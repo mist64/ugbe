@@ -25,6 +25,7 @@
 /* Begin PBXFileReference section */
 		CC2755301C7A6FB3009794B3 /* gbcpu */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = gbcpu; sourceTree = BUILT_PRODUCTS_DIR; };
 		CC2755331C7A6FB3009794B3 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
+		CC27553A1C7A6FF5009794B3 /* DMG_ROM.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = DMG_ROM.bin; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -58,6 +59,7 @@
 			isa = PBXGroup;
 			children = (
 				CC2755331C7A6FB3009794B3 /* main.c */,
+				CC27553A1C7A6FF5009794B3 /* DMG_ROM.bin */,
 			);
 			path = gbcpu;
 			sourceTree = "<group>";
