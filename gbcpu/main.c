@@ -50,11 +50,13 @@ main(int argc, const char * argv[])
 	fclose(f);
 	
 	for (;;) {
+		printf("A=%02x HL=%04x SP=%04x PC=%04x\n", a, hl.full, sp, pc);
+		
 		uint8_t opcode = RAM[pc++];
 		printf("0x%x\n", opcode);
 		
 		switch (opcode) {
-			case 0: // nop
+			case 0x0: // nop
 				break;
 				
 			case 0x21: // LD HL,d16 - 3
@@ -63,10 +65,28 @@ main(int argc, const char * argv[])
 			case 0x31: // LD SP,d16 - 3
 				ld16(&sp);
 				break;
+			case 0x32: // LD (HL-),A // target, source
+				RAM[hl.full--] = a;
+				break;
+
 			case 0xaf: // XOR A - 1 // XOR A,A
 				a = 0;
 				break;
 				
+			case 0xcb: // PREFIX CB
+				opcode = RAM[pc++];
+				printf("0x%x\n", opcode);
+
+				switch (opcode) {
+					case 0x7c: // BIT 7,H
+						
+						break;
+						
+					default:
+						printf("Unknown Prefix CB Opcode\n");
+						return 1;
+						break;
+				}
 			default:
 				printf("Unknown Opcode\n");
 				return 1;
