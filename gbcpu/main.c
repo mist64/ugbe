@@ -17,7 +17,6 @@ uint8_t RAM[65536];
 uint16_t pc = 0;
 uint16_t sp = 0;
 
-uint8_t a = 0;
 
 // registers, can be used as 16 bit registers in the following combinations:
 // a,f,
@@ -37,16 +36,35 @@ uint8_t a = 0;
 union reg16_t {
 	uint16_t full;
 	struct {
-		uint8_t low;
+        union {
+            uint8_t reg8;
+            struct {
+                unsigned int zf:1;
+                unsigned int nf:1;
+                unsigned int hf:1;
+                unsigned int cf:1;
+                unsigned int zero:4;
+            };
+        } low;
 		uint8_t high;
 	};
 };
 
+union reg16_t reg16_af;
 union reg16_t reg16_hl;
+
+#define af reg16_af.full
+#define a reg16_af.high
+#define f reg16_af.low.reg8
+
+#define zf reg16_af.low.z
+#define nf reg16_af.low.n
+#define hf reg16_af.low.h
+#define cf reg16_af.low.c
 
 #define hl reg16_hl.full
 #define h reg16_hl.high
-#define l reg16_hl.low
+#define l reg16_hl.low.reg8
 
 void
 ld16(uint16_t *r16)
