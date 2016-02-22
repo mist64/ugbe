@@ -8,6 +8,11 @@
 
 #include <stdio.h>
 
+
+// see: http://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html
+// see: http://gbdev.gg8.se/wiki/articles/Gameboy_Bootstrap_ROM
+
+
 uint8_t RAM[65536];
 uint16_t pc = 0;
 uint16_t sp = 0;
@@ -19,6 +24,15 @@ uint8_t a = 0;
 // b,c,
 // d,e,
 // h,l
+
+// f - flags register in detail
+// 7	6	5	4	3	2	1	0
+// Z	N	H	C	0	0	0	0
+// Z - Zero Flag
+// N - Subtract Flag
+// H - Half Carry Flag
+// C - Carry Flag
+// 0 - Not used, always zero
 
 union reg16_t {
 	uint16_t full;
@@ -47,13 +61,13 @@ main(int argc, const char * argv[])
 {
 
 #if BUILD_USER_Lisa
-	FILE *f = fopen("/Users/lisa/Projects/gbcpu/gbcpu/DMG_ROM.bin", "r");
+	FILE *file = fopen("/Users/lisa/Projects/gbcpu/gbcpu/DMG_ROM.bin", "r");
 #else
-    FILE *f = fopen("/Users/mist/Documents/git/gbcpu/gbcpu/DMG_ROM.bin", "r");
+    FILE *file = fopen("/Users/mist/Documents/git/gbcpu/gbcpu/DMG_ROM.bin", "r");
 #endif
 
-    fread(RAM, 256, 1, f);
-	fclose(f);
+    fread(RAM, 256, 1, file);
+	fclose(file);
 	
 	for (;;) {
 		printf("A=%02x HL=%04x SP=%04x PC=%04x\n", a, hl, sp, pc);
@@ -62,20 +76,20 @@ main(int argc, const char * argv[])
 		printf("0x%x\n", opcode);
 		
 		switch (opcode) {
-			case 0x0: // nop
+			case 0x0: // nop; 1; ----
 				break;
 				
-			case 0x21: // LD HL,d16 - 3
+			case 0x21: // LD HL,d16; 3; ----
 				ld16(&hl);
 				break;
-			case 0x31: // LD SP,d16 - 3
+			case 0x31: // LD SP,d16; 3; ----
 				ld16(&sp);
 				break;
-			case 0x32: // LD (HL-),A // target, source
+			case 0x32: // LD (HL-),A ; 1; ---- // target, source
 				RAM[hl--] = a;
 				break;
 
-			case 0xaf: // XOR A - 1 // XOR A,A
+			case 0xaf: // XOR A - 1; 1; Z000 // XOR A,A
 				a = 0;
 				break;
 				
@@ -84,17 +98,17 @@ main(int argc, const char * argv[])
 				printf("0x%x\n", opcode);
 
 				switch (opcode) {
-					case 0x7c: // BIT 7,H
+					case 0x7c: // BIT 7,H; 2; Z01-
 						
 						break;
 						
 					default:
-						printf("Unknown Prefix CB Opcode\n");
+						printf("Unknown Prefix CB Opcode 0x%x\n", opcode);
 						return 1;
 						break;
 				}
 			default:
-				printf("Unknown Opcode\n");
+				printf("Unknown Opcode 0x%x\n", opcode);
 				return 1;
 		}
 	}
