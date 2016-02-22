@@ -11,6 +11,7 @@
 
 // see: http://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html
 // see: http://gbdev.gg8.se/wiki/articles/Gameboy_Bootstrap_ROM
+// see: http://meatfighter.com/gameboy/GBCribSheet000129.pdf
 
 
 uint8_t RAM[65536];
@@ -51,6 +52,7 @@ union reg16_t {
 };
 
 union reg16_t reg16_af;
+union reg16_t reg16_bc;
 union reg16_t reg16_hl;
 
 #define af reg16_af.full
@@ -61,6 +63,10 @@ union reg16_t reg16_hl;
 #define nf reg16_af.low.bit6
 #define hf reg16_af.low.bit5
 #define cf reg16_af.low.bit4
+
+#define bc reg16_bc.full
+#define b reg16_bc.high
+#define c reg16_bc.low.full
 
 #define hl reg16_hl.full
 #define h reg16_hl.high
@@ -88,7 +94,7 @@ main(int argc, const char * argv[])
 	fclose(file);
 	
 	for (;;) {
-		printf("A=%02x HL=%04x SP=%04x PC=%04x\n", a, hl, sp, pc);
+		printf("A=%02x BC=%04x HL=%04x SP=%04x PC=%04x (ZF=%d,NF=%d,HF=%d,CF=%d)\n", a, bc, hl, sp, pc, zf, nf, hf, cf);
 		
 		uint8_t opcode = RAM[pc++];
 		printf("0x%x\n", opcode);
@@ -97,6 +103,9 @@ main(int argc, const char * argv[])
 			case 0x0: // nop; 1; ----
 				break;
 				
+//			case 0x02: // LD (BC),A; 1; ----
+//				RAM[bc] = a;
+//				break;
 			case 0x21: // LD HL,d16; 3; ----
 				ld16(&hl);
 				break;
@@ -125,6 +134,8 @@ main(int argc, const char * argv[])
 						return 1;
 						break;
 				}
+                break;
+                
 			default:
 				printf("Unknown Opcode 0x%x\n", opcode);
 				return 1;
