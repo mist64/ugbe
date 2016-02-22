@@ -13,8 +13,6 @@ uint16_t pc = 0;
 uint16_t sp = 0;
 
 uint8_t a = 0;
-uint8_t h = 0;
-uint8_t l = 0;
 
 // registers, can be used as 16 bit registers in the following combinations:
 // a,f,
@@ -30,7 +28,11 @@ union reg16_t {
 	};
 };
 
-union reg16_t hl;
+union reg16_t reg16_hl;
+
+#define hl reg16_hl.full
+#define h reg16_hl.high
+#define l reg16_hl.low
 
 void
 ld16(uint16_t *r16)
@@ -54,7 +56,7 @@ main(int argc, const char * argv[])
 	fclose(f);
 	
 	for (;;) {
-		printf("A=%02x HL=%04x SP=%04x PC=%04x\n", a, hl.full, sp, pc);
+		printf("A=%02x HL=%04x SP=%04x PC=%04x\n", a, hl, sp, pc);
 		
 		uint8_t opcode = RAM[pc++];
 		printf("0x%x\n", opcode);
@@ -64,13 +66,13 @@ main(int argc, const char * argv[])
 				break;
 				
 			case 0x21: // LD HL,d16 - 3
-				ld16(&hl.full);
+				ld16(&hl);
 				break;
 			case 0x31: // LD SP,d16 - 3
 				ld16(&sp);
 				break;
 			case 0x32: // LD (HL-),A // target, source
-				RAM[hl.full--] = a;
+				RAM[hl--] = a;
 				break;
 
 			case 0xaf: // XOR A - 1 // XOR A,A
