@@ -37,13 +37,13 @@ union reg16_t {
 	uint16_t full;
 	struct {
         union {
-            uint8_t reg8;
+            uint8_t full;
             struct {
-                unsigned int zf:1;
-                unsigned int nf:1;
-                unsigned int hf:1;
-                unsigned int cf:1;
-                unsigned int zero:4;
+                unsigned int bit7 : 1;
+                unsigned int bit6 : 1;
+                unsigned int bit5 : 1;
+                unsigned int bit4 : 1;
+                unsigned int bit3_0 : 4;
             };
         } low;
 		uint8_t high;
@@ -55,16 +55,16 @@ union reg16_t reg16_hl;
 
 #define af reg16_af.full
 #define a reg16_af.high
-#define f reg16_af.low.reg8
+#define f reg16_af.low.full
 
-#define zf reg16_af.low.z
-#define nf reg16_af.low.n
-#define hf reg16_af.low.h
-#define cf reg16_af.low.c
+#define zf reg16_af.low.bit7
+#define nf reg16_af.low.bit6
+#define hf reg16_af.low.bit5
+#define cf reg16_af.low.bit4
 
 #define hl reg16_hl.full
 #define h reg16_hl.high
-#define l reg16_hl.low.reg8
+#define l reg16_hl.low.full
 
 void
 ld16(uint16_t *r16)
@@ -117,7 +117,7 @@ main(int argc, const char * argv[])
 
 				switch (opcode) {
 					case 0x7c: // BIT 7,H; 2; Z01-
-						
+						// todo: implement
 						break;
 						
 					default:
