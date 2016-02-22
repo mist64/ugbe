@@ -44,9 +44,13 @@ int
 main(int argc, const char * argv[])
 {
 
-	
-	FILE *f = fopen("/Users/mist/Documents/git/gbcpu/gbcpu/DMG_ROM.bin", "r");
-	fread(RAM, 256, 1, f);
+#if BUILD_USER_Lisa
+	FILE *f = fopen("/Users/lisa/Projects/gbcpu/gbcpu/DMG_ROM.bin", "r");
+#else
+    FILE *f = fopen("/Users/mist/Documents/git/gbcpu/gbcpu/DMG_ROM.bin", "r");
+#endif
+
+    fread(RAM, 256, 1, f);
 	fclose(f);
 	
 	for (;;) {
