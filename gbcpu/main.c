@@ -160,9 +160,15 @@ main(int argc, const char * argv[])
 		switch (opcode) {
 			case 0x00: // nop; 1; ----
 				break;
-//			case 0x02: // LD (BC),A; 1; ----
-//				RAM[bc] = a;
-//				break;
+			case 0x02: // LD (BC),A; 1; ----
+				RAM[bc] = a;
+				break;
+			case 0x05: // DEC B; 1; Z 1 H -
+				b--;
+				zf = !b;
+				nf = 1;
+//				hf = ; // todo: calculate hf
+				break;
 			case 0x06: // LD B,d8; 2; ----
 				ld8(&b);
 				break;
@@ -210,6 +216,12 @@ main(int argc, const char * argv[])
 			}
             case 0x21: // LD HL,d16; 3; ----
 				ld16(&hl);
+				break;
+			case 0x22: // LD (HL+),A; 1; ---- // LD (HLI),A or LDI (HL),A // target, source
+				RAM[hl++] = a;
+				break;
+			case 0x23: // INC HL; 1; ----
+				hl++;
 				break;
 			case 0x26: // LD H,d8; 2; ----
 				ld8(&h);
@@ -266,6 +278,9 @@ main(int argc, const char * argv[])
 
 			case 0xc5: // PUSH BC; 1; ----
 				push16(bc);
+				break;
+			case 0xc9: // RET; 1; ----
+				pc = pop16();
 				break;
 			case 0xcd: { // CALL a16; 3; ----
 				uint16_t a16 = fetch16();
