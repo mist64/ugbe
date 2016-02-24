@@ -148,6 +148,9 @@ main(int argc, const char * argv[])
 //			case 0x02: // LD (BC),A; 1; ----
 //				RAM[bc] = a;
 //				break;
+			case 0x06: // LD B,d8; 2; ----
+				ld8(&b);
+				break;
 			case 0x0c: // INC C; 1; Z 0 H -
 				c++;
 				zf = !c;
@@ -159,6 +162,9 @@ main(int argc, const char * argv[])
 				break;
 			case 0x11: // LD DE,d16; 3; ----
 				ld16(&de);
+				break;
+			case 0x16: // LD D,d8; 2; ----
+				ld8(&d);
 				break;
 			case 0x1a: // LD A,(DE); 1; ----
 				a = RAM[de];
@@ -173,6 +179,9 @@ main(int argc, const char * argv[])
             case 0x21: // LD HL,d16; 3; ----
 				ld16(&hl);
 				break;
+			case 0x26: // LD H,d8; 2; ----
+				ld8(&h);
+				break;
 			case 0x31: // LD SP,d16; 3; ----
 				ld16(&sp);
 				break;
@@ -181,6 +190,9 @@ main(int argc, const char * argv[])
 				break;
 			case 0x3e: // LD A,d8; 2; ----
 				ld8(&a);
+				break;
+			case 0x4f: // LD C,A; 1; ----
+				c = a;
 				break;
 			case 0x77: // LD (HL),A; 1; ----
 				RAM[hl] = a;
@@ -208,12 +220,19 @@ main(int argc, const char * argv[])
 						break;
 				}
                 break;
+
+			case 0xc5: //PUSH BC; 1; ----
+				push16(bc);
+				break;
 			case 0xcd: { // CALL a16; 3; ----
 				uint16_t a16 = fetch16();
 				push16(pc);
 				pc = a16;
 				break;
 			}
+			case 0xd5: //PUSH DE; 1; ----
+				push16(de);
+				break;
 			case 0xe0: { // LDH (a8),A; 2; ---- // LD ($FF00+a8),A
 				uint8_t a8 = fetch8();
 				RAM[0xff00 + a8] = a;
@@ -221,6 +240,12 @@ main(int argc, const char * argv[])
 			}
 			case 0xe2: // LD (C),A; 1; ---- // LD ($FF00+C),A // target, source
 				RAM[0xff00 + c] = a;
+				break;
+			case 0xe5: //PUSH HL; 1; ----
+				push16(hl);
+				break;
+			case 0xf5: //PUSH AF; 1; ----
+				push16(af);
 				break;
 
 			default:
