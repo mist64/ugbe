@@ -30,7 +30,7 @@ uint16_t sp = 0;
 // Z	N	H	C	0	0	0	0
 // Z - Zero Flag
 // N - Subtract Flag
-// H - Half Carry Flag
+// H - Half Carry Flag - did a carry from 3 to 4 bit happen
 // C - Carry Flag
 // 0 - Not used, always zero
 
@@ -74,6 +74,13 @@ union reg16_t reg16_hl;
 #define l reg16_hl.low.full
 
 void
+ld8(uint8_t *r8)
+{
+	uint8_t d8 = RAM[pc++];
+	*r8 = d8;
+}
+
+void
 ld16(uint16_t *r16)
 {
 	uint8_t d16l = RAM[pc++];
@@ -101,13 +108,20 @@ main(int argc, const char * argv[])
 		printf("0x%x\n", opcode);
 		
 		switch (opcode) {
-			case 0x0: // nop; 1; ----
+			case 0x00: // nop; 1; ----
 				break;
-				
 //			case 0x02: // LD (BC),A; 1; ----
 //				RAM[bc] = a;
 //				break;
-
+			case 0x0c: // INC C; 1; Z 0 H -
+				c++;
+				zf = !c;
+				nf = 0;
+//				hf = ; // todo: calculate hf
+				break;
+			case 0x0e: // LD C,d8; 2; ----
+				ld8(&c);
+				break;
 			case 0x20: { // JR NZ, r8;2; ----
 				int8_t r8 = RAM[pc++];
 				if (zf == 0) {
@@ -121,10 +135,15 @@ main(int argc, const char * argv[])
 			case 0x31: // LD SP,d16; 3; ----
 				ld16(&sp);
 				break;
-			case 0x32: // LD (HL-),A ; 1; ---- // target, source
+			case 0x32: // LD (HL-),A; 1; ---- // LD (HLD),A or LDD (HL),A // target, source
 				RAM[hl--] = a;
 				break;
-
+			case 0x3e: // LD A,d8; 2; ----
+				ld8(&a);
+				break;
+			case 0x77: // LD (HL),A; 1; ----
+				RAM[hl] = a;
+				break;
 			case 0xaf: // XOR A - 1; 1; Z000 // XOR A,A
 				a = 0;
 				break;
@@ -135,7 +154,7 @@ main(int argc, const char * argv[])
 
 				switch (opcode) {
                     case 0x7c: { // BIT 7,H; 2; Z01-
-                        uint8_t test = 1<<7;
+                        uint8_t test = 1 << 7;
 						zf = !(h & test);
                         nf = 0;
                         hf = 1;
@@ -148,7 +167,16 @@ main(int argc, const char * argv[])
 						break;
 				}
                 break;
-                
+				
+			case 0xe0: { // LDH (a8),A; 2; ---- // LD ($FF00+a8),A
+				uint8_t a8 = RAM[pc++];
+				RAM[0xff00 + a8] = a;
+				break;
+			}
+			case 0xe2: // LD (C),A; 2; ---- // LD ($FF00+C),A // target, source
+				RAM[0xff00 + c] = a;
+				break;
+
 			default:
 				printf("Unknown Opcode 0x%02x\n", opcode);
 				return 1;
