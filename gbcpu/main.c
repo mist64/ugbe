@@ -151,6 +151,14 @@ main(int argc, const char * argv[])
 			case 0x06: // LD B,d8; 2; ----
 				ld8(&b);
 				break;
+			case 0x07: { // RLCA; 1; 0 0 0 C:
+				cf = a >> 7;
+				a = a << 1;
+				zf = 0;
+				nf = 0;
+				hf = 0;
+				break;
+			}
 			case 0x0c: // INC C; 1; Z 0 H -
 				c++;
 				zf = !c;
@@ -166,6 +174,15 @@ main(int argc, const char * argv[])
 			case 0x16: // LD D,d8; 2; ----
 				ld8(&d);
 				break;
+			case 0x17: { // RLA; 1; 0 0 0 C:
+				uint8_t oldcf = cf;
+				cf = a >> 7;
+				a = (a << 1) | oldcf;
+				zf = 0;
+				nf = 0;
+				hf = 0;
+				break;
+			}
 			case 0x1a: // LD A,(DE); 1; ----
 				a = RAM[de];
 				break;
@@ -206,6 +223,15 @@ main(int argc, const char * argv[])
 				printf("0x%02x\n", opcode);
 
 				switch (opcode) {
+					case 0x11: { // RL C; 2; Z 0 0 C
+						uint8_t oldcf = cf;
+						cf = c >> 7;
+						c = (c << 1) | oldcf;
+						zf = !c;
+						nf = 0;
+						hf = 0;
+						break;
+					}
                     case 0x7c: { // BIT 7,H; 2; Z01-
                         uint8_t test = 1 << 7;
 						zf = !(h & test);
