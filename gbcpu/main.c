@@ -34,6 +34,7 @@ uint16_t sp = 0;
 // C - Carry Flag
 // 0 - Not used, always zero
 
+#pragma pack(1)
 union reg16_t {
 	uint16_t full;
 	struct {
