@@ -130,6 +130,9 @@ main(int argc, const char * argv[])
 			case 0x11: // LD DE,d16; 3; ----
 				ld16(&de);
 				break;
+			case 0x1a: // LD A,(DE); 1; ----
+				a = RAM[de];
+				break;
 			case 0x20: { // JR NZ, r8;2; ----
 				int8_t r8 = RAM[pc++];
 				if (zf == 0) {
@@ -175,13 +178,20 @@ main(int argc, const char * argv[])
 						break;
 				}
                 break;
-				
+			case 0xcd: // CALL a16; 3; ----
+				// get address
+				// pc to stack
+				// jump there
+				// todo: implement
+				return 1;
+
+				break;
 			case 0xe0: { // LDH (a8),A; 2; ---- // LD ($FF00+a8),A
 				uint8_t a8 = RAM[pc++];
 				RAM[0xff00 + a8] = a;
 				break;
 			}
-			case 0xe2: // LD (C),A; 2; ---- // LD ($FF00+C),A // target, source
+			case 0xe2: // LD (C),A; 1; ---- // LD ($FF00+C),A // target, source
 				RAM[0xff00 + c] = a;
 				break;
 
