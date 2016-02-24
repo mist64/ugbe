@@ -54,6 +54,7 @@ union reg16_t {
 
 union reg16_t reg16_af;
 union reg16_t reg16_bc;
+union reg16_t reg16_de;
 union reg16_t reg16_hl;
 
 #define af reg16_af.full
@@ -68,6 +69,10 @@ union reg16_t reg16_hl;
 #define bc reg16_bc.full
 #define b reg16_bc.high
 #define c reg16_bc.low.full
+
+#define de reg16_de.full
+#define d reg16_de.high
+#define e reg16_de.low.full
 
 #define hl reg16_hl.full
 #define h reg16_hl.high
@@ -121,6 +126,9 @@ main(int argc, const char * argv[])
 				break;
 			case 0x0e: // LD C,d8; 2; ----
 				ld8(&c);
+				break;
+			case 0x11: // LD DE,d16; 3; ----
+				ld16(&de);
 				break;
 			case 0x20: { // JR NZ, r8;2; ----
 				int8_t r8 = RAM[pc++];
