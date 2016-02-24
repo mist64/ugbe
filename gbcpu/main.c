@@ -78,20 +78,50 @@ union reg16_t reg16_hl;
 #define h reg16_hl.high
 #define l reg16_hl.low.full
 
+uint8_t
+fetch8()
+{
+	uint8_t d8 = RAM[pc++];
+	return d8;
+
+}
+
+uint16_t
+fetch16()
+{
+	uint8_t d16l = fetch8();
+	uint8_t d16h = fetch8();
+	uint16_t d16 = (d16h << 8) | d16l;
+	return d16;
+}
+
 void
 ld8(uint8_t *r8)
 {
-	uint8_t d8 = RAM[pc++];
+	uint8_t d8 = fetch8();
 	*r8 = d8;
 }
 
 void
 ld16(uint16_t *r16)
 {
-	uint8_t d16l = RAM[pc++];
-	uint8_t d16h = RAM[pc++];
-	*r16 = (d16h << 8) | d16l;
+	uint16_t d16 = fetch16();
+	*r16 = d16;
 }
+
+void
+push8(uint8_t d8)
+{
+	RAM[--sp] = d8;
+}
+
+void
+push16(uint16_t d16)
+{
+	push8(d16 >> 8);
+	push8(d16 & 0xff);
+}
+
 
 int
 main(int argc, const char * argv[])
@@ -109,7 +139,7 @@ main(int argc, const char * argv[])
 	for (;;) {
 		printf("A=%02x BC=%04x HL=%04x SP=%04x PC=%04x (ZF=%d,NF=%d,HF=%d,CF=%d)\n", a, bc, hl, sp, pc, zf, nf, hf, cf);
 		
-		uint8_t opcode = RAM[pc++];
+		uint8_t opcode = fetch8();
 		printf("0x%x\n", opcode);
 		
 		switch (opcode) {
@@ -134,7 +164,7 @@ main(int argc, const char * argv[])
 				a = RAM[de];
 				break;
 			case 0x20: { // JR NZ, r8;2; ----
-				int8_t r8 = RAM[pc++];
+				int8_t r8 = fetch8();
 				if (zf == 0) {
 					pc += r8;
 				}
@@ -160,7 +190,7 @@ main(int argc, const char * argv[])
 				break;
 				
 			case 0xcb: // PREFIX CB
-				opcode = RAM[pc++];
+				opcode = fetch8();
 				printf("0x%02x\n", opcode);
 
 				switch (opcode) {
@@ -187,7 +217,7 @@ main(int argc, const char * argv[])
 
 				break;
 			case 0xe0: { // LDH (a8),A; 2; ---- // LD ($FF00+a8),A
-				uint8_t a8 = RAM[pc++];
+				uint8_t a8 = fetch8();
 				RAM[0xff00 + a8] = a;
 				break;
 			}
