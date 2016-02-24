@@ -122,6 +122,21 @@ push16(uint16_t d16)
 	push8(d16 & 0xff);
 }
 
+uint8_t
+pop8()
+{
+	uint8_t d8 = RAM[sp++];
+	return d8;
+}
+
+uint16_t
+pop16()
+{
+	uint8_t d16l = pop8();
+	uint8_t d16h = pop8();
+	uint16_t d16 = (d16h << 8) | d16l;
+	return d16;
+}
 
 int
 main(int argc, const char * argv[])
@@ -217,7 +232,9 @@ main(int argc, const char * argv[])
 			case 0xaf: // XOR A - 1; 1; Z000 // XOR A,A
 				a = 0;
 				break;
-				
+			case 0xc1: // POP BC; 1; ----
+				bc = pop16();
+				break;
 			case 0xcb: // PREFIX CB
 				opcode = fetch8();
 				printf("0x%02x\n", opcode);
@@ -247,7 +264,7 @@ main(int argc, const char * argv[])
 				}
                 break;
 
-			case 0xc5: //PUSH BC; 1; ----
+			case 0xc5: // PUSH BC; 1; ----
 				push16(bc);
 				break;
 			case 0xcd: { // CALL a16; 3; ----
@@ -256,7 +273,10 @@ main(int argc, const char * argv[])
 				pc = a16;
 				break;
 			}
-			case 0xd5: //PUSH DE; 1; ----
+			case 0xd1: // POP DE; 1; ----
+				de = pop16();
+				break;
+			case 0xd5: // PUSH DE; 1; ----
 				push16(de);
 				break;
 			case 0xe0: { // LDH (a8),A; 2; ---- // LD ($FF00+a8),A
@@ -264,13 +284,19 @@ main(int argc, const char * argv[])
 				RAM[0xff00 + a8] = a;
 				break;
 			}
+			case 0xe1: // POP HL; 1; ----
+				hl = pop16();
+				break;
 			case 0xe2: // LD (C),A; 1; ---- // LD ($FF00+C),A // target, source
 				RAM[0xff00 + c] = a;
 				break;
-			case 0xe5: //PUSH HL; 1; ----
+			case 0xe5: // PUSH HL; 1; ----
 				push16(hl);
 				break;
-			case 0xf5: //PUSH AF; 1; ----
+			case 0xf1: // POP AF; 1; Z N H C
+				af = pop16();
+				break;
+			case 0xf5: // PUSH AF; 1; ----
 				push16(af);
 				break;
 
