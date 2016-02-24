@@ -106,7 +106,15 @@ main(int argc, const char * argv[])
 //			case 0x02: // LD (BC),A; 1; ----
 //				RAM[bc] = a;
 //				break;
-			case 0x21: // LD HL,d16; 3; ----
+
+			case 0x20: { // JR NZ, r8;2; ----
+				int8_t r8 = RAM[pc++];
+				if (zf == 0) {
+					pc += r8;
+				}
+				break;
+			}
+            case 0x21: // LD HL,d16; 3; ----
 				ld16(&hl);
 				break;
 			case 0x31: // LD SP,d16; 3; ----
@@ -122,22 +130,26 @@ main(int argc, const char * argv[])
 				
 			case 0xcb: // PREFIX CB
 				opcode = RAM[pc++];
-				printf("0x%x\n", opcode);
+				printf("0x%02x\n", opcode);
 
 				switch (opcode) {
-					case 0x7c: // BIT 7,H; 2; Z01-
-						// todo: implement
-						break;
+                    case 0x7c: { // BIT 7,H; 2; Z01-
+                        uint8_t test = 1<<7;
+						zf = !(h & test);
+                        nf = 0;
+                        hf = 1;
+                        break;
+                    }
 						
 					default:
-						printf("Unknown Prefix CB Opcode 0x%x\n", opcode);
+						printf("Unknown Prefix CB Opcode 0x%02x\n", opcode);
 						return 1;
 						break;
 				}
                 break;
                 
 			default:
-				printf("Unknown Opcode 0x%x\n", opcode);
+				printf("Unknown Opcode 0x%02x\n", opcode);
 				return 1;
 		}
 	}
