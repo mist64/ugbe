@@ -208,14 +208,12 @@ main(int argc, const char * argv[])
 						break;
 				}
                 break;
-			case 0xcd: // CALL a16; 3; ----
-				// get address
-				// pc to stack
-				// jump there
-				// todo: implement
-				return 1;
-
+			case 0xcd: { // CALL a16; 3; ----
+				uint16_t a16 = fetch16();
+				push16(pc);
+				pc = a16;
 				break;
+			}
 			case 0xe0: { // LDH (a8),A; 2; ---- // LD ($FF00+a8),A
 				uint8_t a8 = fetch8();
 				RAM[0xff00 + a8] = a;
