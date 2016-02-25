@@ -967,7 +967,7 @@ main(int argc, const char * argv[])
 				return 1; // todo
 				break;
 			
-			case 0xcb: // PREFIX CB; // wrong: 1; 4; ----
+			case 0xcb: // PREFIX CB
 				opcode = fetch8();
 				printf("0x%02x\n", opcode);
 
@@ -1084,7 +1084,7 @@ main(int argc, const char * argv[])
 			case 0xe1: // POP HL; 1; 12; ----
 				hl = pop16();
 				break;
-			case 0xe2: // LD (C),A; 1; ---- // LD ($FF00+C),A // target, source
+			case 0xe2: // LD (C),A; 1; 8; ---- // LD ($FF00+C),A // target, source
 				RAM[0xff00 + c] = a;
 				break;
 			case 0xe3: // crash?
@@ -1145,7 +1145,7 @@ main(int argc, const char * argv[])
 			case 0xf1: // POP AF; 1; 12; Z N H C
 				af = pop16();
 				break;
-			case 0xf2: // LD A,(C); 2; 8; ----
+			case 0xf2: // LD A,(C); 1; 8; ----
 				printf("todo: 0x%x\n", opcode);
 				return 1; // todo
 				break;
