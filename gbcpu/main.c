@@ -168,8 +168,7 @@ main(int argc, const char * argv[])
 				RAM[bc] = a;
 				break;
 			case 0x03: // INC BC; 1; 8; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				bc++;
 				break;
 			case 0x04: // INC B; 1; 4; Z 0 H -
 				printf("todo: 0x%x\n", opcode);
@@ -237,8 +236,7 @@ main(int argc, const char * argv[])
 				return 1; // todo
 				break;
 			case 0x13: // INC DE; 1; 8; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				de++;
 				break;
 			case 0x14: // INC D; 1; 4; Z 0 H -
 				printf("todo: 0x%x\n", opcode);
@@ -365,8 +363,7 @@ main(int argc, const char * argv[])
 				RAM[hl--] = a;
 				break;
 			case 0x33: // INC SP; 1; 8; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				sp++;
 				break;
 			case 0x34: // INC (HL); 1; 12; Z 0 H -
 				printf("todo: 0x%x\n", opcode);
