@@ -138,6 +138,15 @@ pop16()
 	return d16;
 }
 
+void
+inc8(uint8_t *r)
+{
+	(*r)++;
+	zf = !*r;
+	nf = 0;
+//	hf = ; // todo: calculate hf
+}
+
 int
 main(int argc, const char * argv[])
 {
@@ -171,8 +180,7 @@ main(int argc, const char * argv[])
 				bc++;
 				break;
 			case 0x04: // INC B; 1; 4; Z 0 H -
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				inc8(&b);
 				break;
 			case 0x05: // DEC B; 1; 4; Z 1 H -
 				b--;
@@ -208,10 +216,7 @@ main(int argc, const char * argv[])
 				return 1; // todo
 				break;
 			case 0x0c: // INC C; 1; 4; Z 0 H -
-				c++;
-				zf = !c;
-				nf = 0;
-//				hf = ; // todo: calculate hf
+				inc8(&c);
 				break;
 			case 0x0d: // DEC C; 1; 4; Z 1 H -
 				printf("todo: 0x%x\n", opcode);
@@ -239,8 +244,7 @@ main(int argc, const char * argv[])
 				de++;
 				break;
 			case 0x14: // INC D; 1; 4; Z 0 H -
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				inc8(&d);
 				break;
 			case 0x15: // DEC D; 1; 4; Z 1 H -
 				printf("todo: 0x%x\n", opcode);
@@ -274,8 +278,7 @@ main(int argc, const char * argv[])
 				return 1; // todo
 				break;
 			case 0x1c: // INC E; 1; 4; Z 0 H -
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				inc8(&e);
 				break;
 			case 0x1d: // DEC E; 1; 4; Z 1 H -
 				printf("todo: 0x%x\n", opcode);
@@ -306,8 +309,7 @@ main(int argc, const char * argv[])
 				hl++;
 				break;
 			case 0x24: // INC H; 1; 4; Z 0 H -
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				inc8(&h);
 				break;
 			case 0x25: // DEC H; 1; 4; Z 1 H -
 				printf("todo: 0x%x\n", opcode);
@@ -337,8 +339,7 @@ main(int argc, const char * argv[])
 				return 1; // todo
 				break;
 			case 0x2c: // INC L; 1; 4; Z 0 H -
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				inc8(&l);
 				break;
 			case 0x2d: // DEC L; 1; 4; Z 1 H -
 				printf("todo: 0x%x\n", opcode);
@@ -398,8 +399,7 @@ main(int argc, const char * argv[])
 				return 1; // todo
 				break;
 			case 0x3c: // INC A; 1; 4; Z 0 H -
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				inc8(&a);
 				break;
 			case 0x3d: // DEC A; 1; 4; Z 1 H -
 				printf("todo: 0x%x\n", opcode);
