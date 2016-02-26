@@ -12,6 +12,7 @@
 		CC512A691C7BA65100ECFACA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CC512A681C7BA65100ECFACA /* Assets.xcassets */; };
 		CC512A6C1C7BA65100ECFACA /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = CC512A6A1C7BA65100ECFACA /* MainMenu.xib */; };
 		CC6486F91C803EE200637024 /* cpu.c in Sources */ = {isa = PBXBuildFile; fileRef = CC6486F81C803EE200637024 /* cpu.c */; };
+		CC6486FC1C8068C000637024 /* ppu.c in Sources */ = {isa = PBXBuildFile; fileRef = CC6486FA1C8068C000637024 /* ppu.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -23,6 +24,8 @@
 		CC512A6B1C7BA65100ECFACA /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		CC512A6D1C7BA65100ECFACA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		CC6486F81C803EE200637024 /* cpu.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = cpu.c; sourceTree = "<group>"; };
+		CC6486FA1C8068C000637024 /* ppu.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ppu.c; sourceTree = "<group>"; };
+		CC6486FB1C8068C000637024 /* ppu.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ppu.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -55,12 +58,14 @@
 		CC512A611C7BA65100ECFACA /* gbppu */ = {
 			isa = PBXGroup;
 			children = (
-				CC512A621C7BA65100ECFACA /* AppDelegate.h */,
 				CC512A631C7BA65100ECFACA /* AppDelegate.m */,
+				CC512A621C7BA65100ECFACA /* AppDelegate.h */,
 				CC512A681C7BA65100ECFACA /* Assets.xcassets */,
 				CC512A6A1C7BA65100ECFACA /* MainMenu.xib */,
 				CC512A6D1C7BA65100ECFACA /* Info.plist */,
 				CC6486F81C803EE200637024 /* cpu.c */,
+				CC6486FA1C8068C000637024 /* ppu.c */,
+				CC6486FB1C8068C000637024 /* ppu.h */,
 				CC512A651C7BA65100ECFACA /* Supporting Files */,
 			);
 			path = gbppu;
@@ -146,6 +151,7 @@
 				CC6486F91C803EE200637024 /* cpu.c in Sources */,
 				CC512A671C7BA65100ECFACA /* main.m in Sources */,
 				CC512A641C7BA65100ECFACA /* AppDelegate.m in Sources */,
+				CC6486FC1C8068C000637024 /* ppu.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
