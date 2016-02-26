@@ -218,7 +218,6 @@ jrcc(int condition) // jump relative condition code
 	if (condition) {
 		pc += r8;
 	}
-
 }
 
 int
@@ -236,11 +235,13 @@ main(int argc, const char * argv[])
 	
 	ppu_init();
 	
+	int counter = 0;
 	for (;;) {
-		printf("A=%02x BC=%04x DE=%04x HL=%04x SP=%04x PC=%04x (ZF=%d,NF=%d,HF=%d,CF=%d) LY=%02x\n", a, bc, de, hl, sp, pc, zf, nf, hf, cf, scanline);
-		
 		uint8_t opcode = fetch8();
-		printf("0x%02x\n", opcode);
+		if (++counter % 1000 == 0) {
+//		if (pc >= 0xe0) {
+			printf("A=%02x BC=%04x DE=%04x HL=%04x SP=%04x PC=%04x (ZF=%d,NF=%d,HF=%d,CF=%d) LY=%02x - opcode 0x%02x\n", a, bc, de, hl, sp, pc-1, zf, nf, hf, cf, scanline, opcode);
+		}
 		
 		switch (opcode) {
 			case 0x00: // NOP; 1; 4; ----
@@ -936,7 +937,7 @@ main(int argc, const char * argv[])
 			
 			case 0xcb: // PREFIX CB
 				opcode = fetch8();
-				printf("0x%02x\n", opcode);
+//				printf("0x%02x\n", opcode);
 
 				switch (opcode) {
 					case 0x11: { // RL C; 2; Z 0 0 C
