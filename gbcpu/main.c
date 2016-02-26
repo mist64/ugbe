@@ -78,10 +78,17 @@ union reg16_t reg16_hl;
 #define h reg16_hl.high
 #define l reg16_hl.low.full
 
+
+uint8_t
+mem_read(uint16_t a16)
+{
+	return RAM[a16];
+}
+
 uint8_t
 fetch8()
 {
-	uint8_t d8 = RAM[pc++];
+	uint8_t d8 = mem_read(pc++);
 	return d8;
 
 }
@@ -125,7 +132,7 @@ push16(uint16_t d16)
 uint8_t
 pop8()
 {
-	uint8_t d8 = RAM[sp++];
+	uint8_t d8 = mem_read(sp++);
 	return d8;
 }
 
@@ -232,7 +239,7 @@ main(int argc, const char * argv[])
 				return 1; // todo
 				break;
 			case 0x0a: // LD A,(BC); 1; 8; ----
-				a = RAM[bc];
+				a = mem_read(bc);
 				break;
 			case 0x0b: // DEC BC; 1; 8; ----
 				bc--;
@@ -289,7 +296,7 @@ main(int argc, const char * argv[])
 				return 1; // todo
 				break;
 			case 0x1a: // LD A,(DE); 1; 8; ----
-				a = RAM[de];
+				a = mem_read(de);
 				break;
 			case 0x1b: // DEC DE; 1; 8; ----
 				de--;
@@ -341,7 +348,7 @@ main(int argc, const char * argv[])
 				return 1; // todo
 				break;
 			case 0x2a: // LD A,(HL+); 1; 8; ----
-				a = RAM[hl++];
+				a = mem_read(hl++);
 				break;
 			case 0x2b: // DEC HL; 1; 8; ----
 				hl--;
@@ -394,7 +401,7 @@ main(int argc, const char * argv[])
 				return 1; // todo
 				break;
 			case 0x3a: // LD A,(HL-); 1; 8; ----
-				a = RAM[hl--];
+				a = mem_read(hl--);
 				break;
 			case 0x3b: // DEC SP; 1; 8; ----
 				sp--;
@@ -431,7 +438,7 @@ main(int argc, const char * argv[])
 				b = l;
 				break;
 			case 0x46: // LD B,(HL); 1; 8; ----
-				b = RAM[hl];
+				b = mem_read(hl);
 				break;
 			case 0x47: // LD B,A; 1; 4; ----
 				b = a;
@@ -455,7 +462,7 @@ main(int argc, const char * argv[])
 				c = l;
 				break;
 			case 0x4e: // LD C,(HL); 1; 8; ----
-				c = RAM[hl];
+				c = mem_read(hl);
 				break;
 			case 0x4f: // LD C,A; 1; 4; ----
 				c = a;
@@ -479,7 +486,7 @@ main(int argc, const char * argv[])
 				d = l;
 				break;
 			case 0x56: // LD D,(HL); 1; 8; ----
-				d = RAM[hl];
+				d = mem_read(hl);
 				break;
 			case 0x57: // LD D,A; 1; 4; ----
 				d = a;
@@ -503,7 +510,7 @@ main(int argc, const char * argv[])
 				e = l;
 				break;
 			case 0x5e: // LD E,(HL); 1; 8; ----
-				e = RAM[hl];
+				e = mem_read(hl);
 				break;
 			case 0x5f: // LD E,A; 1; 4; ----
 				e = a;
@@ -527,7 +534,7 @@ main(int argc, const char * argv[])
 				h = l;
 				break;
 			case 0x66: // LD H,(HL); 1; 8; ----
-				h = RAM[hl];
+				h = mem_read(hl);
 				break;
 			case 0x67: // LD H,A; 1; 4; ----
 				h = a;
@@ -551,7 +558,7 @@ main(int argc, const char * argv[])
 				l = l;
 				break;
 			case 0x6e: // LD L,(HL); 1; 8; ----
-				l = RAM[hl];
+				l = mem_read(hl);
 				break;
 			case 0x6f: // LD L,A; 1; 4; ----
 				l = a;
@@ -600,7 +607,7 @@ main(int argc, const char * argv[])
 				a = l;
 				break;
 			case 0x7e: // LD A,(HL); 1; 8; ----
-				a = RAM[hl];
+				a = mem_read(hl);
 				break;
 			case 0x7f: // LD A,A; 1; 4; ----
 				a = a;
@@ -847,7 +854,7 @@ main(int argc, const char * argv[])
 				cpa8(l);
 				break;
 			case 0xbe: // CP (HL); 1; 8; Z 1 H C
-				cpa8(RAM[hl]);
+				cpa8(mem_read(hl));
 				break;
 			case 0xbf: // CP A; 1; 4; Z 1 H C
 				cpa8(a);
@@ -1057,13 +1064,13 @@ main(int argc, const char * argv[])
 				return 1; // todo
 				break;
 			case 0xf0: // LDH A,(a8); 2; 12; ---- // LD A,($FF00+a8)
-				a = RAM[0xff00 + fetch8()];
+				a = mem_read(0xff00 + fetch8());
 				break;
 			case 0xf1: // POP AF; 1; 12; Z N H C
 				af = pop16();
 				break;
 			case 0xf2: // LD A,(C); 1; 8; ---- // LD A,($FF00+C)
-				a = RAM[0xff00 + c];
+				a = mem_read(0xff00 + c);
 				break;
 			case 0xf3: // DI; 1; 4; ----
 				printf("todo: 0x%02x\n", opcode);
@@ -1091,7 +1098,7 @@ main(int argc, const char * argv[])
 				sp = hl;
 				break;
 			case 0xfa: // LD A,(a16); 3; 16; ----
-				a = RAM[fetch16()];
+				a = mem_read(fetch16());
 				break;
 			case 0xfb: // EI; 1; 4; ----
 				printf("todo: 0x%02x\n", opcode);
