@@ -12,6 +12,8 @@
 // see: http://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html
 // see: http://gbdev.gg8.se/wiki/articles/Gameboy_Bootstrap_ROM
 // see: http://meatfighter.com/gameboy/GBCribSheet000129.pdf
+// see: http://www.z80.info/z80code.htm
+// see: http://z80-heaven.wikidot.com/instructions-set
 
 
 uint8_t RAM[65536];
@@ -193,6 +195,16 @@ dec8(uint8_t *r8) // DEC \w 1; 4; Z 1 H -
 void
 cpa8(uint8_t d8) // CP \w; 1; 4; Z 1 H C
 {
+	zf = (a == d8);
+	nf = 1;
+//	hf = ; // todo: calculate hf
+	cf = a < d8;
+}
+
+void
+suba8(uint8_t d8) // SUB \w; 1; 4; Z 1 H C
+{
+	a = a - d8;
 	zf = (a == d8);
 	nf = 1;
 //	hf = ; // todo: calculate hf
@@ -706,36 +718,28 @@ main(int argc, const char * argv[])
 				return 1; // todo
 				break;
 			case 0x90: // SUB B; 1; 4; Z 1 H C
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
+				suba8(b);
 				break;
 			case 0x91: // SUB C; 1; 4; Z 1 H C
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
+				suba8(c);
 				break;
 			case 0x92: // SUB D; 1; 4; Z 1 H C
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
+				suba8(d);
 				break;
 			case 0x93: // SUB E; 1; 4; Z 1 H C
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
+				suba8(e);
 				break;
 			case 0x94: // SUB H; 1; 4; Z 1 H C
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
+				suba8(h);
 				break;
 			case 0x95: // SUB L; 1; 4; Z 1 H C
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
+				suba8(l);
 				break;
 			case 0x96: // SUB (HL); 1; 8; Z 1 H C
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
+				suba8(mem_read(hl));
 				break;
 			case 0x97: // SUB A; 1; 4; Z 1 H C
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
+				suba8(a);
 				break;
 			case 0x98: // SBC A,B; 1; 4; Z 1 H C
 				printf("todo: 0x%02x\n", opcode);
@@ -999,8 +1003,7 @@ main(int argc, const char * argv[])
 				push16(de);
 				break;
 			case 0xd6: // SUB d8; 2; 8; Z 1 H C
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
+				suba8(fetch8());
 				break;
 			case 0xd7: // RST 10H; 1; 16; ----
 				printf("todo: 0x%02x\n", opcode);
