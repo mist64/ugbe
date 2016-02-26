@@ -84,23 +84,8 @@ union reg16_t reg16_hl;
 uint8_t cycle;
 uint8_t scanline;
 
-void
-ppu_init()
-{
-	cycle = 0;
-	scanline = 0;
-}
-
-void
-ppu_step()
-{
-	if (++cycle == 114) {
-		cycle = 0;
-		if (++scanline == 154) {
-			scanline = 0;
-		}
-	}
-}
+extern void ppu_init();
+extern void ppu_step();
 
 uint8_t
 mem_read(uint16_t a16)
@@ -231,17 +216,17 @@ jrcc(int condition) // jump relative condition code
 }
 
 int
-main(int argc, const char * argv[])
+run(int argc, const char * argv[])
 {
 	
-#if BUILD_USER_Lisa
-	FILE *tetris = fopen("/Users/lisa/Projects/gbcpu/gbcpu/tetris.gb", "r");
-	FILE *file = fopen("/Users/lisa/Projects/gbcpu/gbcpu/DMG_ROM.bin", "r");
-#else
+//#if BUILD_USER_Lisa
+//	FILE *tetris = fopen("/Users/lisa/Projects/gbcpu/gbcpu/tetris.gb", "r");
+//	FILE *file = fopen("/Users/lisa/Projects/gbcpu/gbcpu/DMG_ROM.bin", "r");
+//#else
 	FILE *tetris = fopen("/Users/mist/Documents/git/gbcpu/gbcpu/tetris.gb", "r");
 	FILE *file = fopen("/Users/mist/Documents/git/gbcpu/gbcpu/DMG_ROM.bin", "r");
-#endif
-	
+//#endif
+
 	fread(RAM, 32768, 1, tetris);
 	fclose(tetris);
     fread(RAM, 256, 1, file);
@@ -910,10 +895,14 @@ main(int argc, const char * argv[])
 				printf("todo: 0x%02x\n", opcode);
 				return 1; // todo
 				break;
-			case 0xc3: // JP a16; 3; 16; ----
+			case 0xc3: { // JP a16; 3; 16; ----
 				printf("todo: 0x%02x\n", opcode);
+				FILE *file = fopen("/tmp/ram.bin", "w");
+				fwrite(RAM, 65536, 1, file);
+				fclose(file);
 				return 1; // todo
 				break;
+			}
 			case 0xc4: // CALL NZ,a16; 3; 24/12; ----
 				printf("todo: 0x%02x\n", opcode);
 				return 1; // todo
