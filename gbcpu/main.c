@@ -237,7 +237,7 @@ main(int argc, const char * argv[])
 	ppu_init();
 	
 	for (;;) {
-		printf("A=%02x BC=%04x HL=%04x SP=%04x PC=%04x (ZF=%d,NF=%d,HF=%d,CF=%d)\n", a, bc, hl, sp, pc, zf, nf, hf, cf);
+		printf("A=%02x BC=%04x DE=%04x HL=%04x SP=%04x PC=%04x (ZF=%d,NF=%d,HF=%d,CF=%d) LY=%02x\n", a, bc, de, hl, sp, pc, zf, nf, hf, cf, scanline);
 		
 		uint8_t opcode = fetch8();
 		printf("0x%02x\n", opcode);
