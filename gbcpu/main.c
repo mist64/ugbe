@@ -79,10 +79,37 @@ union reg16_t reg16_hl;
 #define l reg16_hl.low.full
 
 
+uint8_t cycle;
+uint8_t scanline;
+
+void
+ppu_init()
+{
+	cycle = 0;
+	scanline = 0;
+}
+
+void
+ppu_step()
+{
+	if (++cycle == 114) {
+		cycle = 0;
+		if (++scanline == 154) {
+			scanline = 0;
+		}
+	}
+}
+
 uint8_t
 mem_read(uint16_t a16)
 {
-	return RAM[a16];
+	ppu_step();
+
+	if (a16 == 0xff44) {
+		return scanline;
+	} else {
+		return RAM[a16];
+	}
 }
 
 uint8_t
@@ -194,6 +221,8 @@ main(int argc, const char * argv[])
 
     fread(RAM, 256, 1, file);
 	fclose(file);
+	
+	ppu_init();
 	
 	for (;;) {
 		printf("A=%02x BC=%04x HL=%04x SP=%04x PC=%04x (ZF=%d,NF=%d,HF=%d,CF=%d)\n", a, bc, hl, sp, pc, zf, nf, hf, cf);
