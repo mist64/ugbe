@@ -25,6 +25,8 @@ uint16_t pc = 0;
 uint16_t sp = 0;
 
 
+int interrupts_enabled = 0;
+
 #pragma mark - Registers
 
 // registers, can be used as 16 bit registers in the following combinations:
@@ -213,6 +215,35 @@ jpcc(int condition) // jump condition code
 	}
 }
 
+void
+anda(uint8_t d8) // AND \w; 1; 4; Z 0 1 0
+{
+	a = a & d8;
+	zf = !a;
+	nf = 0;
+	hf = 1;
+	cf = 0;
+}
+
+void
+ora(uint8_t d8) // OR \w; 1; 4; Z 0 0 0
+{
+	a = a | d8;
+	zf = !a;
+	nf = 0;
+	hf = 0;
+	cf = 0;
+}
+
+void
+xora(uint8_t d8) // XOR \w; 1; 4; Z 0 0 0
+{
+	a = a ^ d8;
+	zf = !a;
+	nf = 0;
+	hf = 0;
+	cf = 0;
+}
 
 #pragma mark - Init
 
@@ -747,76 +778,76 @@ cpu_step()
 			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xa0: // AND B; 1; 4; Z 0 1 0
-			NOT_YET_IMPLEMENTED();
+			anda(b);
 			break;
 		case 0xa1: // AND C; 1; 4; Z 0 1 0
-			NOT_YET_IMPLEMENTED();
+			anda(c);
 			break;
 		case 0xa2: // AND D; 1; 4; Z 0 1 0
-			NOT_YET_IMPLEMENTED();
+			anda(d);
 			break;
 		case 0xa3: // AND E; 1; 4; Z 0 1 0
-			NOT_YET_IMPLEMENTED();
+			anda(e);
 			break;
 		case 0xa4: // AND H; 1; 4; Z 0 1 0
-			NOT_YET_IMPLEMENTED();
+			anda(h);
 			break;
 		case 0xa5: // AND L; 1; 4; Z 0 1 0
-			NOT_YET_IMPLEMENTED();
+			anda(l);
 			break;
 		case 0xa6: // AND (HL); 1; 8; Z 0 1 0
-			NOT_YET_IMPLEMENTED();
+			anda(mem_read(hl));
 			break;
 		case 0xa7: // AND A; 1; 4; Z 0 1 0
-			NOT_YET_IMPLEMENTED();
+			anda(a);
 			break;
 		case 0xa8: // XOR B; 1; 4; Z 0 0 0
-			NOT_YET_IMPLEMENTED();
+			xora(b);
 			break;
 		case 0xa9: // XOR C; 1; 4; Z 0 0 0
-			NOT_YET_IMPLEMENTED();
+			xora(c);
 			break;
 		case 0xaa: // XOR D; 1; 4; Z 0 0 0
-			NOT_YET_IMPLEMENTED();
+			xora(d);
 			break;
 		case 0xab: // XOR E; 1; 4; Z 0 0 0
-			NOT_YET_IMPLEMENTED();
+			xora(e);
 			break;
 		case 0xac: // XOR H; 1; 4; Z 0 0 0
-			NOT_YET_IMPLEMENTED();
+			xora(h);
 			break;
 		case 0xad: // XOR L; 1; 4; Z 0 0 0
-			NOT_YET_IMPLEMENTED();
+			xora(l);
 			break;
 		case 0xae: // XOR (HL); 1; 8; Z 0 0 0
-			NOT_YET_IMPLEMENTED();
+			xora(mem_read(hl));
 			break;
-		case 0xaf: // XOR A; 1; 4; Z 0 0 0 // XOR A,A
-			a = 0;
+		case 0xaf: // XOR A; 1; 4; Z 0 0 0
+			xora(a);
 			break;
 		case 0xb0: // OR B; 1; 4; Z 0 0 0
-			NOT_YET_IMPLEMENTED();
+			ora(b);
 			break;
 		case 0xb1: // OR C; 1; 4; Z 0 0 0
-			NOT_YET_IMPLEMENTED();
+			ora(c);
 			break;
 		case 0xb2: // OR D; 1; 4; Z 0 0 0
-			NOT_YET_IMPLEMENTED();
+			ora(d);
 			break;
 		case 0xb3: // OR E; 1; 4; Z 0 0 0
-			NOT_YET_IMPLEMENTED();
+			ora(e);
 			break;
 		case 0xb4: // OR H; 1; 4; Z 0 0 0
-			NOT_YET_IMPLEMENTED();
+			ora(h);
 			break;
 		case 0xb5: // OR L; 1; 4; Z 0 0 0
-			NOT_YET_IMPLEMENTED();
+			ora(l);
 			break;
 		case 0xb6: // OR (HL); 1; 8; Z 0 0 0
-			NOT_YET_IMPLEMENTED();
+			ora(mem_read(hl));
 			break;
 		case 0xb7: // OR A; 1; 4; Z 0 0 0
-			NOT_YET_IMPLEMENTED();
+			ora(a);
 			break;
 		case 0xb8: // CP B; 1; 4; Z 1 H C
 			cpa8(b);
@@ -990,7 +1021,7 @@ cpu_step()
 			push16(hl);
 			break;
 		case 0xe6: // AND d8; 2; 8; Z 0 1 0
-			NOT_YET_IMPLEMENTED();
+			anda(fetch8());
 			break;
 		case 0xe7: // RST 20H; 1; 16; ----
 			NOT_YET_IMPLEMENTED();
@@ -1014,7 +1045,7 @@ cpu_step()
 			printf("crash: 0x%02x\n", opcode);
 			return 1;
 		case 0xee: // XOR d8; 2; 8; Z 0 0 0
-			NOT_YET_IMPLEMENTED();
+			xora(fetch8());
 			break;
 		case 0xef: // RST 28H; 1; 16; ----
 			NOT_YET_IMPLEMENTED();
@@ -1029,7 +1060,7 @@ cpu_step()
 			a = mem_read(0xff00 + c);
 			break;
 		case 0xf3: // DI; 1; 4; ----
-			NOT_YET_IMPLEMENTED();
+			interrupts_enabled = 0;
 			break;
 		case 0xf4: // crash
 			printf("crash: 0x%02x\n", opcode);
@@ -1038,7 +1069,7 @@ cpu_step()
 			push16(af);
 			break;
 		case 0xf6: // OR d8; 2; 8; Z 0 0 0
-			NOT_YET_IMPLEMENTED();
+			ora(fetch8());
 			break;
 		case 0xf7: // RST 30H; 1; 16; ----
 			NOT_YET_IMPLEMENTED();
