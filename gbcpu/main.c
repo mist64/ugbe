@@ -156,6 +156,15 @@ dec8(uint8_t *r8) // DEC \w 1; 4; Z 1 H -
 //	hf = ; // todo: calculate hf
 }
 
+void
+cpa8(uint8_t d8) // CP \w; 1; 4; Z 1 H C
+{
+	zf = (a == d8);
+	nf = 1;
+//	hf = ; // todo: calculate hf
+	cf = a < d8;
+}
+
 int
 main(int argc, const char * argv[])
 {
@@ -838,36 +847,28 @@ main(int argc, const char * argv[])
 				return 1; // todo
 				break;
 			case 0xb8: // CP B; 1; 4; Z 1 H C
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				cpa8(b);
 				break;
 			case 0xb9: // CP C; 1; 4; Z 1 H C
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				cpa8(c);
 				break;
 			case 0xba: // CP D; 1; 4; Z 1 H C
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				cpa8(d);
 				break;
 			case 0xbb: // CP E; 1; 4; Z 1 H C
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				cpa8(e);
 				break;
 			case 0xbc: // CP H; 1; 4; Z 1 H C
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				cpa8(h);
 				break;
 			case 0xbd: // CP L; 1; 4; Z 1 H C
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				cpa8(l);
 				break;
 			case 0xbe: // CP (HL); 1; 8; Z 1 H C
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				cpa8(RAM[hl]);
 				break;
 			case 0xbf: // CP A; 1; 4; Z 1 H C
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				cpa8(a);
 				break;
 			case 0xc0: // RET NZ; 1; 20/8; ----
 				printf("todo: 0x%x\n", opcode);
@@ -1137,8 +1138,7 @@ main(int argc, const char * argv[])
 				return 1; // todo
 				break;
 			case 0xfe: // CP d8; 2; 8; Z 1 H C
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				cpa8(fetch8());
 				break;
 			case 0xff: // RST 38H; 1; 16; ---
 				printf("todo: 0x%x\n", opcode);
