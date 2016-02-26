@@ -120,20 +120,6 @@ fetch16()
 }
 
 void
-ld8(uint8_t *r8)
-{
-	uint8_t d8 = fetch8();
-	*r8 = d8;
-}
-
-void
-ld16(uint16_t *r16)
-{
-	uint16_t d16 = fetch16();
-	*r16 = d16;
-}
-
-void
 push8(uint8_t d8)
 {
 	RAM[--sp] = d8;
@@ -263,7 +249,7 @@ cpu_step()
 		case 0x00: // NOP; 1; 4; ----
 			break;
 		case 0x01: // LD BC,d16; 3; 12; ----
-			ld16(&bc);
+			bc = fetch16();
 			break;
 		case 0x02: // LD (BC),A; 1; 8; ----
 			RAM[bc] = a;
@@ -278,7 +264,7 @@ cpu_step()
 			dec8(&b);
 			break;
 		case 0x06: // LD B,d8; 2; 8; ----
-			ld8(&b);
+			b = fetch8();
 			break;
 		case 0x07: { // RLCA; 1; 4; 0 0 0 C
 			cf = a >> 7;
@@ -307,7 +293,7 @@ cpu_step()
 			dec8(&c);
 			break;
 		case 0x0e: // LD C,d8; 2; 8; ----
-			ld8(&c);
+			c = fetch8();
 			break;
 		case 0x0f: // RRCA; 1; 4; 0 0 0 C
 			NOT_YET_IMPLEMENTED();
@@ -316,7 +302,7 @@ cpu_step()
 			NOT_YET_IMPLEMENTED();
 			break;
 		case 0x11: // LD DE,d16; 3; 12; ----
-			ld16(&de);
+			de = fetch16();
 			break;
 		case 0x12: // LD (DE),A; 1; 8; ----
 			RAM[de] = a;
@@ -331,7 +317,7 @@ cpu_step()
 			dec8(&d);
 			break;
 		case 0x16: // LD D,d8; 2; 8; ----
-			ld8(&d);
+			d = fetch8();
 			break;
 		case 0x17: { // RLA; 1; 4; 0 0 0 C
 			uint8_t oldcf = cf;
@@ -361,7 +347,7 @@ cpu_step()
 			dec8(&e);
 			break;
 		case 0x1e: // LD E,d8; 2; 8; ----
-			ld8(&e);
+			e = fetch8();
 			break;
 		case 0x1f: // RRA; 1; 4; 0 0 0 C
 			NOT_YET_IMPLEMENTED();
@@ -371,7 +357,7 @@ cpu_step()
 			break;
 		}
 		case 0x21: // LD HL,d16; 3; 12; ----
-			ld16(&hl);
+			hl = fetch16();
 			break;
 		case 0x22: // LD (HL+),A; 1; 8; ---- // LD (HLI),A or LDI (HL),A // target, source
 			RAM[hl++] = a;
@@ -386,7 +372,7 @@ cpu_step()
 			dec8(&h);
 			break;
 		case 0x26: // LD H,d8; 2; 8; ----
-			ld8(&h);
+			h = fetch8();
 			break;
 		case 0x27: // DAA; 1; 4; Z - 0 C
 			NOT_YET_IMPLEMENTED();
@@ -410,7 +396,7 @@ cpu_step()
 			dec8(&l);
 			break;
 		case 0x2e: // LD L,d8; 2; 8; ----
-			ld8(&l);
+			l = fetch8();
 			break;
 		case 0x2f: // CPL; 1; 4; - 1 1 -
 			NOT_YET_IMPLEMENTED();
@@ -419,7 +405,7 @@ cpu_step()
 			jrcc(!cf);
 			break;
 		case 0x31: // LD SP,d16; 3; 12; ----
-			ld16(&sp);
+			sp = fetch16();
 			break;
 		case 0x32: // LD (HL-),A; 1; 8; ---- // LD (HLD),A or LDD (HL),A // target, source
 			RAM[hl--] = a;
@@ -458,7 +444,7 @@ cpu_step()
 			dec8(&a);
 			break;
 		case 0x3e: // LD A,d8; 2; 8; ----
-			ld8(&a);
+			a = fetch8();
 			break;
 		case 0x3f: // CCF; 1; 4; - 0 0 C
 			NOT_YET_IMPLEMENTED();
