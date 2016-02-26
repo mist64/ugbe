@@ -129,6 +129,8 @@ ppu_step_4()
 
 		if (mode == mode_pixel) {
 			if (!(pixel_transfer_mode_counter & 1)) {
+
+				// background @ 2 MHz
 				switch ((pixel_transfer_mode_counter / 2) & 3) {
 					case 0: {
 						// cycle 0: generate tile map address and prepare reading index
@@ -178,6 +180,8 @@ ppu_step_4()
 					}
 				}
 			}
+			// TODO: pixel clocking @ 4 MHz
+
 			pixel_transfer_mode_counter++;
 		}
 	}
