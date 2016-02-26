@@ -71,16 +71,29 @@ uint8_t *reg = RAM + 0xFF00;
 int current_x;
 int current_y;
 int mode;
-int mode_counter;
+int oam_mode_counter;
+int pixel_transfer_mode_counter;
 
 int pixel_x, pixel_y;
 uint8_t picture[160][144];
+
+uint8_t
+io_read(uint16_t a16)
+{
+	if (a16 == 0xff44) {
+		return current_y;
+	} else {
+//		printf("%s:%d 0x%02x\n", __FILE__, __LINE__, a16);
+//		assert(false);
+		return RAM[a16];
+	}
+}
 
 void
 ppu_init()
 {
 	mode = 2; // OAM
-	mode_counter = 0;
+	oam_mode_counter = 0;
 
 	current_x = 0;
 	current_y = 0;
@@ -89,11 +102,14 @@ ppu_init()
 	pixel_y = 0;
 }
 
-void
+bool
 ppu_output_pixel(uint8_t p)
 {
 	if (pixel_x++ < 160) {
 		picture[pixel_x][pixel_y] = p;
+		return true;
+	} else {
+		return false;
 	}
 }
 
@@ -109,7 +125,7 @@ ppu_new_line()
 uint8_t
 paletted(uint8_t pal, uint8_t p)
 {
-	return (pal >> ((3 - p) * 2)) & 3;
+	return (pal >> (p * 2)) & 3;
 }
 
 char
@@ -142,6 +158,8 @@ vram_get_data()
 	return RAM[vram_address];
 }
 
+bool ppu_dirty;
+
 // PPU steps are executed at half the CPU clock rate, i.e. at ~2 MHz
 void
 ppu_step()
@@ -155,20 +173,21 @@ ppu_step()
 			case 0: // HBLANK
 				break;
 			case 2: { // OAM
-				if (++mode_counter == 40) {
+				if (++oam_mode_counter == 40) {
 					mode = 3;
-					mode_counter = 0;
+					pixel_transfer_mode_counter = 0;
 				}
 				break;
 			case 3: // pixel transfer
-				switch (mode_counter & 3) {
+				switch (pixel_transfer_mode_counter & 3) {
 					case 0: {
 						// cycle 0: generate tile map address and prepare reading index
-						uint8_t xbase = (reg[rSCX] >> 3) + mode_counter / 4;
+						uint8_t xbase = ((reg[rSCX] >> 3) + pixel_transfer_mode_counter / 4) & 31;
 						ybase = reg[rSCY] + current_y;
 						uint8_t ybase_hi = ybase >> 3;
 						uint16_t charaddr = 0x9800 | (!!(reg[rSTAT] & LCDCF_BG9C00) << 10) | (ybase_hi << 5) | xbase;
 						vram_set_address(charaddr);
+//						printf("%s:%d %04x\n", __FILE__, __LINE__, charaddr);
 						break;
 					}
 					case 1: {
@@ -192,42 +211,42 @@ ppu_step()
 						// cycle 3: read tile data #1, output pixels
 						// (VRAM is idle)
 						uint8_t data1 = vram_get_data();
-						int start = (mode_counter >> 2) ? 7 : (7 - (reg[rSCX] & 7));
+						int start = (pixel_transfer_mode_counter >> 2) ? 7 : (7 - (reg[rSCX] & 7));
 
 						for (int i = start; i >= 0; i--) {
 							int b0 = (data0 >> i) & 1;
 							int b1 = (data1 >> i) & 1;
-							printf("%c", printable(b0 | b1 << 1));
-							ppu_output_pixel(paletted(reg[rBGP], b0 | b1 << 1));
+//							printf("%c", printable(paletted(reg[rBGP], b0 | b1 << 1)));
+							if (!ppu_output_pixel(paletted(reg[rBGP], b0 | b1 << 1))) {
+								// line is full, end this
+								ppu_new_line();
+								mode = 0;
+								break;
+							}
 						}
 						break;
 					}
 				}
-
-				if (++mode_counter == 21 * 4) {
-					ppu_new_line();
-					mode = 0;
-				}
+				pixel_transfer_mode_counter++;
 			}
 		}
 	}
 
 
 	if (current_x == PPU_CLOCKS_PER_LINE - 1) {
-		printf("\n");
+//		printf("\n");
 		if (current_y == PPU_LAST_VISIBLE_LINE + 1) {
-			printf("\n");
-			//			exit(1);
+//			printf("\n");
 		}
 	}
-
 
 	if (++current_x == PPU_CLOCKS_PER_LINE) {
 		current_x = 0;
 		mode = 2;
-		mode_counter = 0;
+		oam_mode_counter = 0;
 		if (++current_y == PPU_NUM_LINES) {
 			current_y = 0;
+			ppu_dirty = true;
 		}
 	}
 }
@@ -265,23 +284,23 @@ ppu_step()
 			switch (picture[(int)(160.0 * x / rep.pixelsWide)][(int)(144.0 * y / rep.pixelsHigh)]) {
 				default:
 				case 0:
-					color = 0;
+					color = 255;
 					break;
 				case 1:
-					color = 85;
-					break;
-				case 2:
 					color = 170;
 					break;
+				case 2:
+					color = 85;
+					break;
 				case 3:
-					color = 255;
+					color = 0;
 					break;
 			}
 
-			pixel[0] = color;
+			pixel[0] = 0;
 			pixel[1] = color;
 			pixel[2] = color;
-			pixel[3] = 255;
+			pixel[3] = color;
 
 			[rep setPixel:pixel atX:x y:y];
 		}
@@ -300,6 +319,9 @@ ppu_step()
 
 @implementation AppDelegate
 
+extern void cpu_init();
+extern int cpu_step();
+
 - (void)applicationDidFinishLaunching:(NSNotification *)notification
 {
 	int scale = 2;
@@ -310,21 +332,25 @@ ppu_step()
 	NSView *view = [[View alloc] initWithFrame:bounds];
 	self.window.contentView = view;
 
-	FILE *f = fopen("/Users/mist/Documents/git/gbcpu/gbppu/ram.bin", "r");
-	fread(RAM, 1, 65536, f);
-	fclose(f);
+	dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+		cpu_init();
+		ppu_init();
 
-	//	reg[rSCX] = 7;
-	//	reg[rSCY] = 7;
-
-	ppu_init();
-
-	for (int i = 0; i < 114 * 154; i++) {
-		ppu_step();
-		ppu_step();
-	}
-
-	[view setNeedsDisplay:YES];
+		for (;;) {
+			int ret = cpu_step();
+			if (ret) {
+				exit(ret);
+			}
+			if (ppu_dirty) {
+				ppu_dirty = false;
+				dispatch_async(dispatch_get_main_queue(), ^{
+					[view setNeedsDisplay:YES];
+				});
+				[NSThread sleepForTimeInterval:1.0/60];
+			}
+		}
+	});
+	
 }
 
 @end
