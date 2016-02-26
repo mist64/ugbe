@@ -204,6 +204,15 @@ jrcc(int condition) // jump relative condition code
 	}
 }
 
+void
+jpcc(int condition) // jump condition code
+{
+	int16_t d16 = fetch16();
+	if (condition) {
+		pc = d16;
+	}
+}
+
 
 #pragma mark - Init
 
@@ -840,10 +849,10 @@ cpu_step()
 			bc = pop16();
 			break;
 		case 0xc2: // JP NZ,a16; 3; 16/12; ----
-			NOT_YET_IMPLEMENTED();
+			jpcc(!zf);
 			break;
 		case 0xc3: { // JP a16; 3; 16; ----
-			NOT_YET_IMPLEMENTED();
+			jpcc(1);
 			break;
 		}
 		case 0xc4: // CALL NZ,a16; 3; 24/12; ----
@@ -865,7 +874,7 @@ cpu_step()
 			pc = pop16();
 			break;
 		case 0xca: // JP Z,a16; 3; 16/12; ----
-			NOT_YET_IMPLEMENTED();
+			jpcc(zf);
 			break;
 
 		case 0xcb: // PREFIX CB
@@ -919,7 +928,7 @@ cpu_step()
 			de = pop16();
 			break;
 		case 0xd2: // JP NC,a16; 3; 16/12; ----
-			NOT_YET_IMPLEMENTED();
+			jpcc(!cf);
 			break;
 		case 0xd3: // crash
 			printf("crash: 0x%02x\n", opcode);
@@ -943,7 +952,7 @@ cpu_step()
 			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xda: // JP C,a16; 3; 16/12; ----
-			NOT_YET_IMPLEMENTED();
+			jpcc(cf);
 			break;
 		case 0xdb: // crash
 			printf("crash: 0x%02x\n", opcode);
