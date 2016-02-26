@@ -250,8 +250,7 @@ main(int argc, const char * argv[])
 				ld16(&de);
 				break;
 			case 0x12: // LD (DE),A; 1; 8; ----
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
+				RAM[de] = a;
 				break;
 			case 0x13: // INC DE; 1; 8; ----
 				de++;
@@ -382,8 +381,7 @@ main(int argc, const char * argv[])
 				return 1; // todo
 				break;
 			case 0x36: // LD (HL),d8; 2; 12; ----
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
+				RAM[hl] = fetch8();
 				break;
 			case 0x37: // SCF; 1; 4; - 0 0 1
 				printf("todo: 0x%02x\n", opcode);
@@ -568,28 +566,22 @@ main(int argc, const char * argv[])
 				l = a;
 				break;
 			case 0x70: // LD (HL),B; 1; 8; ----
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
+				RAM[hl] = b;
 				break;
 			case 0x71: // LD (HL),C; 1; 8; ----
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
+				RAM[hl] = c;
 				break;
 			case 0x72: // LD (HL),D; 1; 8; ----
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
+				RAM[hl] = d;
 				break;
 			case 0x73: // LD (HL),E; 1; 8; ----
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
+				RAM[hl] = e;
 				break;
 			case 0x74: // LD (HL),H; 1; 8; ----
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
+				RAM[hl] = h;
 				break;
 			case 0x75: // LD (HL),L; 1; 8; ----
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
+				RAM[hl] = l;
 				break;
 			case 0x76: // HALT; 1; 4; ----
 				printf("todo: 0x%02x\n", opcode);
@@ -1060,8 +1052,7 @@ main(int argc, const char * argv[])
 				return 1; // todo
 				break;
 			case 0xea: // LD (a16),A; 3; 16; ----
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
+				RAM[fetch16()] = a;
 				break;
 			case 0xeb: // crash?
 				printf("todo: 0x%02x\n", opcode);
