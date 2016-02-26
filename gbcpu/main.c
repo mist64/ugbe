@@ -1056,15 +1056,14 @@ main(int argc, const char * argv[])
 				printf("todo: 0x%02x\n", opcode);
 				return 1; // todo
 				break;
-			case 0xf0: // LDH A,(a8); 2; 12; ----
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
+			case 0xf0: // LDH A,(a8); 2; 12; ---- // LD A,($FF00+a8)
+				a = RAM[0xff00 + fetch8()];
 				break;
 			case 0xf1: // POP AF; 1; 12; Z N H C
 				af = pop16();
 				break;
-			case 0xf2: // LD A,(C); 1; 8; ----
-				a = RAM[c];
+			case 0xf2: // LD A,(C); 1; 8; ---- // LD A,($FF00+C)
+				a = RAM[0xff00 + c];
 				break;
 			case 0xf3: // DI; 1; 4; ----
 				printf("todo: 0x%02x\n", opcode);
