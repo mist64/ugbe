@@ -409,60 +409,47 @@ main(int argc, const char * argv[])
 				return 1; // todo
 				break;
 			case 0x40: // LD B,B; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				b = b;
 				break;
 			case 0x41: // LD B,C; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				b = c;
 				break;
 			case 0x42: // LD B,D; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				b = d;
 				break;
 			case 0x43: // LD B,E; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				b = e;
 				break;
 			case 0x44: // LD B,H; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				b = h;
 				break;
 			case 0x45: // LD B,L; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				b = l;
 				break;
 			case 0x46: // LD B,(HL); 1; 8; ----
 				printf("todo: 0x%x\n", opcode);
 				return 1; // todo
 				break;
 			case 0x47: // LD B,A; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				b = a;
 				break;
 			case 0x48: // LD C,B; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				c = b;
 				break;
 			case 0x49: // LD C,C; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				c = c;
 				break;
 			case 0x4a: // LD C,D; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				c = d;
 				break;
 			case 0x4b: // LD C,E; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				c = e;
 				break;
 			case 0x4c: // LD C,H; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				c = h;
 				break;
 			case 0x4d: // LD C,L; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				c = l;
 				break;
 			case 0x4e: // LD C,(HL); 1; 8; ----
 				printf("todo: 0x%x\n", opcode);
@@ -472,134 +459,105 @@ main(int argc, const char * argv[])
 				c = a;
 				break;
 			case 0x50: // LD D,B; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				d = b;
 				break;
 			case 0x51: // LD D,C; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				d = c;
 				break;
 			case 0x52: // LD D,D; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				d = d;
 				break;
 			case 0x53: // LD D,E; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				d = e;
 				break;
 			case 0x54: // LD D,H; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				d = h;
 				break;
 			case 0x55: // LD D,L; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				d = l;
 				break;
 			case 0x56: // LD D,(HL); 1; 8; ----
 				printf("todo: 0x%x\n", opcode);
 				return 1; // todo
 				break;
 			case 0x57: // LD D,A; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				d = a;
 				break;
 			case 0x58: // LD E,B; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				e = b;
 				break;
 			case 0x59: // LD E,C; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				e = c;
 				break;
 			case 0x5a: // LD E,D; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				e = d;
 				break;
 			case 0x5b: // LD E,E; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				e = e;
 				break;
 			case 0x5c: // LD E,H; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				e = h;
 				break;
 			case 0x5d: // LD E,L; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				e = l;
 				break;
 			case 0x5e: // LD E,(HL); 1; 8; ----
 				printf("todo: 0x%x\n", opcode);
 				return 1; // todo
 				break;
 			case 0x5f: // LD E,A; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				e = a;
 				break;
 			case 0x60: // LD H,B; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				h = b;
 				break;
 			case 0x61: // LD H,C; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				h = c;
 				break;
 			case 0x62: // LD H,D; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				h = d;
 				break;
 			case 0x63: // LD H,E; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				h = e;
 				break;
 			case 0x64: // LD H,H; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				h = h;
 				break;
 			case 0x65: // LD H,L; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				h = l;
 				break;
 			case 0x66: // LD H,(HL); 1; 8; ----
 				printf("todo: 0x%x\n", opcode);
 				return 1; // todo
 				break;
 			case 0x67: // LD H,A; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				h = a;
 				break;
 			case 0x68: // LD L,B; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				l = b;
 				break;
 			case 0x69: // LD L,C; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				l = c;
 				break;
 			case 0x6a: // LD L,D; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				l = d;
 				break;
 			case 0x6b: // LD L,E; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				l = e;
 				break;
 			case 0x6c: // LD L,H; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				l = h;
 				break;
 			case 0x6d: // LD L,L; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				l = l;
 				break;
 			case 0x6e: // LD L,(HL); 1; 8; ----
 				printf("todo: 0x%x\n", opcode);
 				return 1; // todo
 				break;
 			case 0x6f: // LD L,A; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				l = a;
 				break;
-
 			case 0x70: // LD (HL),B; 1; 8; ----
 				printf("todo: 0x%x\n", opcode);
 				return 1; // todo
@@ -632,36 +590,29 @@ main(int argc, const char * argv[])
 				RAM[hl] = a;
 				break;
 			case 0x78: // LD A,B; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				a = b;
 				break;
 			case 0x79: // LD A,C; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				a = c;
 				break;
 			case 0x7a: // LD A,D; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				a = d;
 				break;
 			case 0x7b: // LD A,E; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				a = e;
 				break;
 			case 0x7c: // LD A,H; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				a = h;
 				break;
 			case 0x7d: // LD A,L; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				a = l;
 				break;
 			case 0x7e: // LD A,(HL); 1; 8; ----
 				printf("todo: 0x%x\n", opcode);
 				return 1; // todo
 				break;
 			case 0x7f: // LD A,A; 1; 4; ----
-				printf("todo: 0x%x\n", opcode);
-				return 1; // todo
+				a = a;
 				break;
 			case 0x80: // ADD A,B; 1; 4; Z 0 H C
 				printf("todo: 0x%x\n", opcode);
