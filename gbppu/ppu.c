@@ -35,6 +35,15 @@ io_read(uint8_t a8)
 	switch (a8) {
 		case rLY:
 			return current_y;
+		case rSCX:
+		case rSCY:
+		case rBGP:
+		case rOBP0:
+		case rOBP1:
+		case rWX:
+		case rWY:
+			// these behave like RAM
+			return RAM[0xff00 + a8];
 		default:
 			printf("warning: I/O read 0xff%02x\n", a8);
 			return RAM[0xff00 + a8];
