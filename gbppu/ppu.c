@@ -36,7 +36,7 @@ io_read(uint8_t a8)
 		case rLY:
 			return current_y;
 		default:
-			printf("warning: register read 0xff%02x\n", a8);
+			printf("warning: I/O read 0xff%02x\n", a8);
 			return RAM[0xff00 + a8];
 	}
 }
@@ -110,31 +110,29 @@ vram_get_data()
 	return RAM[vram_address];
 }
 
-// PPU steps are executed at half the CPU clock rate, i.e. at ~2 MHz
+// PPU steps are executed the CPU clock rate, i.e. at ~4 MHz
 void
-ppu_step()
+ppu_step_4()
 {
 	static uint8_t ybase;
 	static uint16_t bgptr;
 	static uint8_t data0;
 
 	if (current_y <= PPU_LAST_VISIBLE_LINE) {
-		switch (mode) {
-			case mode_hblank:
-				break;
-			case mode_vblank:
-				break;
-			case mode_oam: {
-				if (++oam_mode_counter == 40) {
-					mode = mode_pixel;
-					pixel_transfer_mode_counter = 0;
-				}
-				break;
-			case mode_pixel:
-				switch (pixel_transfer_mode_counter & 3) {
+
+		if (mode == mode_oam) {
+			if (++oam_mode_counter == 80) {
+				mode = mode_pixel;
+				pixel_transfer_mode_counter = 0;
+			}
+		}
+
+		if (mode == mode_pixel) {
+			if (!(pixel_transfer_mode_counter & 1)) {
+				switch ((pixel_transfer_mode_counter / 2) & 3) {
 					case 0: {
 						// cycle 0: generate tile map address and prepare reading index
-						uint8_t xbase = ((reg[rSCX] >> 3) + pixel_transfer_mode_counter / 4) & 31;
+						uint8_t xbase = ((reg[rSCX] >> 3) + pixel_transfer_mode_counter / 8) & 31;
 						ybase = reg[rSCY] + current_y;
 						uint8_t ybase_hi = ybase >> 3;
 						uint16_t charaddr = 0x9800 | (!!(reg[rSTAT] & LCDCF_BG9C00) << 10) | (ybase_hi << 5) | xbase;
@@ -163,7 +161,7 @@ ppu_step()
 						// cycle 3: read tile data #1, output pixels
 						// (VRAM is idle)
 						uint8_t data1 = vram_get_data();
-						int start = (pixel_transfer_mode_counter >> 2) ? 7 : (7 - (reg[rSCX] & 7));
+						int start = (pixel_transfer_mode_counter >> 3) ? 7 : (7 - (reg[rSCX] & 7));
 
 						for (int i = start; i >= 0; i--) {
 							int b0 = (data0 >> i) & 1;
@@ -179,8 +177,8 @@ ppu_step()
 						break;
 					}
 				}
-				pixel_transfer_mode_counter++;
 			}
+			pixel_transfer_mode_counter++;
 		}
 	}
 
@@ -193,4 +191,14 @@ ppu_step()
 			ppu_dirty = 1;
 		}
 	}
+}
+
+// This needs to be called with ~1 MHz
+void
+ppu_step()
+{
+	ppu_step_4();
+	ppu_step_4();
+	ppu_step_4();
+	ppu_step_4();
 }
