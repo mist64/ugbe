@@ -165,6 +165,16 @@ cpa8(uint8_t d8) // CP \w; 1; 4; Z 1 H C
 	cf = a < d8;
 }
 
+void
+jrcc(int condition) // jump relative condition code
+{
+	int8_t r8 = fetch8();
+	if (condition) {
+		pc += r8;
+	}
+
+}
+
 int
 main(int argc, const char * argv[])
 {
@@ -274,8 +284,7 @@ main(int argc, const char * argv[])
 				break;
 			}
 			case 0x18: // JR r8; 2; 12; ----
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
+				jrcc(1);
 				break;
 			case 0x19: // ADD HL,DE; 1; 8; - 0 H C
 				printf("todo: 0x%02x\n", opcode);
@@ -302,10 +311,7 @@ main(int argc, const char * argv[])
 				return 1; // todo
 				break;
 			case 0x20: { // JR NZ,r8; 2; 12/8; ----
-				int8_t r8 = fetch8();
-				if (zf == 0) {
-					pc += r8;
-				}
+				jrcc(!zf);
 				break;
 			}
             case 0x21: // LD HL,d16; 3; 12; ----
@@ -331,8 +337,7 @@ main(int argc, const char * argv[])
 				return 1; // todo
 				break;
 			case 0x28: // JR Z,r8; 2; 12/8; ----
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
+				jrcc(zf);
 				break;
 			case 0x29: // ADD HL,HL; 1; 8; - 0 H C
 				printf("todo: 0x%02x\n", opcode);
@@ -360,8 +365,7 @@ main(int argc, const char * argv[])
 				return 1; // todo
 				break;
 			case 0x30: // JR NC,r8; 2; 12/8; ----
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
+				jrcc(!cf);
 				break;
 			case 0x31: // LD SP,d16; 3; 12; ----
 				ld16(&sp);
@@ -388,8 +392,7 @@ main(int argc, const char * argv[])
 				return 1; // todo
 				break;
 			case 0x38: // JR C,r8; 2; 12/8; ----
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
+				jrcc(cf);
 				break;
 			case 0x39: // ADD HL,SP; 1; 8; - 0 H C
 				printf("todo: 0x%02x\n", opcode);
