@@ -7,70 +7,13 @@
 //
 
 #include "ppu.h"
-
-#define PPU_NUM_LINES 154
-#define PPU_CLOCKS_PER_LINE (114*2)
-#define PPU_LAST_VISIBLE_LINE 143
-
-#define rP1 0x00
-#define rLCDC 0x40
-#define rSTAT 0x41
-#define rSCY  0x42
-#define rSCX  0x43
-#define rLY 0x44
-#define rLYC  0x45
-#define rDMA  0x46
-#define rBGP  0x47
-#define rOBP0 0x48
-#define rOBP1 0x49
-#define rSB 0x01
-#define rSC 0x02
-#define rDIV 0x04
-#define rTIMA 0x05
-#define rTMA 0x06
-#define rTAC 0x07
-#define rIF 0x0F
-#define rIE 0xFF
-#define rWY 0x4A
-#define rWX 0x4B
-#define rNR50 0x24
-#define rNR51 0x25
-#define rNR52 0x26
-#define rNR10 0x10
-#define rNR11 0x11
-#define rNR12 0x12
-#define rNR13 0x13
-#define rNR14 0x14
-#define rNR21 0x16
-#define rNR22 0x17
-#define rNR23 0x18
-#define rNR24 0x19
-#define rNR30 0x1A
-#define rNR31 0x1B
-#define rNR32 0x1C
-#define rNR33 0x1D
-#define rNR34 0x1E
-#define rNR41 0x20
-#define rNR42 0x21
-#define rNR42_2 0x22
-#define rNR43 0x23
-
-
-#define LCDCF_ON      (1 << 7) /* LCD Control Operation */
-#define LCDCF_WIN9C00 (1 << 6) /* Window Tile Map Display Select */
-#define LCDCF_WINON   (1 << 5) /* Window Display */
-#define LCDCF_BG8000  (1 << 4) /* BG & Window Tile Data Select */
-#define LCDCF_BG9C00  (1 << 3) /* BG Tile Map Display Select */
-#define LCDCF_OBJ16   (1 << 2) /* OBJ Construction */
-#define LCDCF_OBJON   (1 << 1) /* OBJ Display */
-#define LCDCF_BGON    (1 << 0) /* BG Display */
+#include "ppu_private.h"
 
 extern uint8_t RAM[];
 uint8_t *reg = RAM + 0xFF00;
 
 int current_x;
 int current_y;
-int mode;
 int oam_mode_counter;
 int pixel_transfer_mode_counter;
 
@@ -79,22 +22,29 @@ uint8_t picture[160][144];
 
 int ppu_dirty;
 
+enum {
+	mode_hblank = 0,
+	mode_vblank = 1,
+	mode_oam    = 2,
+	mode_pixel  = 3,
+} mode;
+
 uint8_t
-io_read(uint16_t a16)
+io_read(uint8_t a8)
 {
-	if (a16 == 0xff44) {
-		return current_y;
-	} else {
-		//		printf("%s:%d 0x%02x\n", __FILE__, __LINE__, a16);
-		//		assert(false);
-		return RAM[a16];
+	switch (a8) {
+		case rLY:
+			return current_y;
+		default:
+			printf("warning: register read 0xff%02x\n", a8);
+			return RAM[0xff00 + a8];
 	}
 }
 
 void
 ppu_init()
 {
-	mode = 2; // OAM
+	mode = mode_oam;
 	oam_mode_counter = 0;
 
 	current_x = 0;
@@ -170,15 +120,17 @@ ppu_step()
 
 	if (current_y <= PPU_LAST_VISIBLE_LINE) {
 		switch (mode) {
-			case 0: // HBLANK
+			case mode_hblank:
 				break;
-			case 2: { // OAM
+			case mode_vblank:
+				break;
+			case mode_oam: {
 				if (++oam_mode_counter == 40) {
-					mode = 3;
+					mode = mode_pixel;
 					pixel_transfer_mode_counter = 0;
 				}
 				break;
-			case 3: // pixel transfer
+			case mode_pixel:
 				switch (pixel_transfer_mode_counter & 3) {
 					case 0: {
 						// cycle 0: generate tile map address and prepare reading index
@@ -220,7 +172,7 @@ ppu_step()
 							if (!ppu_output_pixel(paletted(reg[rBGP], b0 | b1 << 1))) {
 								// line is full, end this
 								ppu_new_line();
-								mode = 0;
+								mode = mode_hblank;
 								break;
 							}
 						}
@@ -232,17 +184,9 @@ ppu_step()
 		}
 	}
 
-
-	if (current_x == PPU_CLOCKS_PER_LINE - 1) {
-		//		printf("\n");
-		if (current_y == PPU_LAST_VISIBLE_LINE + 1) {
-			//			printf("\n");
-		}
-	}
-
 	if (++current_x == PPU_CLOCKS_PER_LINE) {
 		current_x = 0;
-		mode = 2;
+		mode = mode_oam;
 		oam_mode_counter = 0;
 		if (++current_y == PPU_NUM_LINES) {
 			current_y = 0;

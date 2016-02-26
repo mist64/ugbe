@@ -11,4 +11,9 @@
 
 #include <stdio.h>
 
+extern uint8_t picture[160][144];
+extern int ppu_dirty;
+
+void ppu_init();
+
 #endif /* ppu_h */

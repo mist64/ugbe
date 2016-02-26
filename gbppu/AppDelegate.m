@@ -7,31 +7,17 @@
 //
 
 #import "AppDelegate.h"
-
-extern uint8_t picture[160][144];
-extern int ppu_dirty;
+#import "ppu.h"
 
 @interface View : NSView
 @end
 
 @implementation View
 
-- (id)initWithFrame:(NSRect)frame
-{
-
-	if (self = [super initWithFrame:frame]) {
-		int opts = (NSTrackingActiveInActiveApp | NSTrackingInVisibleRect | NSTrackingMouseMoved);
-		NSTrackingArea *area = [[NSTrackingArea alloc] initWithRect:self.bounds
-															options:opts
-															  owner:self
-														   userInfo:nil];
-		[self addTrackingArea:area];
-	}
-	return self;
-}
-
 - (void)drawRect:(NSRect)dirtyRect
 {
+	static const NSUInteger colors[4] = { 255, 170, 85, 0 };
+
 	[super drawRect:dirtyRect];
 
 	NSBitmapImageRep *rep = [[NSBitmapImageRep alloc] initWithFocusedViewRect:dirtyRect];
@@ -40,22 +26,7 @@ extern int ppu_dirty;
 		for (int x = 0; x < rep.pixelsWide; x++) {
 			NSUInteger pixel[4];
 
-			uint8_t color;
-			switch (picture[(int)(160.0 * x / rep.pixelsWide)][(int)(144.0 * y / rep.pixelsHigh)]) {
-				default:
-				case 0:
-					color = 255;
-					break;
-				case 1:
-					color = 170;
-					break;
-				case 2:
-					color = 85;
-					break;
-				case 3:
-					color = 0;
-					break;
-			}
+			uint8_t color = colors[picture[(int)(160.0 * x / rep.pixelsWide)][(int)(144.0 * y / rep.pixelsHigh)]];
 
 			pixel[0] = 0;
 			pixel[1] = color;
@@ -64,7 +35,6 @@ extern int ppu_dirty;
 
 			[rep setPixel:pixel atX:x y:y];
 		}
-		//		printf("\n");
 	}
 
 	[rep drawInRect:dirtyRect];
@@ -78,8 +48,6 @@ extern int ppu_dirty;
 @end
 
 @implementation AppDelegate
-
-extern void ppu_init();
 
 extern void cpu_init();
 extern int cpu_step();

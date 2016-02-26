@@ -91,8 +91,8 @@ mem_read(uint16_t a16)
 	ppu_step();
 
 	if (a16 >= 0xff00 && a16 < 0xff80) {
-		extern uint8_t io_read(uint16_t);
-		return io_read(a16);
+		extern uint8_t io_read(uint8_t);
+		return io_read(a16 & 0xff);
 	} else {
 		return RAM[a16];
 	}
