@@ -212,8 +212,8 @@ cpu_init()
 {
 	
 #if BUILD_USER_Lisa
-	FILE *tetris = fopen("/Users/lisa/Projects/gbcpu/gbcpu/tetris.gb", "r");
-	FILE *file = fopen("/Users/lisa/Projects/gbcpu/gbcpu/DMG_ROM.bin", "r");
+	FILE *tetris = fopen("/Users/lisa/Projects/gbcpu/gbppu/tetris.gb", "r");
+	FILE *file = fopen("/Users/lisa/Projects/gbcpu/gbppu/DMG_ROM.bin", "r");
 #else
 	FILE *tetris = fopen("/Users/mist/Documents/git/gbcpu/gbppu/tetris.gb", "r");
 	FILE *file = fopen("/Users/mist/Documents/git/gbcpu/gbppu/DMG_ROM.bin", "r");
