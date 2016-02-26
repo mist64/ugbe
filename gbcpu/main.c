@@ -952,10 +952,9 @@ main(int argc, const char * argv[])
 				printf("todo: 0x%02x\n", opcode);
 				return 1; // todo
 				break;
-			case 0xd3: // crash?
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
-				break;
+			case 0xd3: // crash
+				printf("crash: 0x%02x\n", opcode);
+				return 1;
 			case 0xd4: // CALL NC,a16; 3; 24/12; ----
 				printf("todo: 0x%02x\n", opcode);
 				return 1; // todo
@@ -983,18 +982,16 @@ main(int argc, const char * argv[])
 				printf("todo: 0x%02x\n", opcode);
 				return 1; // todo
 				break;
-			case 0xdb: // crash?
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
-				break;
+			case 0xdb: // crash
+				printf("crash: 0x%02x\n", opcode);
+				return 1;
 			case 0xdc: // CALL C,a16; 3; 24/12; ----
 				printf("todo: 0x%02x\n", opcode);
 				return 1; // todo
 				break;
-			case 0xdd: // crash?
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
-				break;
+			case 0xdd: // crash
+				printf("crash: 0x%02x\n", opcode);
+				return 1;
 			case 0xde: // SBC A,d8; 2; 8; Z 1 H C
 				printf("todo: 0x%02x\n", opcode);
 				return 1; // todo
@@ -1014,14 +1011,12 @@ main(int argc, const char * argv[])
 			case 0xe2: // LD (C),A; 1; 8; ---- // LD ($FF00+C),A // target, source
 				RAM[0xff00 + c] = a;
 				break;
-			case 0xe3: // crash?
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
-				break;
-			case 0xe4: // crash?
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
-				break;
+			case 0xe3: // crash
+				printf("crash: 0x%02x\n", opcode);
+				return 1;
+			case 0xe4: // crash
+				printf("crash: 0x%02x\n", opcode);
+				return 1;
 			case 0xe5: // PUSH HL; 1; 16; ----
 				push16(hl);
 				break;
@@ -1044,18 +1039,15 @@ main(int argc, const char * argv[])
 			case 0xea: // LD (a16),A; 3; 16; ----
 				RAM[fetch16()] = a;
 				break;
-			case 0xeb: // crash?
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
-				break;
-			case 0xec: // crash?
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
-				break;
-			case 0xed: // crash?
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
-				break;
+			case 0xeb: // crash
+				printf("crash: 0x%02x\n", opcode);
+				return 1;
+			case 0xec: // crash
+				printf("crash: 0x%02x\n", opcode);
+				return 1;
+			case 0xed: // crash
+				printf("crash: 0x%02x\n", opcode);
+				return 1;
 			case 0xee: // XOR d8; 2; 8; Z 0 0 0
 				printf("todo: 0x%02x\n", opcode);
 				return 1; // todo
@@ -1078,10 +1070,9 @@ main(int argc, const char * argv[])
 				printf("todo: 0x%02x\n", opcode);
 				return 1; // todo
 				break;
-			case 0xf4: // crash?
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
-				break;
+			case 0xf4: // crash
+				printf("crash: 0x%02x\n", opcode);
+				return 1;
 			case 0xf5: // PUSH AF; 1; 16; ----
 				push16(af);
 				break;
@@ -1107,14 +1098,12 @@ main(int argc, const char * argv[])
 				printf("todo: 0x%02x\n", opcode);
 				return 1; // todo
 				break;
-			case 0xfc: // crash?
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
-				break;
-			case 0xfd: // crash?
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
-				break;
+			case 0xfc: // crash
+				printf("crash: 0x%02x\n", opcode);
+				return 1;
+			case 0xfd: // crash
+				printf("crash: 0x%02x\n", opcode);
+				return 1;
 			case 0xfe: // CP d8; 2; 8; Z 1 H C
 				cpa8(fetch8());
 				break;
