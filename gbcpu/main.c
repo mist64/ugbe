@@ -204,11 +204,21 @@ cpa8(uint8_t d8) // CP \w; 1; 4; Z 1 H C
 void
 suba8(uint8_t d8) // SUB \w; 1; 4; Z 1 H C
 {
-	a = a - d8;
 	zf = (a == d8);
 	nf = 1;
 //	hf = ; // todo: calculate hf
 	cf = a < d8;
+	a = a - d8;
+}
+
+void
+adda8(uint8_t d8) // ADD \w; 1; 8; Z 0 H C
+{
+	cf = (int)a + d8 >= 256;
+	a = a + d8;
+	zf = !a;
+	nf = 0;
+//	hf = ; // todo: calculate hf
 }
 
 void
@@ -659,36 +669,28 @@ main(int argc, const char * argv[])
 				a = a;
 				break;
 			case 0x80: // ADD A,B; 1; 4; Z 0 H C
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
+				adda8(b);
 				break;
 			case 0x81: // ADD A,C; 1; 4; Z 0 H C
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
+				adda8(c);
 				break;
 			case 0x82: // ADD A,D; 1; 4; Z 0 H C
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
+				adda8(d);
 				break;
 			case 0x83: // ADD A,E; 1; 4; Z 0 H C
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
+				adda8(e);
 				break;
 			case 0x84: // ADD A,H; 1; 4; Z 0 H C
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
+				adda8(h);
 				break;
 			case 0x85: // ADD A,L; 1; 4; Z 0 H C
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
+				adda8(l);
 				break;
 			case 0x86: // ADD A,(HL); 1; 8; Z 0 H C
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
+				adda8(mem_read(hl));
 				break;
 			case 0x87: // ADD A,A; 1; 4; Z 0 H C
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
+				adda8(a);
 				break;
 			case 0x88: // ADC A,B; 1; 4; Z 0 H C
 				printf("todo: 0x%02x\n", opcode);
@@ -920,8 +922,7 @@ main(int argc, const char * argv[])
 				push16(bc);
 				break;
 			case 0xc6: // ADD A,d8; 2; 8; Z 0 H C
-				printf("todo: 0x%02x\n", opcode);
-				return 1; // todo
+				adda8(fetch8());
 				break;
 			case 0xc7: // RST 00H; 1; 16; ----
 				printf("todo: 0x%02x\n", opcode);
