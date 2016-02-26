@@ -9,6 +9,10 @@
 #include <stdio.h>
 
 
+extern void ppu_init();
+extern void ppu_step();
+
+
 // see: http://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html
 // see: http://gbdev.gg8.se/wiki/articles/Gameboy_Bootstrap_ROM
 // see: http://meatfighter.com/gameboy/GBCribSheet000129.pdf
@@ -20,6 +24,8 @@ uint8_t RAM[65536];
 uint16_t pc = 0;
 uint16_t sp = 0;
 
+
+#pragma mark - Registers
 
 // registers, can be used as 16 bit registers in the following combinations:
 // a,f,
@@ -81,9 +87,7 @@ union reg16_t reg16_hl;
 #define l reg16_hl.low.full
 
 
-
-extern void ppu_init();
-extern void ppu_step();
+#pragma mark - Helper
 
 uint8_t
 mem_read(uint16_t a16)
@@ -214,6 +218,9 @@ jrcc(int condition) // jump relative condition code
 	}
 }
 
+
+#pragma mark - Init
+
 void
 cpu_init()
 {
@@ -232,9 +239,11 @@ cpu_init()
 	fclose(file);
 }
 
+
+#pragma mark - Steps
 int counter = 0;
 
-#define NYI()	do { \
+#define NOT_YET_IMPLEMENTED()	do { \
 	printf("todo: pc=0x%04x, opcode=0x%02x\n", pc, opcode); \
 	return 1; \
 } while(0);
@@ -280,10 +289,10 @@ cpu_step()
 			break;
 		}
 		case 0x08: // LD (a16),SP; 3; 20; ----
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0x09: // ADD HL,BC; 1; 8; - 0 H C
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0x0a: // LD A,(BC); 1; 8; ----
 			a = mem_read(bc);
@@ -301,10 +310,10 @@ cpu_step()
 			ld8(&c);
 			break;
 		case 0x0f: // RRCA; 1; 4; 0 0 0 C
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0x10: // STOP 0; 2; 4; ----
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0x11: // LD DE,d16; 3; 12; ----
 			ld16(&de);
@@ -337,7 +346,7 @@ cpu_step()
 			jrcc(1);
 			break;
 		case 0x19: // ADD HL,DE; 1; 8; - 0 H C
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0x1a: // LD A,(DE); 1; 8; ----
 			a = mem_read(de);
@@ -355,7 +364,7 @@ cpu_step()
 			ld8(&e);
 			break;
 		case 0x1f: // RRA; 1; 4; 0 0 0 C
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0x20: { // JR NZ,r8; 2; 12/8; ----
 			jrcc(!zf);
@@ -380,13 +389,13 @@ cpu_step()
 			ld8(&h);
 			break;
 		case 0x27: // DAA; 1; 4; Z - 0 C
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0x28: // JR Z,r8; 2; 12/8; ----
 			jrcc(zf);
 			break;
 		case 0x29: // ADD HL,HL; 1; 8; - 0 H C
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0x2a: // LD A,(HL+); 1; 8; ----
 			a = mem_read(hl++);
@@ -404,7 +413,7 @@ cpu_step()
 			ld8(&l);
 			break;
 		case 0x2f: // CPL; 1; 4; - 1 1 -
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0x30: // JR NC,r8; 2; 12/8; ----
 			jrcc(!cf);
@@ -419,22 +428,22 @@ cpu_step()
 			sp++;
 			break;
 		case 0x34: // INC (HL); 1; 12; Z 0 H -
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0x35: // DEC (HL); 1; 12; Z 1 H -
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0x36: // LD (HL),d8; 2; 12; ----
 			RAM[hl] = fetch8();
 			break;
 		case 0x37: // SCF; 1; 4; - 0 0 1
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0x38: // JR C,r8; 2; 12/8; ----
 			jrcc(cf);
 			break;
 		case 0x39: // ADD HL,SP; 1; 8; - 0 H C
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0x3a: // LD A,(HL-); 1; 8; ----
 			a = mem_read(hl--);
@@ -452,7 +461,7 @@ cpu_step()
 			ld8(&a);
 			break;
 		case 0x3f: // CCF; 1; 4; - 0 0 C
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0x40: // LD B,B; 1; 4; ----
 			b = b;
@@ -617,7 +626,7 @@ cpu_step()
 			RAM[hl] = l;
 			break;
 		case 0x76: // HALT; 1; 4; ----
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0x77: // LD (HL),A; 1; 8; ----
 			RAM[hl] = a;
@@ -671,28 +680,28 @@ cpu_step()
 			adda8(a);
 			break;
 		case 0x88: // ADC A,B; 1; 4; Z 0 H C
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0x89: // ADC A,C; 1; 4; Z 0 H C
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0x8a: // ADC A,D; 1; 4; Z 0 H C
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0x8b: // ADC A,E; 1; 4; Z 0 H C
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0x8c: // ADC A,H; 1; 4; Z 0 H C
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0x8d: // ADC A,L; 1; 4; Z 0 H C
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0x8e: // ADC A,(HL); 1; 8; Z 0 H C
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0x8f: // ADC A,A; 1; 4; Z 0 H C
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0x90: // SUB B; 1; 4; Z 1 H C
 			suba8(b);
@@ -719,100 +728,100 @@ cpu_step()
 			suba8(a);
 			break;
 		case 0x98: // SBC A,B; 1; 4; Z 1 H C
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0x99: // SBC A,C; 1; 4; Z 1 H C
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0x9a: // SBC A,D; 1; 4; Z 1 H C
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0x9b: // SBC A,E; 1; 4; Z 1 H C
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0x9c: // SBC A,H; 1; 4; Z 1 H C
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0x9d: // SBC A,L; 1; 4; Z 1 H C
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0x9e: // SBC A,(HL); 1; 8; Z 1 H C
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0x9f: // SBC A,A; 1; 4; Z 1 H C
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xa0: // AND B; 1; 4; Z 0 1 0
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xa1: // AND C; 1; 4; Z 0 1 0
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xa2: // AND D; 1; 4; Z 0 1 0
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xa3: // AND E; 1; 4; Z 0 1 0
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xa4: // AND H; 1; 4; Z 0 1 0
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xa5: // AND L; 1; 4; Z 0 1 0
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xa6: // AND (HL); 1; 8; Z 0 1 0
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xa7: // AND A; 1; 4; Z 0 1 0
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xa8: // XOR B; 1; 4; Z 0 0 0
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xa9: // XOR C; 1; 4; Z 0 0 0
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xaa: // XOR D; 1; 4; Z 0 0 0
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xab: // XOR E; 1; 4; Z 0 0 0
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xac: // XOR H; 1; 4; Z 0 0 0
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xad: // XOR L; 1; 4; Z 0 0 0
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xae: // XOR (HL); 1; 8; Z 0 0 0
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xaf: // XOR A; 1; 4; Z 0 0 0 // XOR A,A
 			a = 0;
 			break;
 		case 0xb0: // OR B; 1; 4; Z 0 0 0
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xb1: // OR C; 1; 4; Z 0 0 0
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xb2: // OR D; 1; 4; Z 0 0 0
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xb3: // OR E; 1; 4; Z 0 0 0
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xb4: // OR H; 1; 4; Z 0 0 0
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xb5: // OR L; 1; 4; Z 0 0 0
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xb6: // OR (HL); 1; 8; Z 0 0 0
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xb7: // OR A; 1; 4; Z 0 0 0
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xb8: // CP B; 1; 4; Z 1 H C
 			cpa8(b);
@@ -839,20 +848,20 @@ cpu_step()
 			cpa8(a);
 			break;
 		case 0xc0: // RET NZ; 1; 20/8; ----
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xc1: // POP BC; 1; 12; ----
 			bc = pop16();
 			break;
 		case 0xc2: // JP NZ,a16; 3; 16/12; ----
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xc3: { // JP a16; 3; 16; ----
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		}
 		case 0xc4: // CALL NZ,a16; 3; 24/12; ----
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xc5: // PUSH BC; 1; 16; ----
 			push16(bc);
@@ -861,16 +870,16 @@ cpu_step()
 			adda8(fetch8());
 			break;
 		case 0xc7: // RST 00H; 1; 16; ----
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xc8: // RET Z; 1; 20/8; ----
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xc9: // RET; 1; 16; ----
 			pc = pop16();
 			break;
 		case 0xca: // JP Z,a16; 3; 16/12; ----
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 
 		case 0xcb: // PREFIX CB
@@ -903,7 +912,7 @@ cpu_step()
 			break;
 
 		case 0xcc: // CALL Z,a16; 3; 24/12; ----
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xcd: { // CALL a16; 3; 24; ----
 			uint16_t a16 = fetch16();
@@ -912,25 +921,25 @@ cpu_step()
 			break;
 		}
 		case 0xce: // ADC A,d8; 2; 8; Z 0 H C
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xcf: // RST 08H; 1; 16; ----
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xd0: // RET NC; 1; 20/8; ----
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xd1: // POP DE; 1; 12; ----
 			de = pop16();
 			break;
 		case 0xd2: // JP NC,a16; 3; 16/12; ----
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xd3: // crash
 			printf("crash: 0x%02x\n", opcode);
 			return 1;
 		case 0xd4: // CALL NC,a16; 3; 24/12; ----
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xd5: // PUSH DE; 1; 16; ----
 			push16(de);
@@ -939,31 +948,31 @@ cpu_step()
 			suba8(fetch8());
 			break;
 		case 0xd7: // RST 10H; 1; 16; ----
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xd8: // RET C; 1; 20/8; ----
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xd9: // RETI; 1; 16; ----
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xda: // JP C,a16; 3; 16/12; ----
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xdb: // crash
 			printf("crash: 0x%02x\n", opcode);
 			return 1;
 		case 0xdc: // CALL C,a16; 3; 24/12; ----
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xdd: // crash
 			printf("crash: 0x%02x\n", opcode);
 			return 1;
 		case 0xde: // SBC A,d8; 2; 8; Z 1 H C
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xdf: // RST 18H; 1; 16; ----
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xe0: { // LDH (a8),A; 2; 12; ---- // LD ($FF00+a8),A
 			uint8_t a8 = fetch8();
@@ -986,16 +995,16 @@ cpu_step()
 			push16(hl);
 			break;
 		case 0xe6: // AND d8; 2; 8; Z 0 1 0
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xe7: // RST 20H; 1; 16; ----
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xe8: // ADD SP,r8; 2; 16; 0 0 H C
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xe9: // JP (HL); 1; 4; ----
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xea: // LD (a16),A; 3; 16; ----
 			RAM[fetch16()] = a;
@@ -1010,10 +1019,10 @@ cpu_step()
 			printf("crash: 0x%02x\n", opcode);
 			return 1;
 		case 0xee: // XOR d8; 2; 8; Z 0 0 0
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xef: // RST 28H; 1; 16; ----
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xf0: // LDH A,(a8); 2; 12; ---- // LD A,($FF00+a8)
 			a = mem_read(0xff00 + fetch8());
@@ -1025,7 +1034,7 @@ cpu_step()
 			a = mem_read(0xff00 + c);
 			break;
 		case 0xf3: // DI; 1; 4; ----
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xf4: // crash
 			printf("crash: 0x%02x\n", opcode);
@@ -1034,13 +1043,13 @@ cpu_step()
 			push16(af);
 			break;
 		case 0xf6: // OR d8; 2; 8; Z 0 0 0
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xf7: // RST 30H; 1; 16; ----
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xf8: // LD HL,SP+r8; 2; 12; 0 0 H C
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xf9: // LD SP,HL; 1; 8; ----
 			sp = hl;
@@ -1049,7 +1058,7 @@ cpu_step()
 			a = mem_read(fetch16());
 			break;
 		case 0xfb: // EI; 1; 4; ----
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xfc: // crash
 			printf("crash: 0x%02x\n", opcode);
@@ -1061,7 +1070,7 @@ cpu_step()
 			cpa8(fetch8());
 			break;
 		case 0xff: // RST 38H; 1; 16; ---
-			NYI();
+			NOT_YET_IMPLEMENTED();
 			break;
 
 		default:
