@@ -223,23 +223,27 @@ jrcc(int condition) // jump relative condition code
 int
 main(int argc, const char * argv[])
 {
-
+	
 #if BUILD_USER_Lisa
+	FILE *tetris = fopen("/Users/lisa/Projects/gbcpu/gbcpu/tetris.gb", "r");
 	FILE *file = fopen("/Users/lisa/Projects/gbcpu/gbcpu/DMG_ROM.bin", "r");
 #else
-    FILE *file = fopen("/Users/mist/Documents/git/gbcpu/gbcpu/DMG_ROM.bin", "r");
+	FILE *tetris = fopen("/Users/mist/Documents/git/gbcpu/gbcpu/tetris.gb", "r");
+	FILE *file = fopen("/Users/mist/Documents/git/gbcpu/gbcpu/DMG_ROM.bin", "r");
 #endif
-
+	
+	fread(RAM, 32768, 1, tetris);
+	fclose(tetris);
     fread(RAM, 256, 1, file);
 	fclose(file);
 	
 	ppu_init();
 	
-	int counter = 0;
+//	int counter = 0;
 	for (;;) {
 		uint8_t opcode = fetch8();
-		if (++counter % 1000 == 0) {
-//		if (pc >= 0xe0) {
+//		if (++counter % 1000 == 0) {
+		if (pc >= 0xe0) {
 			printf("A=%02x BC=%04x DE=%04x HL=%04x SP=%04x PC=%04x (ZF=%d,NF=%d,HF=%d,CF=%d) LY=%02x - opcode 0x%02x\n", a, bc, de, hl, sp, pc-1, zf, nf, hf, cf, scanline, opcode);
 		}
 		
