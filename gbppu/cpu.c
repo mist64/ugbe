@@ -246,11 +246,22 @@ xora(uint8_t d8) // XOR \w; 1; 4; Z 0 0 0
 }
 
 void
-swap(uint8_t *r8)
+swap8(uint8_t *r8) // SWAP \w; 2; 8; Z 0 0 0
 {
 	*r8 = *r8 << 4 & *r8 >> 4;
+	zf = !*r8;
+	nf = 0;
+	hf = 0;
+	cf = 0;
 }
 
+void
+bit8(uint8_t d8, uint8_t bit) // BIT \d,\w; 2; 8; Z 0 1 -
+{
+	zf = !(d8 & 1 << bit);
+	nf = 0;
+	hf = 1;
+}
 
 #pragma mark - Init
 
@@ -969,7 +980,7 @@ cpu_step()
 				case 0x0f: // RRC A; 2; 8; Z 0 0 C
 					NOT_YET_IMPLEMENTED();
 					break;
-				case 0x10: // 1x - RL B; 2; 8; Z 0 0 C
+				case 0x10: // RL B; 2; 8; Z 0 0 C
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0x11: { // RL C; 2; 8; Z 0 0 C
@@ -1023,7 +1034,7 @@ cpu_step()
 				case 0x1f: // RR A; 2; 8; Z 0 0 C
 					NOT_YET_IMPLEMENTED();
 					break;
-				case 0x20: // 2x - SLA B; 2; 8; Z 0 0 C
+				case 0x20: // SLA B; 2; 8; Z 0 0 C
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0x21: // SLA C; 2; 8; Z 0 0 C
@@ -1071,29 +1082,29 @@ cpu_step()
 				case 0x2f: // SRA A; 2; 8; Z 0 0 0
 					NOT_YET_IMPLEMENTED();
 					break;
-				case 0x30: // 3x - SWAP B; 2; 8; Z 0 0 0
-					NOT_YET_IMPLEMENTED();
+				case 0x30: // SWAP B; 2; 8; Z 0 0 0
+					swap8(&b);
 					break;
 				case 0x31: // SWAP C; 2; 8; Z 0 0 0
-					NOT_YET_IMPLEMENTED();
+					swap8(&c);
 					break;
 				case 0x32: // SWAP D; 2; 8; Z 0 0 0
-					NOT_YET_IMPLEMENTED();
+					swap8(&d);
 					break;
 				case 0x33: // SWAP E; 2; 8; Z 0 0 0
-					NOT_YET_IMPLEMENTED();
+					swap8(&e);
 					break;
 				case 0x34: // SWAP H; 2; 8; Z 0 0 0
-					NOT_YET_IMPLEMENTED();
+					swap8(&h);
 					break;
 				case 0x35: // SWAP L; 2; 8; Z 0 0 0
-					NOT_YET_IMPLEMENTED();
+					swap8(&l);
 					break;
 				case 0x36: // SWAP (HL); 2; 16; Z 0 0 0
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0x37: // SWAP A; 2; 8; Z 0 0 0
-					NOT_YET_IMPLEMENTED();
+					swap8(&a);
 					break;
 				case 0x38: // SRL B; 2; 8; Z 0 0 C
 					NOT_YET_IMPLEMENTED();
@@ -1119,203 +1130,199 @@ cpu_step()
 				case 0x3f: // SRL A; 2; 8; Z 0 0 C
 					NOT_YET_IMPLEMENTED();
 					break;
-				case 0x40: // 4x - BIT 0,B; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+				case 0x40: // BIT 0,B; 2; 8; Z 0 1 -
+					bit8(b, 0);
 					break;
 				case 0x41: // BIT 0,C; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(c, 0);
 					break;
 				case 0x42: // BIT 0,D; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(d, 0);
 					break;
 				case 0x43: // BIT 0,E; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(e, 0);
 					break;
 				case 0x44: // BIT 0,H; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(h, 0);
 					break;
 				case 0x45: // BIT 0,L; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(l, 0);
 					break;
 				case 0x46: // BIT 0,(HL); 2; 16; Z 0 1 -
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0x47: // BIT 0,A; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(a, 0);
 					break;
 				case 0x48: // BIT 1,B; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(b, 1);
 					break;
 				case 0x49: // BIT 1,C; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(c, 1);
 					break;
 				case 0x4a: // BIT 1,D; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(d, 1);
 					break;
 				case 0x4b: // BIT 1,E; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(e, 1);
 					break;
 				case 0x4c: // BIT 1,H; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(h, 1);
 					break;
 				case 0x4d: // BIT 1,L; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(l, 1);
 					break;
 				case 0x4e: // BIT 1,(HL); 2; 16; Z 0 1 -
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0x4f: // BIT 1,A; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(a, 1);
 					break;
-				case 0x50: // 5x - BIT 2,B; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+				case 0x50: // BIT 2,B; 2; 8; Z 0 1 -
+					bit8(b, 2);
 					break;
 				case 0x51: // BIT 2,C; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(c, 2);
 					break;
 				case 0x52: // BIT 2,D; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(d, 2);
 					break;
 				case 0x53: // BIT 2,E; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(e, 2);
 					break;
 				case 0x54: // BIT 2,H; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(h, 2);
 					break;
 				case 0x55: // BIT 2,L; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(l, 2);
 					break;
 				case 0x56: // BIT 2,(HL); 2; 16; Z 0 1 -
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0x57: // BIT 2,A; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(a, 2);
 					break;
 				case 0x58: // BIT 3,B; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(b, 3);
 					break;
 				case 0x59: // BIT 3,C; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(c, 3);
 					break;
 				case 0x5a: // BIT 3,D; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(d, 3);
 					break;
 				case 0x5b: // BIT 3,E; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(e, 3);
 					break;
 				case 0x5c: // BIT 3,H; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(h, 3);
 					break;
 				case 0x5d: // BIT 3,L; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(l, 3);
 					break;
 				case 0x5e: // BIT 3,(HL); 2; 16; Z 0 1 -
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0x5f: // BIT 3,A; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(a, 3);
 					break;
-				case 0x60: // 6x - BIT 4,B; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+				case 0x60: // BIT 4,B; 2; 8; Z 0 1 -
+					bit8(b, 4);
 					break;
 				case 0x61: // BIT 4,C; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(c, 4);
 					break;
 				case 0x62: // BIT 4,D; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(d, 4);
 					break;
 				case 0x63: // BIT 4,E; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(e, 4);
 					break;
 				case 0x64: // BIT 4,H; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(h, 4);
 					break;
 				case 0x65: // BIT 4,L; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(l, 4);
 					break;
 				case 0x66: // BIT 4,(HL); 2; 16; Z 0 1 -
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0x67: // BIT 4,A; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(a, 4);
 					break;
 				case 0x68: // BIT 5,B; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(b, 5);
 					break;
 				case 0x69: // BIT 5,C; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(c, 5);
 					break;
 				case 0x6a: // BIT 5,D; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(d, 5);
 					break;
 				case 0x6b: // BIT 5,E; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(e, 5);
 					break;
 				case 0x6c: // BIT 5,H; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(h, 5);
 					break;
 				case 0x6d: // BIT 5,L; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(l, 5);
 					break;
 				case 0x6e: // BIT 5,(HL); 2; 16; Z 0 1 -
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0x6f: // BIT 5,A; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(a, 5);
 					break;
-				case 0x70: // 7x - BIT 6,B; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+				case 0x70: // BIT 6,B; 2; 8; Z 0 1 -
+					bit8(b, 6);
 					break;
 				case 0x71: // BIT 6,C; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(c, 6);
 					break;
 				case 0x72: // BIT 6,D; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(d, 6);
 					break;
 				case 0x73: // BIT 6,E; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(e, 6);
 					break;
 				case 0x74: // BIT 6,H; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(h, 6);
 					break;
 				case 0x75: // BIT 6,L; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(l, 6);
 					break;
 				case 0x76: // BIT 6,(HL); 2; 16; Z 0 1 -
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0x77: // BIT 6,A; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(a, 6);
 					break;
 				case 0x78: // BIT 7,B; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(b, 7);
 					break;
 				case 0x79: // BIT 7,C; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(c, 7);
 					break;
 				case 0x7a: // BIT 7,D; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(d, 7);
 					break;
 				case 0x7b: // BIT 7,E; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(e, 7);
 					break;
-				case 0x7c: { // BIT 7,H; 2; 8; Z 0 1 -
-					uint8_t test = 1 << 7;
-					zf = !(h & test);
-					nf = 0;
-					hf = 1;
+				case 0x7c: // BIT 7,H; 2; 8; Z 0 1 -
+					bit8(h, 7);
 					break;
-				}
 				case 0x7d: // BIT 7,L; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(l, 7);
 					break;
 				case 0x7e: // BIT 7,(HL); 2; 16; Z 0 1 -
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0x7f: // BIT 7,A; 2; 8; Z 0 1 -
-					NOT_YET_IMPLEMENTED();
+					bit8(a, 7);
 					break;
-				case 0x80: // 8x - RES 0,B; 2; 8; ----
+				case 0x80: // RES 0,B; 2; 8; ----
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0x81: // RES 0,C; 2; 8; ----
@@ -1363,7 +1370,7 @@ cpu_step()
 				case 0x8f: // RES 1,A; 2; 8; ----
 					NOT_YET_IMPLEMENTED();
 					break;
-				case 0x90: // 9x - RES 2,B; 2; 8; ----
+				case 0x90: // RES 2,B; 2; 8; ----
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0x91: // RES 2,C; 2; 8; ----
@@ -1411,7 +1418,7 @@ cpu_step()
 				case 0x9f: // RES 3,A; 2; 8; ----
 					NOT_YET_IMPLEMENTED();
 					break;
-				case 0xa0: // Ax - RES 4,B; 2; 8; ----
+				case 0xa0: // RES 4,B; 2; 8; ----
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0xa1: // RES 4,C; 2; 8; ----
@@ -1459,7 +1466,7 @@ cpu_step()
 				case 0xaf: // RES 5,A; 2; 8; ----
 					NOT_YET_IMPLEMENTED();
 					break;
-				case 0xb0: // Bx - RES 6,B; 2; 8; ----
+				case 0xb0: // RES 6,B; 2; 8; ----
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0xb1: // RES 6,C; 2; 8; ----
@@ -1507,7 +1514,7 @@ cpu_step()
 				case 0xbf: // RES 7,A; 2; 8; ----
 					NOT_YET_IMPLEMENTED();
 					break;
-				case 0xc0: // Cx - SET 0,B; 2; 8; ----
+				case 0xc0: // SET 0,B; 2; 8; ----
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0xc1: // SET 0,C; 2; 8; ----
@@ -1555,7 +1562,7 @@ cpu_step()
 				case 0xcf: // SET 1,A; 2; 8; ----
 					NOT_YET_IMPLEMENTED();
 					break;
-				case 0xd0: // Dx - SET 2,B; 2; 8; ----
+				case 0xd0: // SET 2,B; 2; 8; ----
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0xd1: // SET 2,C; 2; 8; ----
@@ -1603,7 +1610,7 @@ cpu_step()
 				case 0xdf: // SET 3,A; 2; 8; ----
 					NOT_YET_IMPLEMENTED();
 					break;
-				case 0xe0: // Ex - SET 4,B; 2; 8; ----
+				case 0xe0: // SET 4,B; 2; 8; ----
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0xe1: // SET 4,C; 2; 8; ----
@@ -1651,7 +1658,7 @@ cpu_step()
 				case 0xef: // SET 5,A; 2; 8; ----
 					NOT_YET_IMPLEMENTED();
 					break;
-				case 0xf0: // Fx - SET 6,B; 2; 8; ----
+				case 0xf0: // SET 6,B; 2; 8; ----
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0xf1: // SET 6,C; 2; 8; ----
