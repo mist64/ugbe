@@ -130,14 +130,69 @@ vram_get_data()
 	return RAM[vram_address];
 }
 
-// PPU steps are executed the CPU clock rate, i.e. at ~4 MHz
+
 void
-ppu_step_4()
+bg_step()
 {
 	static uint8_t ybase;
 	static uint16_t bgptr;
 	static uint8_t data0;
 
+	// background @ 2 MHz
+	switch ((pixel_transfer_mode_counter / 2) & 3) {
+		case 0: {
+			// cycle 0: generate tile map address and prepare reading index
+			uint8_t xbase = ((reg[rSCX] >> 3) + pixel_transfer_mode_counter / 8) & 31;
+			ybase = reg[rSCY] + current_y;
+			uint8_t ybase_hi = ybase >> 3;
+			uint16_t charaddr = 0x9800 | (!!(reg[rSTAT] & LCDCF_BG9C00) << 10) | (ybase_hi << 5) | xbase;
+			vram_set_address(charaddr);
+			//						printf("%s:%d %04x\n", __FILE__, __LINE__, charaddr);
+			break;
+		}
+		case 1: {
+			// cycle 1: read index, generate tile data address and prepare reading tile data #0
+			uint8_t index = vram_get_data();
+			if (reg[rLCDC] & LCDCF_BG8000) {
+				bgptr = 0x8000 + index * 16;
+			} else {
+				bgptr = 0x9000 + (int8_t)index * 16;
+			}
+			bgptr += (ybase & 7) * 2;
+			vram_set_address(bgptr);
+			break;
+		}
+		case 2: {
+			// cycle 2: read tile data #0, prepare reading tile data #1
+			data0 = vram_get_data();
+			vram_set_address(bgptr + 1);
+		}
+		case 4: {
+			// cycle 3: read tile data #1, output pixels
+			// (VRAM is idle)
+			uint8_t data1 = vram_get_data();
+			int start = (pixel_transfer_mode_counter >> 3) ? 7 : (7 - (reg[rSCX] & 7));
+
+			for (int i = start; i >= 0; i--) {
+				int b0 = (data0 >> i) & 1;
+				int b1 = (data1 >> i) & 1;
+				//							printf("%c", printable(paletted(reg[rBGP], b0 | b1 << 1)));
+				if (!ppu_output_pixel(paletted(reg[rBGP], b0 | b1 << 1))) {
+					// line is full, end this
+					ppu_new_line();
+					mode = mode_hblank;
+					break;
+				}
+			}
+			break;
+		}
+	}
+}
+
+// PPU steps are executed the CPU clock rate, i.e. at ~4 MHz
+void
+ppu_step_4()
+{
 	if (current_y <= PPU_LAST_VISIBLE_LINE) {
 
 		if (mode == mode_oam) {
@@ -149,56 +204,7 @@ ppu_step_4()
 
 		if (mode == mode_pixel) {
 			if (!(pixel_transfer_mode_counter & 1)) {
-
-				// background @ 2 MHz
-				switch ((pixel_transfer_mode_counter / 2) & 3) {
-					case 0: {
-						// cycle 0: generate tile map address and prepare reading index
-						uint8_t xbase = ((reg[rSCX] >> 3) + pixel_transfer_mode_counter / 8) & 31;
-						ybase = reg[rSCY] + current_y;
-						uint8_t ybase_hi = ybase >> 3;
-						uint16_t charaddr = 0x9800 | (!!(reg[rSTAT] & LCDCF_BG9C00) << 10) | (ybase_hi << 5) | xbase;
-						vram_set_address(charaddr);
-						//						printf("%s:%d %04x\n", __FILE__, __LINE__, charaddr);
-						break;
-					}
-					case 1: {
-						// cycle 1: read index, generate tile data address and prepare reading tile data #0
-						uint8_t index = vram_get_data();
-						if (reg[rLCDC] & LCDCF_BG8000) {
-							bgptr = 0x8000 + index * 16;
-						} else {
-							bgptr = 0x9000 + (int8_t)index * 16;
-						}
-						bgptr += (ybase & 7) * 2;
-						vram_set_address(bgptr);
-						break;
-					}
-					case 2: {
-						// cycle 2: read tile data #0, prepare reading tile data #1
-						data0 = vram_get_data();
-						vram_set_address(bgptr + 1);
-					}
-					case 4: {
-						// cycle 3: read tile data #1, output pixels
-						// (VRAM is idle)
-						uint8_t data1 = vram_get_data();
-						int start = (pixel_transfer_mode_counter >> 3) ? 7 : (7 - (reg[rSCX] & 7));
-
-						for (int i = start; i >= 0; i--) {
-							int b0 = (data0 >> i) & 1;
-							int b1 = (data1 >> i) & 1;
-							//							printf("%c", printable(paletted(reg[rBGP], b0 | b1 << 1)));
-							if (!ppu_output_pixel(paletted(reg[rBGP], b0 | b1 << 1))) {
-								// line is full, end this
-								ppu_new_line();
-								mode = mode_hblank;
-								break;
-							}
-						}
-						break;
-					}
-				}
+				bg_step();
 			}
 			// TODO: pixel clocking @ 4 MHz
 

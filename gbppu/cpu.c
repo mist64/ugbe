@@ -111,7 +111,7 @@ mem_write(uint16_t a16, uint8_t d8)
 	
 	if (a16 >= 0xff00 && a16 < 0xff80) {
 		extern void io_write(uint8_t, uint8_t);
-		return io_write(a16 & 0xff, d8);
+		io_write(a16 & 0xff, d8);
 	} else {
 		RAM[a16] = d8;
 	}
