@@ -104,6 +104,18 @@ mem_read(uint16_t a16)
 	}
 }
 
+void
+mem_write(uint16_t a16, uint8_t d8)
+{
+//?	ppu_step();
+	
+	if (0) {
+		// do things
+	} else {
+		RAM[a16] = d8;
+	}
+}
+
 uint8_t
 fetch8()
 {
@@ -124,7 +136,7 @@ fetch16()
 void
 push8(uint8_t d8)
 {
-	RAM[--sp] = d8;
+	mem_write(--sp, d8);
 }
 
 void
@@ -309,7 +321,7 @@ cpu_step()
 			bc = fetch16();
 			break;
 		case 0x02: // LD (BC),A; 1; 8; ----
-			RAM[bc] = a;
+			mem_write(bc, a);
 			break;
 		case 0x03: // INC BC; 1; 8; ----
 			bc++;
@@ -362,7 +374,7 @@ cpu_step()
 			de = fetch16();
 			break;
 		case 0x12: // LD (DE),A; 1; 8; ----
-			RAM[de] = a;
+			mem_write(de, a);
 			break;
 		case 0x13: // INC DE; 1; 8; ----
 			de++;
@@ -417,7 +429,7 @@ cpu_step()
 			hl = fetch16();
 			break;
 		case 0x22: // LD (HL+),A; 1; 8; ---- // LD (HLI),A or LDI (HL),A // target, source
-			RAM[hl++] = a;
+			mem_write(hl++, a);
 			break;
 		case 0x23: // INC HL; 1; 8; ----
 			hl++;
@@ -467,7 +479,7 @@ cpu_step()
 			sp = fetch16();
 			break;
 		case 0x32: // LD (HL-),A; 1; 8; ---- // LD (HLD),A or LDD (HL),A // target, source
-			RAM[hl--] = a;
+			mem_write(hl--, a);
 			break;
 		case 0x33: // INC SP; 1; 8; ----
 			sp++;
@@ -479,7 +491,7 @@ cpu_step()
 			NOT_YET_IMPLEMENTED();
 			break;
 		case 0x36: // LD (HL),d8; 2; 12; ----
-			RAM[hl] = fetch8();
+			mem_write(hl, fetch8());
 			break;
 		case 0x37: // SCF; 1; 4; - 0 0 1
 			NOT_YET_IMPLEMENTED();
@@ -653,28 +665,28 @@ cpu_step()
 			l = a;
 			break;
 		case 0x70: // LD (HL),B; 1; 8; ----
-			RAM[hl] = b;
+			mem_write(hl, b);
 			break;
 		case 0x71: // LD (HL),C; 1; 8; ----
-			RAM[hl] = c;
+			mem_write(hl, c);
 			break;
 		case 0x72: // LD (HL),D; 1; 8; ----
-			RAM[hl] = d;
+			mem_write(hl, d);
 			break;
 		case 0x73: // LD (HL),E; 1; 8; ----
-			RAM[hl] = e;
+			mem_write(hl, e);
 			break;
 		case 0x74: // LD (HL),H; 1; 8; ----
-			RAM[hl] = h;
+			mem_write(hl, h);
 			break;
 		case 0x75: // LD (HL),L; 1; 8; ----
-			RAM[hl] = l;
+			mem_write(hl, l);
 			break;
 		case 0x76: // HALT; 1; 4; ----
 			NOT_YET_IMPLEMENTED();
 			break;
 		case 0x77: // LD (HL),A; 1; 8; ----
-			RAM[hl] = a;
+			mem_write(hl, a);
 			break;
 		case 0x78: // LD A,B; 1; 4; ----
 			a = b;
@@ -1778,15 +1790,14 @@ cpu_step()
 			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xe0: { // LDH (a8),A; 2; 12; ---- // LD ($FF00+a8),A
-			uint8_t a8 = fetch8();
-			RAM[0xff00 + a8] = a;
+			mem_write(0xff00 + fetch8(), a);
 			break;
 		}
 		case 0xe1: // POP HL; 1; 12; ----
 			hl = pop16();
 			break;
 		case 0xe2: // LD (C),A; 1; 8; ---- // LD ($FF00+C),A // target, source
-			RAM[0xff00 + c] = a;
+			mem_write(0xff00 + c, a);
 			break;
 		case 0xe3: // crash
 			printf("crash: 0x%02x\n", opcode);
@@ -1810,7 +1821,7 @@ cpu_step()
 			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xea: // LD (a16),A; 3; 16; ----
-			RAM[fetch16()] = a;
+			mem_write(fetch16(), a);
 			break;
 		case 0xeb: // crash
 			printf("crash: 0x%02x\n", opcode);
