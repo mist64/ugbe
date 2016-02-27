@@ -236,6 +236,16 @@ rst8(uint8_t d8)
 }
 
 void
+callcc(int condition)
+{
+	uint16_t a16 = fetch16();
+	if (condition) {
+		push16(pc);
+		pc = a16;
+	}
+}
+
+void
 anda(uint8_t d8) // AND \w; 1; 4; Z 0 1 0
 {
 	a = a & d8;
@@ -929,7 +939,7 @@ cpu_step()
 			break;
 		}
 		case 0xc4: // CALL NZ,a16; 3; 24/12; ----
-			NOT_YET_IMPLEMENTED();
+			callcc(!zf);
 			break;
 		case 0xc5: // PUSH BC; 1; 16; ----
 			push16(bc);
@@ -1738,12 +1748,10 @@ cpu_step()
 			break;
 
 		case 0xcc: // CALL Z,a16; 3; 24/12; ----
-			NOT_YET_IMPLEMENTED();
+			callcc(zf);
 			break;
 		case 0xcd: { // CALL a16; 3; 24; ----
-			uint16_t a16 = fetch16();
-			push16(pc);
-			pc = a16;
+			callcc(1);
 			break;
 		}
 		case 0xce: // ADC A,d8; 2; 8; Z 0 H C
@@ -1765,7 +1773,7 @@ cpu_step()
 			printf("crash: 0x%02x\n", opcode);
 			return 1;
 		case 0xd4: // CALL NC,a16; 3; 24/12; ----
-			NOT_YET_IMPLEMENTED();
+			callcc(!cf);
 			break;
 		case 0xd5: // PUSH DE; 1; 16; ----
 			push16(de);
@@ -1789,7 +1797,7 @@ cpu_step()
 			printf("crash: 0x%02x\n", opcode);
 			return 1;
 		case 0xdc: // CALL C,a16; 3; 24/12; ----
-			NOT_YET_IMPLEMENTED();
+			callcc(cf);
 			break;
 		case 0xdd: // crash
 			printf("crash: 0x%02x\n", opcode);
