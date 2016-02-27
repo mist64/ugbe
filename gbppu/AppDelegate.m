@@ -76,7 +76,9 @@ extern int cpu_step();
 				dispatch_async(dispatch_get_main_queue(), ^{
 					[view setNeedsDisplay:YES];
 				});
+#if ! BUILD_USER_Lisa
 				[NSThread sleepForTimeInterval:1.0/60];
+#endif
 			}
 		}
 	});
