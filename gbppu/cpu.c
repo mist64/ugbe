@@ -229,6 +229,13 @@ jpcc(int condition) // jump condition code
 }
 
 void
+rst8(uint8_t d8)
+{
+	push16(pc);
+	pc = d8;
+}
+
+void
 anda(uint8_t d8) // AND \w; 1; 4; Z 0 1 0
 {
 	a = a & d8;
@@ -928,7 +935,7 @@ cpu_step()
 			adda8(fetch8());
 			break;
 		case 0xc7: // RST 00H; 1; 16; ----
-			NOT_YET_IMPLEMENTED();
+			rst8(0x00);
 			break;
 		case 0xc8: // RET Z; 1; 20/8; ----
 			NOT_YET_IMPLEMENTED();
@@ -1740,7 +1747,7 @@ cpu_step()
 			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xcf: // RST 08H; 1; 16; ----
-			NOT_YET_IMPLEMENTED();
+			rst8(0x08);
 			break;
 		case 0xd0: // RET NC; 1; 20/8; ----
 			NOT_YET_IMPLEMENTED();
@@ -1764,7 +1771,7 @@ cpu_step()
 			suba8(fetch8());
 			break;
 		case 0xd7: // RST 10H; 1; 16; ----
-			NOT_YET_IMPLEMENTED();
+			rst8(0x10);
 			break;
 		case 0xd8: // RET C; 1; 20/8; ----
 			NOT_YET_IMPLEMENTED();
@@ -1788,7 +1795,7 @@ cpu_step()
 			NOT_YET_IMPLEMENTED();
 			break;
 		case 0xdf: // RST 18H; 1; 16; ----
-			NOT_YET_IMPLEMENTED();
+			rst8(0x18);
 			break;
 		case 0xe0: { // LDH (a8),A; 2; 12; ---- // LD ($FF00+a8),A
 			mem_write(0xff00 + fetch8(), a);
@@ -1813,7 +1820,7 @@ cpu_step()
 			anda(fetch8());
 			break;
 		case 0xe7: // RST 20H; 1; 16; ----
-			NOT_YET_IMPLEMENTED();
+			rst8(0x20);
 			break;
 		case 0xe8: // ADD SP,r8; 2; 16; 0 0 H C
 			NOT_YET_IMPLEMENTED();
@@ -1837,7 +1844,7 @@ cpu_step()
 			xora(fetch8());
 			break;
 		case 0xef: // RST 28H; 1; 16; ----
-			NOT_YET_IMPLEMENTED();
+			rst8(0x28);
 			break;
 		case 0xf0: // LDH A,(a8); 2; 12; ---- // LD A,($FF00+a8)
 			a = mem_read(0xff00 + fetch8());
@@ -1861,7 +1868,7 @@ cpu_step()
 			ora(fetch8());
 			break;
 		case 0xf7: // RST 30H; 1; 16; ----
-			NOT_YET_IMPLEMENTED();
+			rst8(0x30);
 			break;
 		case 0xf8: // LD HL,SP+r8; 2; 12; 0 0 H C
 			NOT_YET_IMPLEMENTED();
@@ -1885,7 +1892,7 @@ cpu_step()
 			cpa8(fetch8());
 			break;
 		case 0xff: // RST 38H; 1; 16; ---
-			NOT_YET_IMPLEMENTED();
+			rst8(0x38);
 			break;
 
 		default:
