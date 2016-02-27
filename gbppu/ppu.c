@@ -51,6 +51,17 @@ io_read(uint8_t a8)
 }
 
 void
+io_write(uint16_t a8, uint8_t d8)
+{
+	switch (a8) {
+		// TODO: some ports may trigger something
+		default:
+			RAM[0xff00 + a8] = d8;
+	}
+}
+
+
+void
 ppu_init()
 {
 	mode = mode_oam;
