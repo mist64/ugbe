@@ -18,7 +18,7 @@ extern void ppu_step();
 // see: http://meatfighter.com/gameboy/GBCribSheet000129.pdf
 // see: http://www.z80.info/z80code.htm
 // see: http://z80-heaven.wikidot.com/instructions-set
-
+// see: http://gameboy.mongenel.com/dmg/opcodes.html
 
 uint8_t RAM[65536];
 uint16_t pc = 0;
@@ -203,7 +203,7 @@ suba8(uint8_t d8) // SUB \w; 1; 4; Z 1 H C
 void
 adda8(uint8_t d8) // ADD \w; 1; 8; Z 0 H C
 {
-	cf = (int)a + d8 >= 256;
+	cf = (uint16_t)a + d8 >= 256;
 	a = a + d8;
 	zf = !a;
 	nf = 0;
@@ -508,7 +508,10 @@ cpu_step()
 			jrcc(cf);
 			break;
 		case 0x39: // ADD HL,SP; 1; 8; - 0 H C
-			NOT_YET_IMPLEMENTED();
+			cf = (uint32_t)hl + sp >= 65536;
+			hl = hl + sp;
+			nf = 0;
+//			hf = ; // todo: calculate hf
 			break;
 		case 0x3a: // LD A,(HL-); 1; 8; ----
 			a = mem_read(hl--);
