@@ -30,8 +30,11 @@ mem_init()
 	char *cartridge_filename;
 
 #if BUILD_USER_Lisa
-	cartridge_filename = "/Users/lisa/Projects/gbcpu/gbppu/tetris.gb";
-	bootrom_filename = "/Users/lisa/Projects/gbcpu/gbppu/DMG_ROM.bin";
+	bootrom_filename = "/Users/lisa/Projects/game_boy/gbcpu/gbppu/DMG_ROM.bin";
+	cartridge_filename = "/Users/lisa/Projects/game_boy/roms/cpu_test/cpu_instrs.gb";
+//	cartridge_filename = "/Users/lisa/Projects/game_boy/roms/3dclown/CLOWN1.GB";
+//	cartridge_filename = "/Users/lisa/Projects/game_boy/gbcpu/gbppu/tetris.gb";
+//	cartridge_filename = "/Users/lisa/Projects/game_boy/roms/games/Pokemon - Blaue Edition (G) [S][!].gb";
 #else
 	cartridge_filename = "/Users/mist/Documents/git/gbcpu/gbppu/tetris.gb";
 	bootrom_filename = "/Users/mist/Documents/git/gbcpu/gbppu/DMG_ROM.bin";
