@@ -206,6 +206,26 @@ adca8(uint8_t d8) // ADC A,\w; 1; 4; Z 0 H C
 //	hf = ; // todo: calculate hf
 }
 
+void
+addhl(uint16_t d16) // ADD HL,\w\w; 1; 8; - 0 H C
+{
+	cf = (uint32_t)a + d16 >= 65536;
+	hl = hl + d16;
+	nf = 0;
+//	hf = ; // todo: calculate hf
+}
+
+void
+addsp(uint8_t d8) // ADD SP,r8; 2; 16; 0 0 H C
+{
+	cf = (uint32_t)sp + d8 >= 65536;
+	sp = sp + d8;
+	zf = 0;
+	nf = 0;
+//	hf = ; // todo: calculate hf
+}
+
+
 #pragma mark - Jumping
 void
 jrcc(int condition) // jump relative condition code
@@ -462,7 +482,7 @@ cpu_step()
 			mem_write(fetch16(), sp);
 			break;
 		case 0x09: // ADD HL,BC; 1; 8; - 0 H C
-			NOT_YET_IMPLEMENTED();
+			addhl(bc);
 			break;
 		case 0x0a: // LD A,(BC); 1; 8; ----
 			a = mem_read(bc);
@@ -516,7 +536,7 @@ cpu_step()
 			jrcc(1);
 			break;
 		case 0x19: // ADD HL,DE; 1; 8; - 0 H C
-			NOT_YET_IMPLEMENTED();
+			addhl(de);
 			break;
 		case 0x1a: // LD A,(DE); 1; 8; ----
 			a = mem_read(de);
@@ -569,7 +589,7 @@ cpu_step()
 			jrcc(zf);
 			break;
 		case 0x29: // ADD HL,HL; 1; 8; - 0 H C
-			NOT_YET_IMPLEMENTED();
+			addhl(hl);
 			break;
 		case 0x2a: // LD A,(HL+); 1; 8; ----
 			a = mem_read(hl++);
@@ -625,10 +645,7 @@ cpu_step()
 			jrcc(cf);
 			break;
 		case 0x39: // ADD HL,SP; 1; 8; - 0 H C
-			cf = (uint32_t)hl + sp >= 65536;
-			hl = hl + sp;
-			nf = 0;
-//			hf = ; // todo: calculate hf
+			addhl(sp);
 			break;
 		case 0x3a: // LD A,(HL-); 1; 8; ----
 			a = mem_read(hl--);
@@ -1959,7 +1976,7 @@ cpu_step()
 			rst8(0x20);
 			break;
 		case 0xe8: // ADD SP,r8; 2; 16; 0 0 H C
-			NOT_YET_IMPLEMENTED();
+			addsp(fetch8());
 			break;
 		case 0xe9: // JP (HL); 1; 4; ----
 			pc = hl;
