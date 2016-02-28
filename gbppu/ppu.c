@@ -58,7 +58,7 @@ io_write(uint16_t a8, uint8_t d8)
 {
 	switch (a8) {
 		case 0x50:
-			if (a8 & 1) {
+			if (d8 & 1) {
 				disable_bootrom();
 			}
 			break;
