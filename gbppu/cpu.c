@@ -281,7 +281,15 @@ cpu_init()
 {
 #if 0
 	disable_bootrom();
+	a = 1;
+	bc = 0x13;
+	de = 0xd8;
+	sp = 0xfffe;
 	pc = 0x100;
+	zf = 1;
+	nf = 0;
+	hf = 0;
+	cf = 1;
 #endif
 }
 
@@ -307,7 +315,8 @@ cpu_irq(int index)
 int
 cpu_step()
 {
-	if (interrupts_enabled && pending_irq) {
+	int interrupt_handled = 0;
+	while (interrupts_enabled && pending_irq) {
 		interrupts_enabled = 0;
 		int i;
 		for (i = 0; i < 8; i++) {
@@ -318,6 +327,7 @@ cpu_step()
 		}
 		printf("RST 0x%02x\n", 0x40 + i * 8);
 		rst8(0x40 + i * 8);
+		interrupt_handled = 1;
 	}
 
 	uint8_t opcode = fetch8();
@@ -698,7 +708,10 @@ cpu_step()
 			mem_write(hl, l);
 			break;
 		case 0x76: // HALT; 1; 4; ----
-			pc--;
+			if (!interrupt_handled) {
+				pc--;
+			}
+			ppu_step();
 			break;
 		case 0x77: // LD (HL),A; 1; 8; ----
 			mem_write(hl, a);

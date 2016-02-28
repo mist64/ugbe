@@ -253,11 +253,15 @@ ppu_step_4()
 
 	if (++current_x == PPU_CLOCKS_PER_LINE) {
 		current_x = 0;
-		mode = mode_oam;
-		oam_mode_counter = 0;
 		if (++current_y == PPU_NUM_LINES) {
 			current_y = 0;
 			ppu_dirty = 1;
+		}
+		if (current_y <= PPU_LAST_VISIBLE_LINE) {
+			mode = mode_oam;
+			oam_mode_counter = 0;
+		} else {
+			mode = mode_vblank;
 		}
 	}
 }
