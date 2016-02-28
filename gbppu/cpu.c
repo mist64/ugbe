@@ -8,6 +8,7 @@
 
 #include <stdio.h>
 #include "memory.h"
+#include "ppu.h"
 
 extern void ppu_init();
 extern void ppu_step();
@@ -24,7 +25,6 @@ uint16_t pc = 0;
 uint16_t sp = 0;
 
 int interrupts_enabled = 0;
-int pending_irq = 0;
 
 #pragma mark - Registers
 
@@ -110,8 +110,9 @@ fetch16()
 void
 ldhlsp(uint8_t d8) //  LD HL,SP+r8; 2; 12; 0 0 H C // LDHL SP,r8
 {
-	cf = (uint32_t)sp + d8 >= 65536;
-	hl = sp + d8;
+	int8_t sd8 = d8;
+	cf = (uint32_t)sp + sd8 >= 65536;
+	hl = sp + sd8;
 	zf = 0;
 	nf = 0;
 //	hf = ; // todo: calculate hf
@@ -464,26 +465,20 @@ int counter = 0;
 
 #pragma mark - IRQ
 
-void
-cpu_irq(int index)
-{
-	printf("IRQ %u\n", index);
-	pending_irq |= 1 << index;
-}
-
 int
 cpu_step()
 {
 	int interrupt_handled = 0;
-	while (interrupts_enabled && pending_irq) {
+	uint8_t pending_irqs = io_get_pending_irqs();
+	while (interrupts_enabled && pending_irqs) {
 		interrupts_enabled = 0;
 		int i;
 		for (i = 0; i < 8; i++) {
-			if (pending_irq & 1 << i) {
-				pending_irq &= ~(1 << i);
+			if (pending_irqs & 1 << i) {
 				break;
 			}
 		}
+		io_clear_pending_irq(i);
 		printf("RST 0x%02x\n", 0x40 + i * 8);
 		rst8(0x40 + i * 8);
 		interrupt_handled = 1;

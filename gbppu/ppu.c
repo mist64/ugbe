@@ -29,6 +29,8 @@ enum {
 	mode_pixel  = 3,
 } mode;
 
+uint8_t pending_irqs;
+
 static char *reg_name[] = {
 	"P1", /* 0x00 */
 	"SB", /* 0x01 */
@@ -176,11 +178,28 @@ io_write(uint16_t a8, uint8_t d8)
 				mem_write(0xfe00 + i, mem_read((d8 << 8) + i));
 			}
 		}
+		case rIF: {
+			// set pending IRQs
+			reg[a8] = d8;
+			break;
+		}
 		default:
-			printf("warning: I/O write %s 0xff%02x (pc=%04x)\n", name_for_io_reg(a8), a8, pc);
+			printf("warning: I/O write %s 0xff%02x <- 0x%02x (pc=%04x)\n", name_for_io_reg(a8), a8, d8, pc);
 			reg[a8] = d8;
 			break;
 	}
+}
+
+uint8_t
+io_get_pending_irqs()
+{
+	return reg[rIF];
+}
+
+void
+io_clear_pending_irq(uint8_t irq)
+{
+	reg[rIF] &= ~(1 << irq);
 }
 
 
@@ -383,16 +402,16 @@ ppu_step_4()
 //	}
 
 	extern int cpu_ie();
-	extern void cpu_irq(int index);
+	void cpu_update_irq();
 
-	uint8_t ie = io_read(0xff);
+	uint8_t ie = io_read(rIE);
 	if (cpu_ie()) {
 		if (ie & 1 && current_y == 144 && current_x == 0) {
-			cpu_irq(0);
+			reg[rIF] |= 1;
 		} else {
 			if (ie & 2) {
 				if (io_read(rSTAT) & 0x40 && io_read(rLYC) == current_y && current_x == 0) {
-					cpu_irq(1);
+					reg[rIF] |= 2;
 				}
 			}
 		}
