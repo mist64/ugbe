@@ -8,9 +8,9 @@
 
 #include "ppu.h"
 #include "ppu_private.h"
+#include "memory.h"
 
-extern uint8_t RAM[];
-uint8_t *reg = RAM + 0xFF00;
+uint8_t reg[256];
 
 int current_x;
 int current_y;
@@ -43,10 +43,10 @@ io_read(uint8_t a8)
 		case rWX:
 		case rWY:
 			// these behave like RAM
-			return RAM[0xff00 + a8];
+			return reg[a8];
 		default:
 			printf("warning: I/O read 0xff%02x\n", a8);
-			return RAM[0xff00 + a8];
+			return reg[a8];
 	}
 }
 
@@ -54,9 +54,14 @@ void
 io_write(uint16_t a8, uint8_t d8)
 {
 	switch (a8) {
+		case 0xff50:
+			if (a8 & 1) {
+				disable_bootrom();
+			}
+			break;
 		// TODO: some ports may trigger something
 		default:
-			RAM[0xff00 + a8] = d8;
+			reg[a8] = d8;
 	}
 }
 
@@ -127,7 +132,7 @@ vram_set_address(uint16_t addr)
 uint8_t
 vram_get_data()
 {
-	return RAM[vram_address];
+	return vram_read(vram_address);
 }
 
 
