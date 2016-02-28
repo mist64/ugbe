@@ -30,24 +30,27 @@ mem_init()
 	char *cartridge_filename;
 
 #if BUILD_USER_Lisa
-	bootrom_filename = "/Users/lisa/Projects/gbcpu/gbppu/tetris.gb";
-	cartridge_filename = "/Users/lisa/Projects/gbcpu/gbppu/DMG_ROM.bin";
+	cartridge_filename = "/Users/lisa/Projects/gbcpu/gbppu/tetris.gb";
+	bootrom_filename = "/Users/lisa/Projects/gbcpu/gbppu/DMG_ROM.bin";
 #else
-	bootrom_filename = "/Users/mist/Documents/git/gbcpu/gbppu/tetris.gb";
-	cartridge_filename = "/Users/mist/Documents/git/gbcpu/gbppu/DMG_ROM.bin";
+	cartridge_filename = "/Users/mist/Documents/git/gbcpu/gbppu/tetris.gb";
+	bootrom_filename = "/Users/mist/Documents/git/gbcpu/gbppu/DMG_ROM.bin";
 #endif
 
-	FILE *file = fopen(bootrom_filename, "r");
+	FILE *file = fopen(cartridge_filename, "r");
 
 	fseek(file, 0L, SEEK_END);
 	long size = ftell(file);
+	if (size < 0x8000) {
+		size = 0x8000;
+	}
 	fseek(file, 0L, SEEK_SET);
 	rom = calloc(size, 1);
 	fread(rom, size, 1, file);
 	fclose(file);
 
 	bootrom = calloc(0x100, 1);
-	file = fopen(cartridge_filename, "r");
+	file = fopen(bootrom_filename, "r");
 	fread(bootrom, 0x100, 1, file);
 	fclose(file);
 
@@ -119,7 +122,7 @@ mem_read(uint16_t a16)
 		return hiram[a16 - 0xff80];
 	} else {
 		printf("warning: read from 0x%04x!\n", a16);
-		return 0;
+		return 0xff;
 	}
 }
 
