@@ -535,9 +535,13 @@ cpu_step()
 		case 0x0e: // LD C,d8; 2; 8; ----
 			c = fetch8();
 			break;
-		case 0x0f: // RRCA; 1; 4; 0 0 0 C
-			NOT_YET_IMPLEMENTED();
+		case 0x0f: { // RRCA; 1; 4; 0 0 0 C
+			uint8_t old_zf = zf;
+			rrc8(&a);
+			zf = old_zf;
+			// find out: preserve or set zf to 0?
 			break;
+		}
 		case 0x10: // STOP 0; 2; 4; ----
 			NOT_YET_IMPLEMENTED();
 			break;
@@ -593,7 +597,7 @@ cpu_step()
 			uint8_t old_zf = zf;
 			rr8(&a);
 			zf = old_zf;
-			// find out: preserve or set to 0?
+			// find out: preserve or set zf to 0?
 			break;
 		}
 		case 0x20: { // JR NZ,r8; 2; 12/8; ----
@@ -619,6 +623,7 @@ cpu_step()
 			h = fetch8();
 			break;
 		case 0x27: // DAA; 1; 4; Z - 0 C
+			// see: http://z80-heaven.wikidot.com/instructions-set:daa
 			NOT_YET_IMPLEMENTED();
 			break;
 		case 0x28: // JR Z,r8; 2; 12/8; ----
@@ -675,7 +680,9 @@ cpu_step()
 			mem_write(hl, fetch8());
 			break;
 		case 0x37: // SCF; 1; 4; - 0 0 1
-			NOT_YET_IMPLEMENTED();
+			nf = 0;
+			hf = 0;
+			cf = 1;
 			break;
 		case 0x38: // JR C,r8; 2; 12/8; ----
 			jrcc(cf);
@@ -699,7 +706,10 @@ cpu_step()
 			a = fetch8();
 			break;
 		case 0x3f: // CCF; 1; 4; - 0 0 C
-			NOT_YET_IMPLEMENTED();
+			nf = 0;
+			hf = ~hf;
+			cf = ~cf;
+			// todo: invert or 0 hf?
 			break;
 		case 0x40: // LD B,B; 1; 4; ----
 			b = b;
