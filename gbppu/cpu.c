@@ -274,6 +274,18 @@ bit8(uint8_t d8, uint8_t bit) // BIT \d,\w; 2; 8; Z 0 1 -
 	hf = 1;
 }
 
+void
+set8(uint8_t *r8, uint8_t bit) // SET \d,\w; 2; 8; ----
+{
+	*r8 |= 1 << bit;
+}
+
+void
+res8(uint8_t *r8, uint8_t bit) // RES \d,\w; 2; 8; ----
+{
+	*r8 &= ~(1 << bit);
+}
+
 #pragma mark - Init
 
 void
@@ -1324,388 +1336,388 @@ cpu_step()
 					bit8(a, 7);
 					break;
 				case 0x80: // RES 0,B; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&b, 0);
 					break;
 				case 0x81: // RES 0,C; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&c, 0);
 					break;
 				case 0x82: // RES 0,D; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&d, 0);
 					break;
 				case 0x83: // RES 0,E; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&e, 0);
 					break;
 				case 0x84: // RES 0,H; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&h, 0);
 					break;
 				case 0x85: // RES 0,L; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&l, 0);
 					break;
 				case 0x86: // RES 0,(HL); 2; 16; ----
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0x87: // RES 0,A; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&a, 0);
 					break;
 				case 0x88: // RES 1,B; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&b, 1);
 					break;
 				case 0x89: // RES 1,C; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&c, 1);
 					break;
 				case 0x8a: // RES 1,D; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&d, 1);
 					break;
 				case 0x8b: // RES 1,E; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&e, 1);
 					break;
 				case 0x8c: // RES 1,H; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&h, 1);
 					break;
 				case 0x8d: // RES 1,L; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&l, 1);
 					break;
 				case 0x8e: // RES 1,(HL); 2; 16; ----
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0x8f: // RES 1,A; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&a, 1);
 					break;
 				case 0x90: // RES 2,B; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&b, 2);
 					break;
 				case 0x91: // RES 2,C; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&c, 2);
 					break;
 				case 0x92: // RES 2,D; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&d, 2);
 					break;
 				case 0x93: // RES 2,E; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&e, 2);
 					break;
 				case 0x94: // RES 2,H; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&h, 2);
 					break;
 				case 0x95: // RES 2,L; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&l, 2);
 					break;
 				case 0x96: // RES 2,(HL); 2; 16; ----
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0x97: // RES 2,A; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&a, 2);
 					break;
 				case 0x98: // RES 3,B; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&b, 3);
 					break;
 				case 0x99: // RES 3,C; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&c, 3);
 					break;
 				case 0x9a: // RES 3,D; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&d, 3);
 					break;
 				case 0x9b: // RES 3,E; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&e, 3);
 					break;
 				case 0x9c: // RES 3,H; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&h, 3);
 					break;
 				case 0x9d: // RES 3,L; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&l, 3);
 					break;
 				case 0x9e: // RES 3,(HL); 2; 16; ----
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0x9f: // RES 3,A; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&a, 3);
 					break;
 				case 0xa0: // RES 4,B; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&b, 4);
 					break;
 				case 0xa1: // RES 4,C; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&c, 4);
 					break;
 				case 0xa2: // RES 4,D; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&d, 4);
 					break;
 				case 0xa3: // RES 4,E; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&e, 4);
 					break;
 				case 0xa4: // RES 4,H; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&h, 4);
 					break;
 				case 0xa5: // RES 4,L; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&l, 4);
 					break;
 				case 0xa6: // RES 4,(HL); 2; 16; ----
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0xa7: // RES 4,A; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&a, 4);
 					break;
 				case 0xa8: // RES 5,B; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&b, 5);
 					break;
 				case 0xa9: // RES 5,C; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&c, 5);
 					break;
 				case 0xaa: // RES 5,D; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&d, 5);
 					break;
 				case 0xab: // RES 5,E; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&e, 5);
 					break;
 				case 0xac: // RES 5,H; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&h, 5);
 					break;
 				case 0xad: // RES 5,L; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&l, 5);
 					break;
 				case 0xae: // RES 5,(HL); 2; 16; ----
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0xaf: // RES 5,A; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&a, 5);
 					break;
 				case 0xb0: // RES 6,B; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&b, 6);
 					break;
 				case 0xb1: // RES 6,C; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&c, 6);
 					break;
 				case 0xb2: // RES 6,D; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&d, 6);
 					break;
 				case 0xb3: // RES 6,E; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&e, 6);
 					break;
 				case 0xb4: // RES 6,H; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&h, 6);
 					break;
 				case 0xb5: // RES 6,L; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&l, 6);
 					break;
 				case 0xb6: // RES 6,(HL); 2; 16; ----
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0xb7: // RES 6,A; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&a, 6);
 					break;
 				case 0xb8: // RES 7,B; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&b, 7);
 					break;
 				case 0xb9: // RES 7,C; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&c, 7);
 					break;
 				case 0xba: // RES 7,D; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&d, 7);
 					break;
 				case 0xbb: // RES 7,E; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&e, 7);
 					break;
 				case 0xbc: // RES 7,H; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&h, 7);
 					break;
 				case 0xbd: // RES 7,L; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&l, 7);
 					break;
 				case 0xbe: // RES 7,(HL); 2; 16; ----
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0xbf: // RES 7,A; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					res8(&a, 7);
 					break;
 				case 0xc0: // SET 0,B; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&b, 0);
 					break;
 				case 0xc1: // SET 0,C; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&c, 0);
 					break;
 				case 0xc2: // SET 0,D; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&d, 0);
 					break;
 				case 0xc3: // SET 0,E; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&e, 0);
 					break;
 				case 0xc4: // SET 0,H; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&h, 0);
 					break;
 				case 0xc5: // SET 0,L; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&l, 0);
 					break;
 				case 0xc6: // SET 0,(HL); 2; 16; ----
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0xc7: // SET 0,A; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&a, 0);
 					break;
 				case 0xc8: // SET 1,B; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&b, 1);
 					break;
 				case 0xc9: // SET 1,C; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&c, 1);
 					break;
 				case 0xca: // SET 1,D; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&d, 1);
 					break;
 				case 0xcb: // SET 1,E; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&e, 1);
 					break;
 				case 0xcc: // SET 1,H; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&h, 1);
 					break;
 				case 0xcd: // SET 1,L; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&l, 1);
 					break;
 				case 0xce: // SET 1,(HL); 2; 16; ----
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0xcf: // SET 1,A; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&a, 1);
 					break;
 				case 0xd0: // SET 2,B; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&b, 2);
 					break;
 				case 0xd1: // SET 2,C; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&c, 2);
 					break;
 				case 0xd2: // SET 2,D; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&d, 2);
 					break;
 				case 0xd3: // SET 2,E; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&e, 2);
 					break;
 				case 0xd4: // SET 2,H; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&h, 2);
 					break;
 				case 0xd5: // SET 2,L; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&l, 2);
 					break;
 				case 0xd6: // SET 2,(HL); 2; 16; ----
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0xd7: // SET 2,A; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&a, 2);
 					break;
 				case 0xd8: // SET 3,B; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&b, 3);
 					break;
 				case 0xd9: // SET 3,C; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&c, 3);
 					break;
 				case 0xda: // SET 3,D; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&d, 3);
 					break;
 				case 0xdb: // SET 3,E; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&e, 3);
 					break;
 				case 0xdc: // SET 3,H; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&h, 3);
 					break;
 				case 0xdd: // SET 3,L; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&l, 3);
 					break;
 				case 0xde: // SET 3,(HL); 2; 16; ----
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0xdf: // SET 3,A; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&a, 3);
 					break;
 				case 0xe0: // SET 4,B; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&b, 4);
 					break;
 				case 0xe1: // SET 4,C; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&c, 4);
 					break;
 				case 0xe2: // SET 4,D; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&d, 4);
 					break;
 				case 0xe3: // SET 4,E; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&e, 4);
 					break;
 				case 0xe4: // SET 4,H; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&h, 4);
 					break;
 				case 0xe5: // SET 4,L; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&l, 4);
 					break;
 				case 0xe6: // SET 4,(HL); 2; 16; ----
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0xe7: // SET 4,A; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&a, 4);
 					break;
 				case 0xe8: // SET 5,B; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&b, 5);
 					break;
 				case 0xe9: // SET 5,C; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&c, 5);
 					break;
 				case 0xea: // SET 5,D; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&d, 5);
 					break;
 				case 0xeb: // SET 5,E; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&e, 5);
 					break;
 				case 0xec: // SET 5,H; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&h, 5);
 					break;
 				case 0xed: // SET 5,L; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&l, 5);
 					break;
 				case 0xee: // SET 5,(HL); 2; 16; ----
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0xef: // SET 5,A; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&a, 5);
 					break;
 				case 0xf0: // SET 6,B; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&b, 6);
 					break;
 				case 0xf1: // SET 6,C; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&c, 6);
 					break;
 				case 0xf2: // SET 6,D; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&d, 6);
 					break;
 				case 0xf3: // SET 6,E; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&e, 6);
 					break;
 				case 0xf4: // SET 6,H; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&h, 6);
 					break;
 				case 0xf5: // SET 6,L; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&l, 6);
 					break;
 				case 0xf6: // SET 6,(HL); 2; 16; ----
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0xf7: // SET 6,A; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&a, 6);
 					break;
 				case 0xf8: // SET 7,B; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&b, 7);
 					break;
 				case 0xf9: // SET 7,C; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&c, 7);
 					break;
 				case 0xfa: // SET 7,D; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&d, 7);
 					break;
 				case 0xfb: // SET 7,E; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&e, 7);
 					break;
 				case 0xfc: // SET 7,H; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&h, 7);
 					break;
 				case 0xfd: // SET 7,L; 2; 8; ----
-					NOT_YET_IMPLEMENTED();
+					set8(&l, 7);
 					break;
 				case 0xfe: // SET 7,(HL); 2; 16; ----
 					NOT_YET_IMPLEMENTED();
 					break;
-				case 0xff: // SET 7,A; 2; 
-					NOT_YET_IMPLEMENTED();
+				case 0xff: // SET 7,A; 2; 8; ----
+					set8(&a, 7);
 					break;
 
 				default:
