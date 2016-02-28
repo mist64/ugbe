@@ -20,6 +20,8 @@ uint8_t *hiram;
 
 int bootrom_enabled;
 
+static void mem_write_internal(uint16_t a16, uint8_t d8);
+
 void
 mem_init()
 {
@@ -34,17 +36,17 @@ mem_init()
 	cartridge_filename = "/Users/mist/Documents/git/gbcpu/gbppu/DMG_ROM.bin";
 #endif
 
-	FILE *cartridge = fopen(bootrom_filename, "r");
+	FILE *file = fopen(bootrom_filename, "r");
 
-	fseek(cartridge, 0L, SEEK_END);
-	long size = ftell(cartridge);
-	fseek(cartridge, 0L, SEEK_SET);
+	fseek(file, 0L, SEEK_END);
+	long size = ftell(file);
+	fseek(file, 0L, SEEK_SET);
 	rom = calloc(size, 1);
-	fread(rom, size, 1, cartridge);
-	fclose(cartridge);
+	fread(rom, size, 1, file);
+	fclose(file);
 
 	bootrom = calloc(0x100, 1);
-	FILE *file = fopen(cartridge_filename, "r");
+	file = fopen(cartridge_filename, "r");
 	fread(bootrom, 0x100, 1, file);
 	fclose(file);
 
@@ -73,6 +75,18 @@ mem_init()
 	extram = calloc(extramsize, 1);
 
 	bootrom_enabled = 1;
+
+#if 0
+	file = fopen("/Users/mist/Documents/git/gbcpu/gbppu/ram.bin", "r");
+	uint8_t *data = malloc(65536);
+	fread(data, 65536, 1, file);
+	fclose(file);
+
+	for (int addr = 0; addr < 65536; addr++) {
+		printf("%s:%d %04x\n", __FILE__, __LINE__, addr);
+		mem_write_internal(addr, data[addr]);
+	}
+#endif
 }
 
 uint8_t
@@ -86,11 +100,11 @@ mem_read(uint16_t a16)
 		} else {
 			return rom[a16];
 		}
-	} else if (a16 <= 0xa000) {
+	} else if (a16 >= 0x8000 && a16 < 0xa000) {
 		return vram[a16 - 0x8000];
-	} else if (a16 <= 0xc000) {
+	} else if (a16 >= 0xa000 && a16 < 0xc000) {
 		return extram[a16 - 0xa000];
-	} else if (a16 <= 0xe000) {
+	} else if (a16 >= 0xc000 && a16 < 0xe000) {
 		return ram[a16 - 0xc000];
 	} else if (a16 >= 0xfe00 && a16 < 0xfea0) {
 		return oamram[a16 - 0xfe00];
@@ -105,18 +119,16 @@ mem_read(uint16_t a16)
 	}
 }
 
-void
-mem_write(uint16_t a16, uint8_t d8)
+static void
+mem_write_internal(uint16_t a16, uint8_t d8)
 {
-	ppu_step();
-
 	if (a16 < 0x8000) {
 		// TODO: MBC
-	} else if (a16 <= 0xa000) {
+	} else if (a16 >= 0x8000 && a16 < 0xa000) {
 		vram[a16 - 0x8000] = d8;
-	} else if (a16 <= 0xc000) {
+	} else if (a16 >= 0xa000 && a16 < 0xc000) {
 		extram[a16 - 0xa000] = d8;
-	} else if (a16 <= 0xe000) {
+	} else if (a16 >= 0xc000 && a16 < 0xe000) {
 		ram[a16 - 0xc000] = d8;
 	} else if (a16 >= 0xfe00 && a16 < 0xfea0) {
 		oamram[a16 - 0xfe00] = d8;
@@ -128,6 +140,13 @@ mem_write(uint16_t a16, uint8_t d8)
 	} else {
 		printf("warning: write to 0x%04x!\n", a16);
 	}
+}
+
+void
+mem_write(uint16_t a16, uint8_t d8)
+{
+	ppu_step();
+	mem_write_internal(a16, d8);
 }
 
 void
