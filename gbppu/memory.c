@@ -183,6 +183,12 @@ disable_bootrom()
 	bootrom_enabled = 0;
 }
 
+int
+is_bootrom_enabled()
+{
+	return bootrom_enabled;
+}
+
 uint8_t
 vram_read(uint16_t a16)
 {

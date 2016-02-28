@@ -16,6 +16,7 @@ uint8_t mem_read(uint16_t a16);
 void mem_write(uint16_t a16, uint8_t d8);
 
 void disable_bootrom();
+int is_bootrom_enabled();
 
 uint8_t vram_read(uint16_t a16);
 

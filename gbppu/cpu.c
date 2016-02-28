@@ -491,7 +491,7 @@ cpu_step()
 
 	uint8_t opcode = fetch8();
 //			if (++counter % 100 == 0) {
-//			if (pc >= 0xe0) {
+//			if (!is_bootrom_enabled()) {
 //				printf("A=%02x BC=%04x DE=%04x HL=%04x SP=%04x PC=%04x (ZF=%d,NF=%d,HF=%d,CF=%d) LY=%02x - opcode 0x%02x\n", a, bc, de, hl, sp, pc-1, zf, nf, hf, cf, mem_read(0xff44), opcode);
 //			}
 
@@ -887,7 +887,6 @@ cpu_step()
 			if (!interrupt_handled) {
 				pc--;
 			}
-			ppu_step();
 			break;
 		case 0x77: // LD (HL),A; 1; 8; ----
 			mem_write(hl, a);
