@@ -108,6 +108,16 @@ fetch16()
 }
 
 void
+ldhlsp(uint8_t d8) //  LD HL,SP+r8; 2; 12; 0 0 H C // LDHL SP,r8
+{
+	cf = (uint32_t)sp + d8 >= 65536;
+	hl = sp + d8;
+	zf = 0;
+	nf = 0;
+//	hf = ; // todo: calculate hf
+}
+
+void
 push8(uint8_t d8)
 {
 	mem_write(--sp, d8);
@@ -2023,8 +2033,8 @@ cpu_step()
 		case 0xf7: // RST 30H; 1; 16; ----
 			rst8(0x30);
 			break;
-		case 0xf8: // LD HL,SP+r8; 2; 12; 0 0 H C
-			NOT_YET_IMPLEMENTED();
+		case 0xf8: // LD HL,SP+r8; 2; 12; 0 0 H C // LDHL SP,r8
+			ldhlsp(fetch8());
 			break;
 		case 0xf9: // LD SP,HL; 1; 8; ----
 			sp = hl;
