@@ -51,11 +51,11 @@ union reg16_t {
         union {
             uint8_t full;
             struct {
-                unsigned int bit7 : 1;
-                unsigned int bit6 : 1;
-                unsigned int bit5 : 1;
+				unsigned int bit3_0 : 4;
                 unsigned int bit4 : 1;
-                unsigned int bit3_0 : 4;
+				unsigned int bit5 : 1;
+				unsigned int bit6 : 1;
+				unsigned int bit7 : 1;
             };
         } low;
 		uint8_t high;
@@ -2076,6 +2076,7 @@ cpu_step()
 			break;
 		case 0xf1: // POP AF; 1; 12; Z N H C
 			af = pop16();
+			reg16_af.low.bit3_0 = 0;
 			break;
 		case 0xf2: // LD A,(C); 1; 8; ---- // LD A,($FF00+C)
 			a = mem_read(0xff00 + c);
