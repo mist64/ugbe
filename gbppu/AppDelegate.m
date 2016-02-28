@@ -69,10 +69,14 @@ extern int cpu_step();
 		ppu_init();
 
 		for (;;) {
+#if 1
 			int ret = cpu_step();
 			if (ret) {
 				exit(ret);
 			}
+#else
+			ppu_step();
+#endif
 			if (ppu_dirty) {
 				ppu_dirty = false;
 				dispatch_async(dispatch_get_main_queue(), ^{

@@ -18,6 +18,7 @@ uint8_t *extram;
 uint8_t *oamram;
 uint8_t *hiram;
 
+uint16_t extramsize;
 int bootrom_enabled;
 
 static void mem_write_internal(uint16_t a16, uint8_t d8);
@@ -55,7 +56,6 @@ mem_init()
 	oamram = calloc(0x90, 1);
 	hiram = calloc(0x7f, 1);
 
-	uint16_t extramsize;
 	switch (rom[0x149]) {
 		default:
 		case 0:
@@ -83,7 +83,6 @@ mem_init()
 	fclose(file);
 
 	for (int addr = 0; addr < 65536; addr++) {
-		printf("%s:%d %04x\n", __FILE__, __LINE__, addr);
 		mem_write_internal(addr, data[addr]);
 	}
 #endif
@@ -103,7 +102,12 @@ mem_read(uint16_t a16)
 	} else if (a16 >= 0x8000 && a16 < 0xa000) {
 		return vram[a16 - 0x8000];
 	} else if (a16 >= 0xa000 && a16 < 0xc000) {
-		return extram[a16 - 0xa000];
+		if (a16 - 0xa000 < extramsize) {
+			return extram[a16 - 0xa000];
+		} else {
+			printf("warning: read from 0x%04x!\n", a16);
+			return 0;
+		}
 	} else if (a16 >= 0xc000 && a16 < 0xe000) {
 		return ram[a16 - 0xc000];
 	} else if (a16 >= 0xfe00 && a16 < 0xfea0) {
@@ -127,7 +131,11 @@ mem_write_internal(uint16_t a16, uint8_t d8)
 	} else if (a16 >= 0x8000 && a16 < 0xa000) {
 		vram[a16 - 0x8000] = d8;
 	} else if (a16 >= 0xa000 && a16 < 0xc000) {
-		extram[a16 - 0xa000] = d8;
+		if (a16 - 0xa000 < extramsize) {
+			extram[a16 - 0xa000] = d8;
+		} else {
+			printf("warning: write to 0x%04x!\n", a16);
+		}
 	} else if (a16 >= 0xc000 && a16 < 0xe000) {
 		ram[a16 - 0xc000] = d8;
 	} else if (a16 >= 0xfe00 && a16 < 0xfea0) {
