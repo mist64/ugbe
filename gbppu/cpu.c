@@ -209,6 +209,14 @@ rst8(uint8_t d8)
 }
 
 void
+retcc(int condition)
+{
+	if (condition) {
+		pc = pop16();
+	}
+}
+
+void
 callcc(int condition)
 {
 	uint16_t a16 = fetch16();
@@ -886,7 +894,7 @@ cpu_step()
 			cpa8(a);
 			break;
 		case 0xc0: // RET NZ; 1; 20/8; ----
-			NOT_YET_IMPLEMENTED();
+			retcc(!zf);
 			break;
 		case 0xc1: // POP BC; 1; 12; ----
 			bc = pop16();
@@ -911,10 +919,10 @@ cpu_step()
 			rst8(0x00);
 			break;
 		case 0xc8: // RET Z; 1; 20/8; ----
-			NOT_YET_IMPLEMENTED();
+			retcc(zf);
 			break;
 		case 0xc9: // RET; 1; 16; ----
-			pc = pop16();
+			retcc(1);
 			break;
 		case 0xca: // JP Z,a16; 3; 16/12; ----
 			jpcc(zf);
@@ -1721,7 +1729,7 @@ cpu_step()
 			rst8(0x08);
 			break;
 		case 0xd0: // RET NC; 1; 20/8; ----
-			NOT_YET_IMPLEMENTED();
+			retcc(!cf);
 			break;
 		case 0xd1: // POP DE; 1; 12; ----
 			de = pop16();
@@ -1745,7 +1753,7 @@ cpu_step()
 			rst8(0x10);
 			break;
 		case 0xd8: // RET C; 1; 20/8; ----
-			NOT_YET_IMPLEMENTED();
+			retcc(cf);
 			break;
 		case 0xd9: // RETI; 1; 16; ----
 			NOT_YET_IMPLEMENTED();
