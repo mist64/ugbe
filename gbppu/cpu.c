@@ -175,10 +175,32 @@ suba8(uint8_t d8) // SUB \w; 1; 4; Z 1 H C
 }
 
 void
+sbca8(uint8_t d8) // SBC A,\w; 1; 4; Z 1 H C
+{
+	uint8_t old_cf = cf;
+	cf = (uint16_t)a - (d8 + old_cf) >= 256;
+	a = a - (d8 + old_cf);
+	zf = !a;
+	nf = 1;
+//	hf = ; // todo: calculate hf
+}
+
+void
 adda8(uint8_t d8) // ADD \w; 1; 8; Z 0 H C
 {
 	cf = (uint16_t)a + d8 >= 256;
 	a = a + d8;
+	zf = !a;
+	nf = 0;
+//	hf = ; // todo: calculate hf
+}
+
+void
+adca8(uint8_t d8) // ADC A,\w; 1; 4; Z 0 H C
+{
+	uint8_t old_cf = cf;
+	cf = (uint16_t)a + d8 + old_cf >= 256;
+	a = a + d8 + old_cf;
 	zf = !a;
 	nf = 0;
 //	hf = ; // todo: calculate hf
@@ -437,7 +459,7 @@ cpu_step()
 			break;
 		}
 		case 0x08: // LD (a16),SP; 3; 20; ----
-			NOT_YET_IMPLEMENTED();
+			mem_write(fetch16(), sp);
 			break;
 		case 0x09: // ADD HL,BC; 1; 8; - 0 H C
 			NOT_YET_IMPLEMENTED();
@@ -843,28 +865,28 @@ cpu_step()
 			adda8(a);
 			break;
 		case 0x88: // ADC A,B; 1; 4; Z 0 H C
-			NOT_YET_IMPLEMENTED();
+			adca8(b);
 			break;
 		case 0x89: // ADC A,C; 1; 4; Z 0 H C
-			NOT_YET_IMPLEMENTED();
+			adca8(c);
 			break;
 		case 0x8a: // ADC A,D; 1; 4; Z 0 H C
-			NOT_YET_IMPLEMENTED();
+			adca8(d);
 			break;
 		case 0x8b: // ADC A,E; 1; 4; Z 0 H C
-			NOT_YET_IMPLEMENTED();
+			adca8(e);
 			break;
 		case 0x8c: // ADC A,H; 1; 4; Z 0 H C
-			NOT_YET_IMPLEMENTED();
+			adca8(h);
 			break;
 		case 0x8d: // ADC A,L; 1; 4; Z 0 H C
-			NOT_YET_IMPLEMENTED();
+			adca8(l);
 			break;
 		case 0x8e: // ADC A,(HL); 1; 8; Z 0 H C
-			NOT_YET_IMPLEMENTED();
+			adca8(mem_read(hl));
 			break;
 		case 0x8f: // ADC A,A; 1; 4; Z 0 H C
-			NOT_YET_IMPLEMENTED();
+			adca8(a);
 			break;
 		case 0x90: // SUB B; 1; 4; Z 1 H C
 			suba8(b);
@@ -891,28 +913,28 @@ cpu_step()
 			suba8(a);
 			break;
 		case 0x98: // SBC A,B; 1; 4; Z 1 H C
-			NOT_YET_IMPLEMENTED();
+			sbca8(b);
 			break;
 		case 0x99: // SBC A,C; 1; 4; Z 1 H C
-			NOT_YET_IMPLEMENTED();
+			sbca8(c);
 			break;
 		case 0x9a: // SBC A,D; 1; 4; Z 1 H C
-			NOT_YET_IMPLEMENTED();
+			sbca8(d);
 			break;
 		case 0x9b: // SBC A,E; 1; 4; Z 1 H C
-			NOT_YET_IMPLEMENTED();
+			sbca8(e);
 			break;
 		case 0x9c: // SBC A,H; 1; 4; Z 1 H C
-			NOT_YET_IMPLEMENTED();
+			sbca8(h);
 			break;
 		case 0x9d: // SBC A,L; 1; 4; Z 1 H C
-			NOT_YET_IMPLEMENTED();
+			sbca8(l);
 			break;
 		case 0x9e: // SBC A,(HL); 1; 8; Z 1 H C
-			NOT_YET_IMPLEMENTED();
+			sbca8(mem_read(hl));
 			break;
 		case 0x9f: // SBC A,A; 1; 4; Z 1 H C
-			NOT_YET_IMPLEMENTED();
+			sbca8(a);
 			break;
 		case 0xa0: // AND B; 1; 4; Z 0 1 0
 			anda(b);
@@ -1858,7 +1880,7 @@ cpu_step()
 			break;
 		}
 		case 0xce: // ADC A,d8; 2; 8; Z 0 H C
-			NOT_YET_IMPLEMENTED();
+			adca8(fetch8());
 			break;
 		case 0xcf: // RST 08H; 1; 16; ----
 			rst8(0x08);
@@ -1906,7 +1928,7 @@ cpu_step()
 			printf("crash: 0x%02x\n", opcode);
 			return 1;
 		case 0xde: // SBC A,d8; 2; 8; Z 1 H C
-			NOT_YET_IMPLEMENTED();
+			sbca8(fetch8());
 			break;
 		case 0xdf: // RST 18H; 1; 16; ----
 			rst8(0x18);
