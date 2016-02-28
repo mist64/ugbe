@@ -8,6 +8,7 @@
 
 #include <stdio.h>
 #include "memory.h"
+#include <assert.h>
 
 extern void ppu_init();
 extern void ppu_step();
@@ -90,6 +91,19 @@ union reg16_t reg16_hl;
 
 #pragma mark - Helper
 
+void
+set_hf(uint8_t old, uint8_t new) // set the half carry flag
+{
+	int hf_v1 = (new & (1 << 4)) != (old & (1 << 4));
+	int hf_v2  = ((new ^ old) >> 4) & 1;
+	int hf_v3  = !!((new ^ old) & 0x10);
+	assert((hf_v1 == hf_v2) && (hf_v2 == hf_v3));
+	hf = hf_v1;
+}
+
+
+#pragma mark
+
 uint8_t
 fetch8()
 {
@@ -110,11 +124,12 @@ fetch16()
 void
 ldhlsp(uint8_t d8) //  LD HL,SP+r8; 2; 12; 0 0 H C // LDHL SP,r8
 {
+	uint8_t old_hl = hl;
 	cf = (uint32_t)sp + d8 >= 65536;
 	hl = sp + d8;
 	zf = 0;
 	nf = 0;
-//	hf = ; // todo: calculate hf
+	set_hf(old_hl, hl); // todo: find out what that should actually be
 }
 
 void
@@ -150,27 +165,30 @@ pop16()
 void
 inc8(uint8_t *r8) // INC \w 1; 4; Z 0 H -
 {
+	uint8_t old_r8 = *r8;
 	(*r8)++;
 	zf = !*r8;
 	nf = 0;
-//	hf = ; // todo: calculate hf
+	set_hf(old_r8, *r8);
 }
 
 void
 dec8(uint8_t *r8) // DEC \w 1; 4; Z 1 H -
 {
+	uint8_t old_r8 = *r8;
 	(*r8)--;
 	zf = !*r8;
 	nf = 1;
-//	hf = ; // todo: calculate hf
+	set_hf(old_r8, *r8);
 }
 
 void
 cpa8(uint8_t d8) // CP \w; 1; 4; Z 1 H C
 {
+	// todo: make cp behave like suba
 	zf = (a == d8);
 	nf = 1;
-//	hf = ; // todo: calculate hf
+	set_hf(a, a - d8);
 	cf = a < d8;
 }
 
@@ -179,7 +197,7 @@ suba8(uint8_t d8) // SUB \w; 1; 4; Z 1 H C
 {
 	zf = (a == d8);
 	nf = 1;
-//	hf = ; // todo: calculate hf
+	set_hf(a, a - d8);
 	cf = a < d8;
 	a = a - d8;
 }
@@ -189,20 +207,20 @@ sbca8(uint8_t d8) // SBC A,\w; 1; 4; Z 1 H C
 {
 	uint8_t old_cf = cf;
 	cf = (uint16_t)a - (d8 + old_cf) >= 256;
+	set_hf(a, a - (d8 + old_cf));
 	a = a - (d8 + old_cf);
 	zf = !a;
 	nf = 1;
-//	hf = ; // todo: calculate hf
 }
 
 void
 adda8(uint8_t d8) // ADD \w; 1; 8; Z 0 H C
 {
 	cf = (uint16_t)a + d8 >= 256;
+	set_hf(a, a + d8);
 	a = a + d8;
 	zf = !a;
 	nf = 0;
-//	hf = ; // todo: calculate hf
 }
 
 void
@@ -210,29 +228,29 @@ adca8(uint8_t d8) // ADC A,\w; 1; 4; Z 0 H C
 {
 	uint8_t old_cf = cf;
 	cf = (uint16_t)a + d8 + old_cf >= 256;
+	set_hf(a, a + d8 + old_cf);
 	a = a + d8 + old_cf;
 	zf = !a;
 	nf = 0;
-//	hf = ; // todo: calculate hf
 }
 
 void
 addhl(uint16_t d16) // ADD HL,\w\w; 1; 8; - 0 H C
 {
-	cf = (uint32_t)a + d16 >= 65536;
+	cf = (uint32_t)hl + d16 >= 65536;
+	set_hf(hl, hl + d16);
 	hl = hl + d16;
 	nf = 0;
-//	hf = ; // todo: calculate hf
 }
 
 void
 addsp(uint8_t d8) // ADD SP,r8; 2; 16; 0 0 H C
 {
 	cf = (uint32_t)sp + d8 >= 65536;
+	set_hf(sp, sp + d8);
 	sp = sp + d8;
 	zf = 0;
 	nf = 0;
-//	hf = ; // todo: calculate hf
 }
 
 
@@ -546,10 +564,8 @@ cpu_step()
 			c = fetch8();
 			break;
 		case 0x0f: { // RRCA; 1; 4; 0 0 0 C
-			uint8_t old_zf = zf;
 			rrc8(&a);
-			zf = old_zf;
-			// find out: preserve or set zf to 0?
+			zf = 0;
 			break;
 		}
 		case 0x10: // STOP 0; 2; 4; ----
@@ -604,10 +620,8 @@ cpu_step()
 			e = fetch8();
 			break;
 		case 0x1f: { // RRA; 1; 4; 0 0 0 C
-			uint8_t old_zf = zf;
 			rr8(&a);
-			zf = old_zf;
-			// find out: preserve or set zf to 0?
+			zf = 0;
 			break;
 		}
 		case 0x20: { // JR NZ,r8; 2; 12/8; ----
@@ -717,9 +731,8 @@ cpu_step()
 			break;
 		case 0x3f: // CCF; 1; 4; - 0 0 C
 			nf = 0;
-			hf = ~hf;
+			hf = 0;
 			cf = ~cf;
-			// todo: invert or 0 hf?
 			break;
 		case 0x40: // LD B,B; 1; 4; ----
 			b = b;
