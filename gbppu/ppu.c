@@ -29,6 +29,97 @@ enum {
 	mode_pixel  = 3,
 } mode;
 
+static char *reg_name[] = {
+	"P1", /* 0x00 */
+	"SB", /* 0x01 */
+	"SC", /* 0x02 */
+	"0x03",
+	"DIV", /* 0x04 */
+	"TIMA", /* 0x05 */
+	"TMA", /* 0x06 */
+	"TAC", /* 0x07 */
+	"0x08",
+	"0x09",
+	"0x0A",
+	"0x0B",
+	"0x0C",
+	"0x0D",
+	"0x0E",
+	"IF", /* 0x0F */
+	"NR10", /* 0x10 */
+	"NR11", /* 0x11 */
+	"NR12", /* 0x12 */
+	"NR13", /* 0x13 */
+	"NR14", /* 0x14 */
+	"0x15",
+	"NR21", /* 0x16 */
+	"NR22", /* 0x17 */
+	"NR23", /* 0x18 */
+	"NR24", /* 0x19 */
+	"NR30", /* 0x1A */
+	"NR31", /* 0x1B */
+	"NR32", /* 0x1C */
+	"NR33", /* 0x1D */
+	"NR34", /* 0x1E */
+	"0x1F",
+	"NR41", /* 0x20 */
+	"NR42", /* 0x21 */
+	"NR42_2", /* 0x22 */
+	"NR43", /* 0x23 */
+	"NR50", /* 0x24 */
+	"NR51", /* 0x25 */
+	"NR52", /* 0x26 */
+	"0x27",
+	"0x28",
+	"0x29",
+	"0x2A",
+	"0x2B",
+	"0x2C",
+	"0x2D",
+	"0x2E",
+	"0x2F",
+	"0x30",
+	"0x31",
+	"0x32",
+	"0x33",
+	"0x34",
+	"0x35",
+	"0x36",
+	"0x37",
+	"0x38",
+	"0x39",
+	"0x3A",
+	"0x3B",
+	"0x3C",
+	"0x3D",
+	"0x3E",
+	"0x3F",
+	"LCDC", /* 0x40 */
+	"STAT", /* 0x41 */
+	"SCY", /* 0x42 */
+	"SCX", /* 0x43 */
+	"LY", /* 0x44 */
+	"LYC", /* 0x45 */
+	"DMA", /* 0x46 */
+	"BGP", /* 0x47 */
+	"OBP0", /* 0x48 */
+	"OBP1", /* 0x49 */
+	"WY", /* 0x4A */
+	"WX", /* 0x4B */
+};
+
+char *
+name_for_io_reg(uint8_t a8)
+{
+	if (a8 == 0xff) {
+		return "IE";
+	} else if (a8 < sizeof(reg_name) / sizeof(*reg_name)) {
+		return reg_name[a8];
+	} else {
+		return "???";
+	}
+}
+
 uint8_t
 io_read(uint8_t a8)
 {
@@ -49,7 +140,7 @@ io_read(uint8_t a8)
 			// these behave like RAM
 			return reg[a8];
 		default:
-			printf("warning: I/O read 0xff%02x\n", a8);
+			printf("warning: I/O read %s (0xff%02x)\n", name_for_io_reg(a8), a8);
 			return reg[a8];
 	}
 }
@@ -86,7 +177,7 @@ io_write(uint16_t a8, uint8_t d8)
 			}
 		}
 		default:
-			printf("warning: I/O write 0xff%02x (pc=%04x)\n", a8, pc);
+			printf("warning: I/O write %s 0xff%02x (pc=%04x)\n", name_for_io_reg(a8), a8, pc);
 			reg[a8] = d8;
 			break;
 	}
