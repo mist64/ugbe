@@ -1,5 +1,5 @@
 //
-//  main.c
+//  cpu.c
 //  gbcpu
 //
 //  Created by Lisa Brodner on 2016-02-16.
@@ -7,7 +7,7 @@
 //
 
 #include <stdio.h>
-
+#include "memory.h"
 
 extern void ppu_init();
 extern void ppu_step();
@@ -20,7 +20,6 @@ extern void ppu_step();
 // see: http://z80-heaven.wikidot.com/instructions-set
 // see: http://gameboy.mongenel.com/dmg/opcodes.html
 
-uint8_t RAM[65536];
 uint16_t pc = 0;
 uint16_t sp = 0;
 
@@ -90,32 +89,6 @@ union reg16_t reg16_hl;
 
 
 #pragma mark - Helper
-
-uint8_t
-mem_read(uint16_t a16)
-{
-	ppu_step();
-
-	if (a16 >= 0xff00 && a16 < 0xff80) {
-		extern uint8_t io_read(uint8_t);
-		return io_read(a16 & 0xff);
-	} else {
-		return RAM[a16];
-	}
-}
-
-void
-mem_write(uint16_t a16, uint8_t d8)
-{
-	ppu_step();
-	
-	if (a16 >= 0xff00 && a16 < 0xff80) {
-		extern void io_write(uint8_t, uint8_t);
-		io_write(a16 & 0xff, d8);
-	} else {
-		RAM[a16] = d8;
-	}
-}
 
 uint8_t
 fetch8()
@@ -298,19 +271,6 @@ bit8(uint8_t d8, uint8_t bit) // BIT \d,\w; 2; 8; Z 0 1 -
 void
 cpu_init()
 {
-	
-#if BUILD_USER_Lisa
-	FILE *tetris = fopen("/Users/lisa/Projects/gbcpu/gbppu/tetris.gb", "r");
-	FILE *file = fopen("/Users/lisa/Projects/gbcpu/gbppu/DMG_ROM.bin", "r");
-#else
-	FILE *tetris = fopen("/Users/mist/Documents/git/gbcpu/gbppu/tetris.gb", "r");
-	FILE *file = fopen("/Users/mist/Documents/git/gbcpu/gbppu/DMG_ROM.bin", "r");
-#endif
-
-	fread(RAM, 32768, 1, tetris);
-	fclose(tetris);
-	fread(RAM, 256, 1, file);
-	fclose(file);
 }
 
 

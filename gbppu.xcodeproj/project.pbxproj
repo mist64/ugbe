@@ -13,6 +13,7 @@
 		CC512A6C1C7BA65100ECFACA /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = CC512A6A1C7BA65100ECFACA /* MainMenu.xib */; };
 		CC6486F91C803EE200637024 /* cpu.c in Sources */ = {isa = PBXBuildFile; fileRef = CC6486F81C803EE200637024 /* cpu.c */; };
 		CC6486FC1C8068C000637024 /* ppu.c in Sources */ = {isa = PBXBuildFile; fileRef = CC6486FA1C8068C000637024 /* ppu.c */; };
+		CC6487001C82F63400637024 /* memory.c in Sources */ = {isa = PBXBuildFile; fileRef = CC6486FE1C82F63400637024 /* memory.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -27,6 +28,8 @@
 		CC6486FA1C8068C000637024 /* ppu.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ppu.c; sourceTree = "<group>"; };
 		CC6486FB1C8068C000637024 /* ppu.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ppu.h; sourceTree = "<group>"; };
 		CC6486FD1C806BC100637024 /* ppu_private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ppu_private.h; sourceTree = "<group>"; };
+		CC6486FE1C82F63400637024 /* memory.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = memory.c; sourceTree = "<group>"; };
+		CC6486FF1C82F63400637024 /* memory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = memory.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -65,6 +68,8 @@
 				CC512A6A1C7BA65100ECFACA /* MainMenu.xib */,
 				CC512A6D1C7BA65100ECFACA /* Info.plist */,
 				CC6486F81C803EE200637024 /* cpu.c */,
+				CC6486FE1C82F63400637024 /* memory.c */,
+				CC6486FF1C82F63400637024 /* memory.h */,
 				CC6486FA1C8068C000637024 /* ppu.c */,
 				CC6486FD1C806BC100637024 /* ppu_private.h */,
 				CC6486FB1C8068C000637024 /* ppu.h */,
@@ -152,6 +157,7 @@
 			files = (
 				CC6486F91C803EE200637024 /* cpu.c in Sources */,
 				CC512A671C7BA65100ECFACA /* main.m in Sources */,
+				CC6487001C82F63400637024 /* memory.c in Sources */,
 				CC512A641C7BA65100ECFACA /* AppDelegate.m in Sources */,
 				CC6486FC1C8068C000637024 /* ppu.c in Sources */,
 			);

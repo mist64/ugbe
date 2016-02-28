@@ -7,6 +7,7 @@
 //
 
 #import "AppDelegate.h"
+#import "memory.h"
 #import "ppu.h"
 
 @interface View : NSView
@@ -63,6 +64,7 @@ extern int cpu_step();
 	self.window.contentView = view;
 
 	dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+		mem_init();
 		cpu_init();
 		ppu_init();
 
