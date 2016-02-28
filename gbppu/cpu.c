@@ -136,6 +136,7 @@ pop16()
 	return d16;
 }
 
+#pragma mark
 void
 inc8(uint8_t *r8) // INC \w 1; 4; Z 0 H -
 {
@@ -183,6 +184,7 @@ adda8(uint8_t d8) // ADD \w; 1; 8; Z 0 H C
 //	hf = ; // todo: calculate hf
 }
 
+#pragma mark - Jumping
 void
 jrcc(int condition) // jump relative condition code
 {
@@ -226,6 +228,7 @@ callcc(int condition)
 	}
 }
 
+#pragma mark - Bitwise Boolean Operations
 void
 anda(uint8_t d8) // AND \w; 1; 4; Z 0 1 0
 {
@@ -255,6 +258,82 @@ xora(uint8_t d8) // XOR \w; 1; 4; Z 0 0 0
 	hf = 0;
 	cf = 0;
 }
+
+#pragma mark - Shifting
+void
+rl8(uint8_t *r8) // RL \w; 2; 8; Z 0 0 C
+{
+	uint8_t old_cf = cf;
+	cf = *r8 >> 7;
+	*r8 = (*r8 << 1) | old_cf;
+	zf = !*r8;
+	nf = 0;
+	hf = 0;
+}
+
+void
+rlc8(uint8_t *r8) // RLC \w; 2; 8; Z 0 0 C
+{
+	cf = *r8 >> 7;
+	*r8 = *r8 << 1 | cf;
+	zf = !*r8;
+	nf = 0;
+	hf = 0;
+}
+
+void
+rr8(uint8_t *r8) // RR \w; 2; 8; Z 0 0 C
+{
+	uint8_t old_cf = cf;
+	cf = *r8 & 1;
+	*r8 =  old_cf << 7 | *r8 >> 1;
+	zf = !*r8;
+	nf = 0;
+	hf = 0;
+}
+
+void
+rrc8(uint8_t *r8) // RRC \w; 2; 8; Z 0 0 C
+{
+	cf = *r8 & 1;
+	*r8 =  cf << 7 | *r8 >> 1;
+	zf = !*r8;
+	nf = 0;
+	hf = 0;
+}
+
+void
+sla8(uint8_t *r8) // SLA \w; 2; 8; Z 0 0 C
+{
+	cf = *r8 >> 7;
+	*r8 =  *r8 << 1;
+	zf = !*r8;
+	nf = 0;
+	hf = 0;
+}
+
+void
+sra8(uint8_t *r8) // SRA \w; 2; 8; Z 0 0 0
+{
+	uint8_t old_bit7 = *r8 & 1 << 7;
+	cf = *r8 & 1;
+	*r8 =  *r8 >> 1 | old_bit7;
+	zf = !*r8;
+	nf = 0;
+	hf = 0;
+}
+
+void
+srl8(uint8_t *r8) // SRL \w; 2; 8; Z 0 0 C
+{
+	cf = *r8 & 1;
+	*r8 =  *r8 >> 1;
+	zf = !*r8;
+	nf = 0;
+	hf = 0;
+}
+
+#pragma mark - Changing Bits
 
 void
 swap8(uint8_t *r8) // SWAP \w; 2; 8; Z 0 0 0
@@ -946,154 +1025,148 @@ cpu_step()
 
 			switch (opcode) {
 				case 0x00: // RLC B; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					rlc8(&b);
 					break;
 				case 0x01: // RLC C; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					rlc8(&c);
 					break;
 				case 0x02: // RLC D; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					rlc8(&d);
 					break;
 				case 0x03: // RLC E; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					rlc8(&e);
 					break;
 				case 0x04: // RLC H; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					rlc8(&h);
 					break;
 				case 0x05: // RLC L; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					rlc8(&l);
 					break;
 				case 0x06: // RLC (HL); 2; 16; Z 0 0 C
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0x07: // RLC A; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					rlc8(&a);
 					break;
 				case 0x08: // RRC B; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					rrc8(&b);
 					break;
 				case 0x09: // RRC C; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					rrc8(&c);
 					break;
 				case 0x0a: // RRC D; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					rrc8(&d);
 					break;
 				case 0x0b: // RRC E; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					rrc8(&e);
 					break;
 				case 0x0c: // RRC H; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					rrc8(&h);
 					break;
 				case 0x0d: // RRC L; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					rrc8(&l);
 					break;
 				case 0x0e: // RRC (HL); 2; 16; Z 0 0 C
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0x0f: // RRC A; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					rrc8(&a);
 					break;
 				case 0x10: // RL B; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					rl8(&b);
 					break;
-				case 0x11: { // RL C; 2; 8; Z 0 0 C
-					uint8_t oldcf = cf;
-					cf = c >> 7;
-					c = (c << 1) | oldcf;
-					zf = !c;
-					nf = 0;
-					hf = 0;
+				case 0x11: // RL C; 2; 8; Z 0 0 C
+					rl8(&c);
 					break;
-				}
 				case 0x12: // RL D; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					rl8(&d);
 					break;
 				case 0x13: // RL E; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					rl8(&e);
 					break;
 				case 0x14: // RL H; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					rl8(&h);
 					break;
 				case 0x15: // RL L; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					rl8(&l);
 					break;
 				case 0x16: // RL (HL); 2; 16; Z 0 0 C
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0x17: // RL A; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					rl8(&a);
 					break;
 				case 0x18: // RR B; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					rr8(&b);
 					break;
 				case 0x19: // RR C; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					rr8(&c);
 					break;
 				case 0x1a: // RR D; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					rr8(&d);
 					break;
 				case 0x1b: // RR E; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					rr8(&e);
 					break;
 				case 0x1c: // RR H; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					rr8(&h);
 					break;
 				case 0x1d: // RR L; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					rr8(&l);
 					break;
 				case 0x1e: // RR (HL); 2; 16; Z 0 0 C
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0x1f: // RR A; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					rr8(&a);
 					break;
 				case 0x20: // SLA B; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					sla8(&b);
 					break;
 				case 0x21: // SLA C; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					sla8(&c);
 					break;
 				case 0x22: // SLA D; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					sla8(&d);
 					break;
 				case 0x23: // SLA E; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					sla8(&e);
 					break;
 				case 0x24: // SLA H; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					sla8(&h);
 					break;
 				case 0x25: // SLA L; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					sla8(&l);
 					break;
 				case 0x26: // SLA (HL); 2; 16; Z 0 0 C
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0x27: // SLA A; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					sla8(&a);
 					break;
 				case 0x28: // SRA B; 2; 8; Z 0 0 0
-					NOT_YET_IMPLEMENTED();
+					sra8(&b);
 					break;
 				case 0x29: // SRA C; 2; 8; Z 0 0 0
-					NOT_YET_IMPLEMENTED();
+					sra8(&c);
 					break;
 				case 0x2a: // SRA D; 2; 8; Z 0 0 0
-					NOT_YET_IMPLEMENTED();
+					sra8(&d);
 					break;
 				case 0x2b: // SRA E; 2; 8; Z 0 0 0
-					NOT_YET_IMPLEMENTED();
+					sra8(&e);
 					break;
 				case 0x2c: // SRA H; 2; 8; Z 0 0 0
-					NOT_YET_IMPLEMENTED();
+					sra8(&h);
 					break;
 				case 0x2d: // SRA L; 2; 8; Z 0 0 0
-					NOT_YET_IMPLEMENTED();
+					sra8(&l);
 					break;
 				case 0x2e: // SRA (HL); 2; 16; Z 0 0 0
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0x2f: // SRA A; 2; 8; Z 0 0 0
-					NOT_YET_IMPLEMENTED();
+					sra8(&a);
 					break;
 				case 0x30: // SWAP B; 2; 8; Z 0 0 0
 					swap8(&b);
@@ -1120,28 +1193,28 @@ cpu_step()
 					swap8(&a);
 					break;
 				case 0x38: // SRL B; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					srl8(&b);
 					break;
 				case 0x39: // SRL C; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					srl8(&c);
 					break;
 				case 0x3a: // SRL D; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					srl8(&d);
 					break;
 				case 0x3b: // SRL E; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					srl8(&e);
 					break;
 				case 0x3c: // SRL H; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					srl8(&h);
 					break;
 				case 0x3d: // SRL L; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					srl8(&l);
 					break;
 				case 0x3e: // SRL (HL); 2; 16; Z 0 0 C
 					NOT_YET_IMPLEMENTED();
 					break;
 				case 0x3f: // SRL A; 2; 8; Z 0 0 C
-					NOT_YET_IMPLEMENTED();
+					srl8(&a);
 					break;
 				case 0x40: // BIT 0,B; 2; 8; Z 0 1 -
 					bit8(b, 0);
