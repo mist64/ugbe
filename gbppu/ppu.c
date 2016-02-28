@@ -42,6 +42,9 @@ io_read(uint8_t a8)
 		case rOBP1:
 		case rWX:
 		case rWY:
+		case rSTAT:
+		case rLYC:
+		case 0xFF:
 			// these behave like RAM
 			return reg[a8];
 		default:
@@ -60,8 +63,22 @@ io_write(uint16_t a8, uint8_t d8)
 			}
 			break;
 		// TODO: some ports may trigger something
-		default:
+		case rSCX:
+		case rSCY:
+		case rBGP:
+		case rOBP0:
+		case rOBP1:
+		case rWX:
+		case rWY:
+		case rSTAT:
+		case rLYC:
+		case 0xFF:
 			reg[a8] = d8;
+			break;
+		default:
+			printf("warning: I/O write 0xff%02x\n", a8);
+			reg[a8] = d8;
+			break;
 	}
 }
 
@@ -198,6 +215,23 @@ bg_step()
 void
 ppu_step_4()
 {
+	extern int cpu_ie();
+	extern void cpu_irq(int index);
+
+	uint8_t ie = io_read(0xff);
+	if (cpu_ie()) {
+		if (ie & 1 && current_y == 144 && current_x == 0) {
+			cpu_irq(0);
+		} else {
+			if (ie & 2) {
+				if (io_read(rSTAT) & 0x40 && io_read(rLYC) == current_y && current_x == 0) {
+					cpu_irq(1);
+				}
+			}
+		}
+
+	}
+
 	if (current_y <= PPU_LAST_VISIBLE_LINE) {
 
 		if (mode == mode_oam) {

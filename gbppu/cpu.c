@@ -23,8 +23,8 @@ extern void ppu_step();
 uint16_t pc = 0;
 uint16_t sp = 0;
 
-
 int interrupts_enabled = 0;
+int pending_irq = 0;
 
 #pragma mark - Registers
 
@@ -279,6 +279,10 @@ bit8(uint8_t d8, uint8_t bit) // BIT \d,\w; 2; 8; Z 0 1 -
 void
 cpu_init()
 {
+#if 0
+	disable_bootrom();
+	pc = 0x100;
+#endif
 }
 
 
@@ -291,9 +295,31 @@ int counter = 0;
 } while(0);
 
 
+#pragma mark - IRQ
+
+void
+cpu_irq(int index)
+{
+	printf("IRQ %u\n", index);
+	pending_irq |= 1 << index;
+}
+
 int
 cpu_step()
 {
+	if (interrupts_enabled && pending_irq) {
+		interrupts_enabled = 0;
+		int i;
+		for (i = 0; i < 8; i++) {
+			if (pending_irq & 1 << i) {
+				pending_irq &= ~(1 << i);
+				break;
+			}
+		}
+		printf("RST 0x%02x\n", 0x40 + i * 8);
+		rst8(0x40 + i * 8);
+	}
+
 	uint8_t opcode = fetch8();
 //			if (++counter % 100 == 0) {
 //			if (pc >= 0xe0) {
@@ -672,7 +698,7 @@ cpu_step()
 			mem_write(hl, l);
 			break;
 		case 0x76: // HALT; 1; 4; ----
-			NOT_YET_IMPLEMENTED();
+			pc--;
 			break;
 		case 0x77: // LD (HL),A; 1; 8; ----
 			mem_write(hl, a);
@@ -1756,7 +1782,8 @@ cpu_step()
 			retcc(cf);
 			break;
 		case 0xd9: // RETI; 1; 16; ----
-			NOT_YET_IMPLEMENTED();
+			interrupts_enabled = 1;
+			retcc(1);
 			break;
 		case 0xda: // JP C,a16; 3; 16/12; ----
 			jpcc(cf);
@@ -1880,4 +1907,10 @@ cpu_step()
 	}
 
 	return 0;
+}
+
+int
+cpu_ie()
+{
+	return interrupts_enabled;
 }
