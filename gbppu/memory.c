@@ -7,6 +7,7 @@
 //
 
 #include "memory.h"
+#include "ppu.h"
 
 uint8_t RAM[65536];
 

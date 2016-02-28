@@ -15,5 +15,6 @@ extern uint8_t picture[160][144];
 extern int ppu_dirty;
 
 void ppu_init();
+void ppu_step();
 
 #endif /* ppu_h */
