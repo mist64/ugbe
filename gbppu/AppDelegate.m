@@ -9,6 +9,7 @@
 #import "AppDelegate.h"
 #import "memory.h"
 #import "ppu.h"
+#import "cpu.h"
 
 @interface View : NSView
 @end
@@ -102,9 +103,6 @@ static uint8_t keys;
 @end
 
 @implementation AppDelegate
-
-extern void cpu_init();
-extern int cpu_step();
 
 - (void)applicationDidFinishLaunching:(NSNotification *)notification
 {

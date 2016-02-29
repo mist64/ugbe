@@ -9,6 +9,7 @@
 #include "ppu.h"
 #include "ppu_private.h"
 #include "memory.h"
+#include "cpu.h"
 
 uint8_t reg[256];
 
@@ -211,7 +212,7 @@ io_read(uint8_t a8)
 }
 
 void
-io_write(uint16_t a8, uint8_t d8)
+io_write(uint8_t a8, uint8_t d8)
 {
 	extern uint16_t pc;
 
@@ -471,7 +472,6 @@ ppu_step_4()
 //		printf("%c", mode + '0');
 //	}
 
-	extern int cpu_ie();
 	void cpu_update_irq();
 
 	uint8_t ie = io_read(rIE);

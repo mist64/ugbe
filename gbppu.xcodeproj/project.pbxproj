@@ -17,6 +17,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		425ADC0F1C84C88D00068F15 /* cpu.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = cpu.h; sourceTree = "<group>"; };
 		CC512A5F1C7BA65100ECFACA /* gbppu.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = gbppu.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CC512A621C7BA65100ECFACA /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		CC512A631C7BA65100ECFACA /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -68,6 +69,7 @@
 				CC512A6A1C7BA65100ECFACA /* MainMenu.xib */,
 				CC512A6D1C7BA65100ECFACA /* Info.plist */,
 				CC6486F81C803EE200637024 /* cpu.c */,
+				425ADC0F1C84C88D00068F15 /* cpu.h */,
 				CC6486FE1C82F63400637024 /* memory.c */,
 				CC6486FF1C82F63400637024 /* memory.h */,
 				CC6486FA1C8068C000637024 /* ppu.c */,
