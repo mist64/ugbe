@@ -33,6 +33,14 @@ uint8_t pending_irqs;
 
 int timer_counter;
 
+static uint8_t keys;
+
+void
+io_set_keys(uint8_t k)
+{
+	keys = k;
+}
+
 void
 timer_reset()
 {
@@ -186,6 +194,16 @@ io_read(uint8_t a8)
 		case 0xFF:
 			// these behave like RAM
 			return reg[a8];
+		case rP1:{
+			uint8_t d8 = reg[rP1] & 0xf0;
+			if (reg[rP1] & 0x20) {
+				d8 |= keys & 0xf;
+			}
+			if (reg[rP1] & 0x10) {
+				d8 |= keys >> 4;
+			}
+			return d8;
+		}
 		default:
 			printf("warning: I/O read %s (0xff%02x) -> 0x%02x\n", name_for_io_reg(a8), a8, reg[a8]);
 			return reg[a8];
@@ -213,6 +231,7 @@ io_write(uint16_t a8, uint8_t d8)
 		case rWY:
 		case rSTAT:
 		case rLYC:
+		case rP1:
 		case 0xFF:
 			reg[a8] = d8;
 			break;

@@ -50,7 +50,42 @@ mem_init()
 //	cartridge_filename = "/Users/lisa/Projects/game_boy/gbcpu/gbppu/tetris.gb";
 //	cartridge_filename = "/Users/lisa/Projects/game_boy/roms/games/Pokemon - Blaue Edition (G) [S][!].gb";
 #else
-	cartridge_filename = "/Users/mist/Documents/git/gbcpu/gbppu/tetris.gb";
+//	cartridge_filename = "/Users/mist/Documents/git/gbcpu/gbppu/tetris.gb";
+//	cartridge_filename = "/Users/mist/Documents/git/gb-timing/gb-irqtest.gb";
+//	cartridge_filename = "/Users/mist/Documents/git/gb-timing/gb-timing.gb";
+//	cartridge_filename = "/Users/mist/Documents/git/gb-platformer/gb-platformer.gb";
+
+//	cartridge_filename = "/Users/mist/Downloads/cpu_instrs/individual/01-special.gb";            // Failed ? Takes forever
+//	cartridge_filename = "/Users/mist/Downloads/cpu_instrs/individual/02-interrupts.gb";         // Failed
+//	cartridge_filename = "/Users/mist/Downloads/cpu_instrs/individual/03-op sp,hl.gb";           // Failed
+//	cartridge_filename = "/Users/mist/Downloads/cpu_instrs/individual/04-op r,imm.gb";           // Failed!
+//	cartridge_filename = "/Users/mist/Downloads/cpu_instrs/individual/05-op rp.gb";              // Failed!
+//	cartridge_filename = "/Users/mist/Downloads/cpu_instrs/individual/06-ld r,r.gb";             // Passed!
+//	cartridge_filename = "/Users/mist/Downloads/cpu_instrs/individual/07-jr,jp,call,ret,rst.gb"; // Failed
+//	cartridge_filename = "/Users/mist/Downloads/cpu_instrs/individual/08-misc instrs.gb";        // Failed
+//	cartridge_filename = "/Users/mist/Downloads/cpu_instrs/individual/09-op r,r.gb";             // Failed!
+//	cartridge_filename = "/Users/mist/Downloads/cpu_instrs/individual/10-bit ops.gb";            // Failed!
+//	cartridge_filename = "/Users/mist/Downloads/cpu_instrs/individual/11-op a,(hl).gb";          // Failed
+
+	cartridge_filename = "/Users/mist/tmp/gb/World Bowling (U).gb";
+//	cartridge_filename = "/Users/mist/tmp/gb/Tesserae (U) [!].gb";
+//	cartridge_filename = "/Users/mist/tmp/gb/Tennis (W) [!].gb";
+//	cartridge_filename = "/Users/mist/tmp/gb/Supreme 105 in 1 (Menu) [p1][b1].gb";
+//	cartridge_filename = "/Users/mist/tmp/gb/Street Rider (Sachen 4-in-1 Vol. 1) (Unl) [!].gb";
+//	cartridge_filename = "/Users/mist/tmp/gb/Soukoban (J).gb";
+//	cartridge_filename = "/Users/mist/tmp/gb/Shisenshou - Match-Mania (J).gb";
+//	cartridge_filename = "/Users/mist/tmp/gb/Serpent (U).gb";
+//	cartridge_filename = "/Users/mist/tmp/gb/Pop Up (U) [!].gb";
+//	cartridge_filename = "/Users/mist/tmp/gb/Mogura De Pon! (J).gb";
+//	cartridge_filename = "/Users/mist/tmp/gb/Dr. Mario (W) (V1.1).gb";
+//	cartridge_filename = "/Users/mist/tmp/gb/Asteroids (U).gb";
+//	cartridge_filename = "/Users/mist/tmp/gb/Bomb Jack (U).gb";
+//	cartridge_filename = "";
+//	cartridge_filename = "";
+//	cartridge_filename = "";
+//	cartridge_filename = "";
+
+
 	bootrom_filename = "/Users/mist/Documents/git/gbcpu/gbppu/DMG_ROM.bin";
 #endif
 

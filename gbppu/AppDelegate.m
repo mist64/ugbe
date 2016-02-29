@@ -41,6 +41,59 @@
 	[rep drawInRect:dirtyRect];
 }
 
+- (BOOL)acceptsFirstResponder
+{
+	return YES;
+}
+
+static uint8_t keys;
+
+- (uint8_t)keyMaskFromEvent:(NSEvent *)event
+{
+	switch ([event.characters characterAtIndex:0]) {
+		case 0xF703: // right
+			return 1;
+			break;
+		case 0xF702: // left
+			return 2;
+			break;
+		case 0xF700: // up
+			return 4;
+			break;
+		case 0xF701: // down
+			return 8;
+			break;
+		case 'a': // a
+			return 16;
+			break;
+		case 's': // b
+			return 32;
+			break;
+		case '\'': // select
+			return 64;
+			break;
+		case '\r': // start
+			return 128;
+			break;
+		default:
+			return 0;
+	}
+}
+
+- (void)keyDown:(NSEvent *)event
+{
+	NSLog(@"XXX %@ %x", event.characters, keys);
+	keys |= [self keyMaskFromEvent:event];
+	io_set_keys(keys);
+}
+
+- (void)keyUp:(NSEvent *)event
+{
+	NSLog(@"XXX %@", event.characters);
+	keys &= ~[self keyMaskFromEvent:event];
+	io_set_keys(keys);
+}
+
 @end
 
 @interface AppDelegate ()
@@ -61,6 +114,7 @@ extern int cpu_step();
 	CGRect bounds = self.window.frame;
 	bounds.origin = CGPointZero;
 	NSView *view = [[View alloc] initWithFrame:bounds];
+	[self.window makeFirstResponder:view];
 	self.window.contentView = view;
 
 	dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
@@ -83,7 +137,7 @@ extern int cpu_step();
 					[view setNeedsDisplay:YES];
 				});
 #if ! BUILD_USER_Lisa
-				[NSThread sleepForTimeInterval:1.0/60];
+//				[NSThread sleepForTimeInterval:1.0/60];
 #endif
 			}
 		}
