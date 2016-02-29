@@ -31,6 +31,50 @@ enum {
 
 uint8_t pending_irqs;
 
+int timer_counter;
+
+void
+timer_reset()
+{
+	timer_counter = 0;
+}
+
+void
+timer_step()
+{
+	if (!(reg[rTAC] & 4)) {
+		return;
+	}
+
+	int divider;
+	switch (reg[rTAC] & 3) {
+		default: // clang is stupid
+		case 0:
+			divider = 1024;
+			break;
+		case 1:
+			divider = 16;
+			break;
+		case 2:
+			divider = 64;
+			break;
+		case 3:
+			divider = 256;
+			break;
+	}
+
+//	printf("TIMER STEP %d %d %d\n", divider, timer_counter, reg[rTIMA]);
+
+	if (++timer_counter == divider) {
+		timer_counter = 0;
+		if (++reg[rTIMA] == 0) {
+			reg[rTIMA] = reg[rTMA];
+//			printf("TIMER FIRED %s:%d\n", __FILE__, __LINE__);
+			reg[rIF] |= 4;
+		}
+	}
+}
+
 static char *reg_name[] = {
 	"P1", /* 0x00 */
 	"SB", /* 0x01 */
@@ -138,11 +182,12 @@ io_read(uint8_t a8)
 		case rWY:
 		case rSTAT:
 		case rLYC:
+		case rTAC:
 		case 0xFF:
 			// these behave like RAM
 			return reg[a8];
 		default:
-			printf("warning: I/O read %s (0xff%02x)\n", name_for_io_reg(a8), a8);
+			printf("warning: I/O read %s (0xff%02x) -> 0x%02x\n", name_for_io_reg(a8), a8, reg[a8]);
 			return reg[a8];
 	}
 }
@@ -183,6 +228,11 @@ io_write(uint16_t a8, uint8_t d8)
 			reg[a8] = d8;
 			break;
 		}
+		case rTAC:
+		case rTIMA:
+			reg[a8] = d8;
+			timer_reset();
+			break;
 		default:
 			printf("warning: I/O write %s 0xff%02x <- 0x%02x (pc=%04x)\n", name_for_io_reg(a8), a8, d8, pc);
 			reg[a8] = d8;
@@ -201,7 +251,6 @@ io_clear_pending_irq(uint8_t irq)
 {
 	reg[rIF] &= ~(1 << irq);
 }
-
 
 void
 ppu_init()
@@ -397,6 +446,8 @@ bg_step()
 void
 ppu_step_4()
 {
+	timer_step();
+
 //	if ((current_x & 3) == 0) {
 //		printf("%c", mode + '0');
 //	}
