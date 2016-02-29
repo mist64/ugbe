@@ -29,12 +29,106 @@ enum {
 	mode_pixel  = 3,
 } mode;
 
+uint8_t pending_irqs;
+
+static char *reg_name[] = {
+	"P1", /* 0x00 */
+	"SB", /* 0x01 */
+	"SC", /* 0x02 */
+	"0x03",
+	"DIV", /* 0x04 */
+	"TIMA", /* 0x05 */
+	"TMA", /* 0x06 */
+	"TAC", /* 0x07 */
+	"0x08",
+	"0x09",
+	"0x0A",
+	"0x0B",
+	"0x0C",
+	"0x0D",
+	"0x0E",
+	"IF", /* 0x0F */
+	"NR10", /* 0x10 */
+	"NR11", /* 0x11 */
+	"NR12", /* 0x12 */
+	"NR13", /* 0x13 */
+	"NR14", /* 0x14 */
+	"0x15",
+	"NR21", /* 0x16 */
+	"NR22", /* 0x17 */
+	"NR23", /* 0x18 */
+	"NR24", /* 0x19 */
+	"NR30", /* 0x1A */
+	"NR31", /* 0x1B */
+	"NR32", /* 0x1C */
+	"NR33", /* 0x1D */
+	"NR34", /* 0x1E */
+	"0x1F",
+	"NR41", /* 0x20 */
+	"NR42", /* 0x21 */
+	"NR42_2", /* 0x22 */
+	"NR43", /* 0x23 */
+	"NR50", /* 0x24 */
+	"NR51", /* 0x25 */
+	"NR52", /* 0x26 */
+	"0x27",
+	"0x28",
+	"0x29",
+	"0x2A",
+	"0x2B",
+	"0x2C",
+	"0x2D",
+	"0x2E",
+	"0x2F",
+	"0x30",
+	"0x31",
+	"0x32",
+	"0x33",
+	"0x34",
+	"0x35",
+	"0x36",
+	"0x37",
+	"0x38",
+	"0x39",
+	"0x3A",
+	"0x3B",
+	"0x3C",
+	"0x3D",
+	"0x3E",
+	"0x3F",
+	"LCDC", /* 0x40 */
+	"STAT", /* 0x41 */
+	"SCY", /* 0x42 */
+	"SCX", /* 0x43 */
+	"LY", /* 0x44 */
+	"LYC", /* 0x45 */
+	"DMA", /* 0x46 */
+	"BGP", /* 0x47 */
+	"OBP0", /* 0x48 */
+	"OBP1", /* 0x49 */
+	"WY", /* 0x4A */
+	"WX", /* 0x4B */
+};
+
+char *
+name_for_io_reg(uint8_t a8)
+{
+	if (a8 == 0xff) {
+		return "IE";
+	} else if (a8 < sizeof(reg_name) / sizeof(*reg_name)) {
+		return reg_name[a8];
+	} else {
+		return "???";
+	}
+}
+
 uint8_t
 io_read(uint8_t a8)
 {
 	switch (a8) {
 		case rLY:
 			return current_y;
+		case rLCDC:
 		case rSCX:
 		case rSCY:
 		case rBGP:
@@ -48,7 +142,7 @@ io_read(uint8_t a8)
 			// these behave like RAM
 			return reg[a8];
 		default:
-			printf("warning: I/O read 0xff%02x\n", a8);
+			printf("warning: I/O read %s (0xff%02x)\n", name_for_io_reg(a8), a8);
 			return reg[a8];
 	}
 }
@@ -56,13 +150,15 @@ io_read(uint8_t a8)
 void
 io_write(uint16_t a8, uint8_t d8)
 {
+	extern uint16_t pc;
+
 	switch (a8) {
 		case 0x50:
 			if (d8 & 1) {
 				disable_bootrom();
 			}
 			break;
-		// TODO: some ports may trigger something
+		case rLCDC:
 		case rSCX:
 		case rSCY:
 		case rBGP:
@@ -75,11 +171,35 @@ io_write(uint16_t a8, uint8_t d8)
 		case 0xFF:
 			reg[a8] = d8;
 			break;
+		case rDMA: {
+			// TODO this should take a while and block access
+			// to certain memory areas
+			for (uint8_t i = 0; i < 160; i++) {
+				mem_write(0xfe00 + i, mem_read((d8 << 8) + i));
+			}
+		}
+		case rIF: {
+			// set pending IRQs
+			reg[a8] = d8;
+			break;
+		}
 		default:
-			printf("warning: I/O write 0xff%02x\n", a8);
+			printf("warning: I/O write %s 0xff%02x <- 0x%02x (pc=%04x)\n", name_for_io_reg(a8), a8, d8, pc);
 			reg[a8] = d8;
 			break;
 	}
+}
+
+uint8_t
+io_get_pending_irqs()
+{
+	return reg[rIF];
+}
+
+void
+io_clear_pending_irq(uint8_t irq)
+{
+	reg[rIF] &= ~(1 << irq);
 }
 
 
@@ -152,6 +272,68 @@ vram_get_data()
 	return vram_read(vram_address);
 }
 
+#pragma pack(1)
+typedef struct {
+	uint8_t y;
+	uint8_t x;
+	uint8_t tile;
+	uint8_t attr;
+} oamentry;
+
+struct {
+	oamentry oam;
+	uint8_t data0;
+	uint8_t data1;
+} spritegen[10];
+
+uint8_t sprites_visible;
+
+void
+oam_step()
+{
+	extern uint8_t *oamram;
+	oamentry *oam = (oamentry *)oamram;
+	int sprite_used[40];
+
+//	for (int i = 0; i < 160; i++) {
+//		printf("%x ", oamram[i]);
+//	}
+//	printf("\n");
+
+	// do all the logic in the first cycle...
+	if (!oam_mode_counter && io_read(rLCDC) & LCDCF_OBJON) {
+		// fill the 10 sprite generators with the 10 leftmost sprites
+		uint8_t sprite_height = io_read(rLCDC) & LCDCF_OBJ16 ? 16 : 8;
+
+		for (int i = 0; i < 40; i++) {
+			sprite_used[i] = 0;
+		}
+
+		sprites_visible = 0;
+		int oam_index;
+		do {
+			uint8_t minx = 255;
+			oam_index = -1;
+			for (int i = 0; i < 40; i++) {
+				if (!sprite_used[i] && oam[i].x && oam[i].y >= current_y && oam[i].y < current_y + sprite_height && oam[i].x < minx) {
+					oam_index = i;
+				}
+			}
+			if (oam_index >= 0) {
+				minx = oam[oam_index].x;
+				sprite_used[oam_index] = 1;
+				spritegen[sprites_visible].oam = oam[oam_index];
+				sprites_visible++;
+			}
+		} while (sprites_visible < 10 && oam_index >= 0);
+
+//		if (sprites_visible) {
+//			for (int j = 0; j < sprites_visible; j++) {
+//				printf("line: %d; sprit e %d: x=%d, y=%d, index=%d\n", current_y, j, spritegen[j].oam.x, spritegen[j].oam.y, spritegen[j].oam.tile);
+//			}
+//		}
+	}
+}
 
 void
 bg_step()
@@ -215,17 +397,21 @@ bg_step()
 void
 ppu_step_4()
 {
-	extern int cpu_ie();
-	extern void cpu_irq(int index);
+//	if ((current_x & 3) == 0) {
+//		printf("%c", mode + '0');
+//	}
 
-	uint8_t ie = io_read(0xff);
+	extern int cpu_ie();
+	void cpu_update_irq();
+
+	uint8_t ie = io_read(rIE);
 	if (cpu_ie()) {
 		if (ie & 1 && current_y == 144 && current_x == 0) {
-			cpu_irq(0);
+			reg[rIF] |= 1;
 		} else {
 			if (ie & 2) {
 				if (io_read(rSTAT) & 0x40 && io_read(rLYC) == current_y && current_x == 0) {
-					cpu_irq(1);
+					reg[rIF] |= 2;
 				}
 			}
 		}
@@ -235,6 +421,7 @@ ppu_step_4()
 	if (current_y <= PPU_LAST_VISIBLE_LINE) {
 
 		if (mode == mode_oam) {
+			oam_step();
 			if (++oam_mode_counter == 80) {
 				mode = mode_pixel;
 				pixel_transfer_mode_counter = 0;
@@ -253,9 +440,11 @@ ppu_step_4()
 
 	if (++current_x == PPU_CLOCKS_PER_LINE) {
 		current_x = 0;
+//		printf("\n");
 		if (++current_y == PPU_NUM_LINES) {
 			current_y = 0;
 			ppu_dirty = 1;
+//			printf("\n");
 		}
 		if (current_y <= PPU_LAST_VISIBLE_LINE) {
 			mode = mode_oam;
