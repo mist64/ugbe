@@ -20,4 +20,7 @@ void ppu_step();
 uint8_t io_get_pending_irqs();
 void io_clear_pending_irq(uint8_t irq);
 
+uint8_t io_read(uint8_t);
+void io_write(uint8_t, uint8_t);
+
 #endif /* ppu_h */

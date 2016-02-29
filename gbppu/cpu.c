@@ -6,13 +6,12 @@
 //  Copyright © 2016 Lisa Brodner. All rights reserved.
 //
 
+#include "cpu.h"
+
 #include <stdio.h>
 #include "memory.h"
 #include <assert.h>
 #include "ppu.h"
-
-extern void ppu_init();
-extern void ppu_step();
 
 
 // see: http://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html
@@ -104,7 +103,7 @@ set_hf(uint8_t old, uint8_t new) // set the half carry flag
 
 #pragma mark
 
-uint8_t
+static uint8_t
 fetch8()
 {
 	uint8_t d8 = mem_read(pc++);
@@ -112,7 +111,7 @@ fetch8()
 
 }
 
-uint16_t
+static uint16_t
 fetch16()
 {
 	uint8_t d16l = fetch8();
@@ -121,7 +120,7 @@ fetch16()
 	return d16;
 }
 
-void
+static void
 ldhlsp(uint8_t d8) //  LD HL,SP+r8; 2; 12; 0 0 H C // LDHL SP,r8
 {
 	int8_t sd8 = d8;
@@ -133,27 +132,27 @@ ldhlsp(uint8_t d8) //  LD HL,SP+r8; 2; 12; 0 0 H C // LDHL SP,r8
 	set_hf(old_hl, hl); // todo: find out what that should actually be
 }
 
-void
+static void
 push8(uint8_t d8)
 {
 	mem_write(--sp, d8);
 }
 
-void
+static void
 push16(uint16_t d16)
 {
 	push8(d16 >> 8);
 	push8(d16 & 0xff);
 }
 
-uint8_t
+static uint8_t
 pop8()
 {
 	uint8_t d8 = mem_read(sp++);
 	return d8;
 }
 
-uint16_t
+static uint16_t
 pop16()
 {
 	uint8_t d16l = pop8();
@@ -162,8 +161,10 @@ pop16()
 	return d16;
 }
 
+
 #pragma mark
-void
+
+static void
 inc8(uint8_t *r8) // INC \w 1; 4; Z 0 H -
 {
 	uint8_t old_r8 = *r8;
@@ -173,7 +174,7 @@ inc8(uint8_t *r8) // INC \w 1; 4; Z 0 H -
 	set_hf(old_r8, *r8);
 }
 
-void
+static void
 dec8(uint8_t *r8) // DEC \w 1; 4; Z 1 H -
 {
 	uint8_t old_r8 = *r8;
@@ -183,7 +184,7 @@ dec8(uint8_t *r8) // DEC \w 1; 4; Z 1 H -
 	set_hf(old_r8, *r8);
 }
 
-void
+static void
 cpa8(uint8_t d8) // CP \w; 1; 4; Z 1 H C
 {
 	// todo: make cp behave like suba
@@ -193,7 +194,7 @@ cpa8(uint8_t d8) // CP \w; 1; 4; Z 1 H C
 	cf = a < d8;
 }
 
-void
+static void
 suba8(uint8_t d8) // SUB \w; 1; 4; Z 1 H C
 {
 	zf = (a == d8);
@@ -203,7 +204,7 @@ suba8(uint8_t d8) // SUB \w; 1; 4; Z 1 H C
 	a = a - d8;
 }
 
-void
+static void
 sbca8(uint8_t d8) // SBC A,\w; 1; 4; Z 1 H C
 {
 	uint8_t old_cf = cf;
@@ -214,7 +215,7 @@ sbca8(uint8_t d8) // SBC A,\w; 1; 4; Z 1 H C
 	nf = 1;
 }
 
-void
+static void
 adda8(uint8_t d8) // ADD \w; 1; 8; Z 0 H C
 {
 	cf = (uint16_t)a + d8 >= 256;
@@ -224,7 +225,7 @@ adda8(uint8_t d8) // ADD \w; 1; 8; Z 0 H C
 	nf = 0;
 }
 
-void
+static void
 adca8(uint8_t d8) // ADC A,\w; 1; 4; Z 0 H C
 {
 	uint8_t old_cf = cf;
@@ -235,7 +236,7 @@ adca8(uint8_t d8) // ADC A,\w; 1; 4; Z 0 H C
 	nf = 0;
 }
 
-void
+static void
 addhl(uint16_t d16) // ADD HL,\w\w; 1; 8; - 0 H C
 {
 	cf = (uint32_t)hl + d16 >= 65536;
@@ -244,7 +245,7 @@ addhl(uint16_t d16) // ADD HL,\w\w; 1; 8; - 0 H C
 	nf = 0;
 }
 
-void
+static void
 addsp(uint8_t d8) // ADD SP,r8; 2; 16; 0 0 H C
 {
 	cf = (uint32_t)sp + d8 >= 65536;
@@ -256,7 +257,8 @@ addsp(uint8_t d8) // ADD SP,r8; 2; 16; 0 0 H C
 
 
 #pragma mark - Jumping
-void
+
+static void
 jrcc(int condition) // jump relative condition code
 {
 	int8_t r8 = fetch8();
@@ -265,7 +267,7 @@ jrcc(int condition) // jump relative condition code
 	}
 }
 
-void
+static void
 jpcc(int condition) // jump condition code
 {
 	int16_t d16 = fetch16();
@@ -274,14 +276,14 @@ jpcc(int condition) // jump condition code
 	}
 }
 
-void
+static void
 rst8(uint8_t d8)
 {
 	push16(pc);
 	pc = d8;
 }
 
-void
+static void
 retcc(int condition)
 {
 	if (condition) {
@@ -289,7 +291,7 @@ retcc(int condition)
 	}
 }
 
-void
+static void
 callcc(int condition)
 {
 	uint16_t a16 = fetch16();
@@ -299,8 +301,10 @@ callcc(int condition)
 	}
 }
 
+
 #pragma mark - Bitwise Boolean Operations
-void
+
+static void
 anda(uint8_t d8) // AND \w; 1; 4; Z 0 1 0
 {
 	a = a & d8;
@@ -310,7 +314,7 @@ anda(uint8_t d8) // AND \w; 1; 4; Z 0 1 0
 	cf = 0;
 }
 
-void
+static void
 ora(uint8_t d8) // OR \w; 1; 4; Z 0 0 0
 {
 	a = a | d8;
@@ -320,7 +324,7 @@ ora(uint8_t d8) // OR \w; 1; 4; Z 0 0 0
 	cf = 0;
 }
 
-void
+static void
 xora(uint8_t d8) // XOR \w; 1; 4; Z 0 0 0
 {
 	a = a ^ d8;
@@ -330,8 +334,10 @@ xora(uint8_t d8) // XOR \w; 1; 4; Z 0 0 0
 	cf = 0;
 }
 
+
 #pragma mark - Shifting
-void
+
+static void
 rl8(uint8_t *r8) // RL \w; 2; 8; Z 0 0 C
 {
 	uint8_t old_cf = cf;
@@ -342,7 +348,7 @@ rl8(uint8_t *r8) // RL \w; 2; 8; Z 0 0 C
 	hf = 0;
 }
 
-void
+static void
 rlc8(uint8_t *r8) // RLC \w; 2; 8; Z 0 0 C
 {
 	cf = *r8 >> 7;
@@ -352,7 +358,7 @@ rlc8(uint8_t *r8) // RLC \w; 2; 8; Z 0 0 C
 	hf = 0;
 }
 
-void
+static void
 rr8(uint8_t *r8) // RR \w; 2; 8; Z 0 0 C
 {
 	uint8_t old_cf = cf;
@@ -363,7 +369,7 @@ rr8(uint8_t *r8) // RR \w; 2; 8; Z 0 0 C
 	hf = 0;
 }
 
-void
+static void
 rrc8(uint8_t *r8) // RRC \w; 2; 8; Z 0 0 C
 {
 	cf = *r8 & 1;
@@ -373,7 +379,7 @@ rrc8(uint8_t *r8) // RRC \w; 2; 8; Z 0 0 C
 	hf = 0;
 }
 
-void
+static void
 sla8(uint8_t *r8) // SLA \w; 2; 8; Z 0 0 C
 {
 	cf = *r8 >> 7;
@@ -383,7 +389,7 @@ sla8(uint8_t *r8) // SLA \w; 2; 8; Z 0 0 C
 	hf = 0;
 }
 
-void
+static void
 sra8(uint8_t *r8) // SRA \w; 2; 8; Z 0 0 0
 {
 	uint8_t old_bit7 = *r8 & 1 << 7;
@@ -394,7 +400,7 @@ sra8(uint8_t *r8) // SRA \w; 2; 8; Z 0 0 0
 	hf = 0;
 }
 
-void
+static void
 srl8(uint8_t *r8) // SRL \w; 2; 8; Z 0 0 C
 {
 	cf = *r8 & 1;
@@ -404,9 +410,10 @@ srl8(uint8_t *r8) // SRL \w; 2; 8; Z 0 0 C
 	hf = 0;
 }
 
+
 #pragma mark - Changing Bits
 
-void
+static void
 swap8(uint8_t *r8) // SWAP \w; 2; 8; Z 0 0 0
 {
 	*r8 = *r8 << 4 & *r8 >> 4;
@@ -416,7 +423,7 @@ swap8(uint8_t *r8) // SWAP \w; 2; 8; Z 0 0 0
 	cf = 0;
 }
 
-void
+static void
 bit8(uint8_t d8, uint8_t bit) // BIT \d,\w; 2; 8; Z 0 1 -
 {
 	zf = !(d8 & 1 << bit);
@@ -424,13 +431,13 @@ bit8(uint8_t d8, uint8_t bit) // BIT \d,\w; 2; 8; Z 0 1 -
 	hf = 1;
 }
 
-void
+static void
 set8(uint8_t *r8, uint8_t bit) // SET \d,\w; 2; 8; ----
 {
 	*r8 |= 1 << bit;
 }
 
-void
+static void
 sethl(uint8_t bit)
 {
 	uint8_t d8 = mem_read(hl);
@@ -438,19 +445,20 @@ sethl(uint8_t bit)
 	mem_write(hl, d8);
 }
 
-void
+static void
 res8(uint8_t *r8, uint8_t bit) // RES \d,\w; 2; 8; ----
 {
 	*r8 &= ~(1 << bit);
 }
 
-void
+static void
 reshl(uint8_t bit)
 {
 	uint8_t d8 = mem_read(hl);
 	res8(&d8, bit);
 	mem_write(hl, d8);
 }
+
 
 #pragma mark - Init
 

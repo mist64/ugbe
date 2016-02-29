@@ -133,7 +133,6 @@ mem_read(uint16_t a16)
 	} else if (a16 >= 0xfe00 && a16 < 0xfea0) {
 		return oamram[a16 - 0xfe00];
 	} else if ((a16 >= 0xff00 && a16 < 0xff80) || a16 == 0xffff) {
-		extern uint8_t io_read(uint8_t);
 		return io_read(a16 & 0xff);
 	} else if (a16 >= 0xff80) {
 		return hiram[a16 - 0xff80];
@@ -161,7 +160,6 @@ mem_write_internal(uint16_t a16, uint8_t d8)
 	} else if (a16 >= 0xfe00 && a16 < 0xfea0) {
 		oamram[a16 - 0xfe00] = d8;
 	} else if ((a16 >= 0xff00 && a16 < 0xff80) || a16 == 0xffff) {
-		extern void io_write(uint8_t, uint8_t);
 		io_write(a16 & 0xff, d8);
 	} else if (a16 >= 0xff80) {
 		hiram[a16 - 0xff80] = d8;
