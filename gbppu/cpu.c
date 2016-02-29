@@ -240,7 +240,7 @@ static void
 addhl(uint16_t d16) // ADD HL,\w\w; 1; 8; - 0 H C
 {
 	cf = (uint32_t)hl + d16 >= 65536;
-	set_hf(hl, hl + d16);
+	set_hf(hl, hl + d16); // TODO: verify
 	hl = hl + d16;
 	nf = 0;
 }
@@ -250,7 +250,7 @@ addsp(uint8_t d8) // ADD SP,r8; 2; 16; 0 0 H C
 {
 	int8_t sd8 = d8;
 	cf = (uint32_t)sp + sd8 >= 65536;
-	set_hf(sp, sp + sd8);
+	set_hf(sp, sp + sd8); // TODO: verify
 	sp = sp + sd8;
 	zf = 0;
 	nf = 0;
@@ -353,7 +353,7 @@ static void
 rlc8(uint8_t *r8) // RLC \w; 2; 8; Z 0 0 C
 {
 	cf = *r8 >> 7;
-	*r8 = *r8 << 1 | cf;
+	*r8 = (*r8 << 1) | cf;
 	zf = !*r8;
 	nf = 0;
 	hf = 0;
@@ -364,7 +364,7 @@ rr8(uint8_t *r8) // RR \w; 2; 8; Z 0 0 C
 {
 	uint8_t old_cf = cf;
 	cf = *r8 & 1;
-	*r8 =  old_cf << 7 | *r8 >> 1;
+	*r8 = (old_cf << 7) | (*r8 >> 1);
 	zf = !*r8;
 	nf = 0;
 	hf = 0;
@@ -374,7 +374,7 @@ static void
 rrc8(uint8_t *r8) // RRC \w; 2; 8; Z 0 0 C
 {
 	cf = *r8 & 1;
-	*r8 =  cf << 7 | *r8 >> 1;
+	*r8 = (cf << 7) | (*r8 >> 1);
 	zf = !*r8;
 	nf = 0;
 	hf = 0;
@@ -393,9 +393,9 @@ sla8(uint8_t *r8) // SLA \w; 2; 8; Z 0 0 C
 static void
 sra8(uint8_t *r8) // SRA \w; 2; 8; Z 0 0 0
 {
-	uint8_t old_bit7 = *r8 & 1 << 7;
+	uint8_t old_bit7 = *r8 & (1 << 7);
 	cf = *r8 & 1;
-	*r8 =  *r8 >> 1 | old_bit7;
+	*r8 = (*r8 >> 1) | old_bit7;
 	zf = !*r8;
 	nf = 0;
 	hf = 0;
@@ -405,7 +405,7 @@ static void
 srl8(uint8_t *r8) // SRL \w; 2; 8; Z 0 0 C
 {
 	cf = *r8 & 1;
-	*r8 =  *r8 >> 1;
+	*r8 = *r8 >> 1;
 	zf = !*r8;
 	nf = 0;
 	hf = 0;
@@ -417,7 +417,7 @@ srl8(uint8_t *r8) // SRL \w; 2; 8; Z 0 0 C
 static void
 swap8(uint8_t *r8) // SWAP \w; 2; 8; Z 0 0 0
 {
-	*r8 = *r8 << 4 & *r8 >> 4;
+	*r8 = (*r8 << 4) | (*r8 >> 4);
 	zf = !*r8;
 	nf = 0;
 	hf = 0;
@@ -427,7 +427,7 @@ swap8(uint8_t *r8) // SWAP \w; 2; 8; Z 0 0 0
 static void
 bit8(uint8_t d8, uint8_t bit) // BIT \d,\w; 2; 8; Z 0 1 -
 {
-	zf = !(d8 & 1 << bit);
+	zf = !(d8 & (1 << bit));
 	nf = 0;
 	hf = 1;
 }
@@ -506,7 +506,7 @@ cpu_step()
 			}
 		}
 		io_clear_pending_irq(i);
-		printf("RST 0x%02x\n", 0x40 + i * 8);
+//		printf("RST 0x%02x\n", 0x40 + i * 8);
 		rst8(0x40 + i * 8);
 		interrupt_handled = 1;
 	}
