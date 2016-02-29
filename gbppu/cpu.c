@@ -248,9 +248,10 @@ addhl(uint16_t d16) // ADD HL,\w\w; 1; 8; - 0 H C
 static void
 addsp(uint8_t d8) // ADD SP,r8; 2; 16; 0 0 H C
 {
-	cf = (uint32_t)sp + d8 >= 65536;
-	set_hf(sp, sp + d8);
-	sp = sp + d8;
+	int8_t sd8 = d8;
+	cf = (uint32_t)sp + sd8 >= 65536;
+	set_hf(sp, sp + sd8);
+	sp = sp + sd8;
 	zf = 0;
 	nf = 0;
 }
