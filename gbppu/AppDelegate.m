@@ -54,28 +54,20 @@ static uint8_t keys;
 	switch ([event.characters characterAtIndex:0]) {
 		case 0xF703: // right
 			return 1;
-			break;
 		case 0xF702: // left
 			return 2;
-			break;
 		case 0xF700: // up
 			return 4;
-			break;
 		case 0xF701: // down
 			return 8;
-			break;
 		case 'a': // a
 			return 16;
-			break;
 		case 's': // b
 			return 32;
-			break;
 		case '\'': // select
 			return 64;
-			break;
 		case '\r': // start
 			return 128;
-			break;
 		default:
 			return 0;
 	}
