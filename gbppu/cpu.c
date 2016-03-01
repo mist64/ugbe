@@ -551,9 +551,12 @@ cpu_step()
 			hf = 0;
 			break;
 		}
-		case 0x08: // LD (a16),SP; 3; 20; ----
-			mem_write(fetch16(), sp);
+		case 0x08: { // LD (a16),SP; 3; 20; ----
+			uint16_t a16 = fetch16();
+			mem_write(a16, sp & 0xff);
+			mem_write(a16 + 1, sp >> 8);
 			break;
+		}
 		case 0x09: // ADD HL,BC; 1; 8; - 0 H C
 			addhl(bc);
 			break;
