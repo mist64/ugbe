@@ -75,14 +75,12 @@ static uint8_t keys;
 
 - (void)keyDown:(NSEvent *)event
 {
-	NSLog(@"XXX %@ %x", event.characters, keys);
 	keys |= [self keyMaskFromEvent:event];
 	io_set_keys(keys);
 }
 
 - (void)keyUp:(NSEvent *)event
 {
-	NSLog(@"XXX %@", event.characters);
 	keys &= ~[self keyMaskFromEvent:event];
 	io_set_keys(keys);
 }

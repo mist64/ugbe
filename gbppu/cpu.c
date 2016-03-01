@@ -512,7 +512,7 @@ cpu_step()
 			io_clear_pending_irq(i);
 		}
 		halted = 0;
-		printf("RST 0x%02x\n", 0x40 + i * 8);
+//		printf("RST 0x%02x\n", 0x40 + i * 8);
 		rst8(0x40 + i * 8);
 	}
 

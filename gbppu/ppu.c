@@ -288,7 +288,7 @@ ppu_init()
 int
 ppu_output_pixel(uint8_t p)
 {
-	if (pixel_x++ < 160) {
+	if (++pixel_x < 160) {
 		picture[pixel_x][pixel_y] = p;
 		return 1;
 	} else {
