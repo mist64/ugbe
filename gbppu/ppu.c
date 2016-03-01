@@ -263,7 +263,7 @@ io_write(uint8_t a8, uint8_t d8)
 uint8_t
 io_get_pending_irqs()
 {
-	return reg[rIF];
+	return reg[rIF] & reg[rIE];
 }
 
 void

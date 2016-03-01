@@ -492,23 +492,28 @@ int counter = 0;
 
 #pragma mark - IRQ
 
+int halted = 0;
+
 int
 cpu_step()
 {
-	int interrupt_handled = 0;
 	uint8_t pending_irqs = io_get_pending_irqs();
-	while (interrupts_enabled && pending_irqs) {
+	while ((interrupts_enabled || halted) && pending_irqs) {
 		interrupts_enabled = 0;
 		int i;
 		for (i = 0; i < 8; i++) {
-			if (pending_irqs & 1 << i) {
+			if (pending_irqs & (1 << i)) {
 				break;
 			}
 		}
-		io_clear_pending_irq(i);
-//		printf("RST 0x%02x\n", 0x40 + i * 8);
+		if (halted) {
+			pc += 2; // DMG bug: skip instruction after HALT
+		} else {
+			io_clear_pending_irq(i);
+		}
+		halted = 0;
+		printf("RST 0x%02x\n", 0x40 + i * 8);
 		rst8(0x40 + i * 8);
-		interrupt_handled = 1;
 	}
 
 	uint8_t opcode = fetch8();
@@ -901,9 +906,8 @@ cpu_step()
 			mem_write(hl, l);
 			break;
 		case 0x76: // HALT; 1; 4; ----
-			if (!interrupt_handled) {
-				pc--;
-			}
+			halted = 1;
+			pc--;
 			break;
 		case 0x77: // LD (HL),A; 1; 8; ----
 			mem_write(hl, a);
