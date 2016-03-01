@@ -198,10 +198,10 @@ io_read(uint8_t a8)
 		case rP1:{
 			uint8_t d8 = reg[rP1] & 0xf0;
 			if (reg[rP1] & 0x20) {
-				d8 |= keys & 0xf;
+				d8 |= (keys & 0xf) ^ 0xf;
 			}
 			if (reg[rP1] & 0x10) {
-				d8 |= keys >> 4;
+				d8 |= (keys >> 4) ^ 0xf;
 			}
 			return d8;
 		}
