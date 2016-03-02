@@ -91,13 +91,13 @@ union reg16_t reg16_hl;
 #pragma mark - Helper
 
 void
-set_hf(uint8_t old, uint8_t new) // set the half carry flag
+set_hf(uint8_t bit, uint16_t da, uint16_t db, uint8_t neg) // set the half carry flag
 {
-	int hf_v1 = (new & (1 << 4)) != (old & (1 << 4));
-	int hf_v2  = ((new ^ old) >> 4) & 1;
-	int hf_v3  = !!((new ^ old) & 0x10);
-	assert((hf_v1 == hf_v2) && (hf_v2 == hf_v3));
-	hf = hf_v1;
+	int hf_v1;
+	uint32_t bb = 1 << bit;
+	uint32_t mask = bb - 1;
+	hf_v1 = ((da & mask) + (db & mask)) >= bb;
+	hf = hf_v1 ^ neg;
 }
 
 
@@ -123,13 +123,12 @@ fetch16()
 static void
 ldhlsp(uint8_t d8) //  LD HL,SP+r8; 2; 12; 0 0 H C // LDHL SP,r8
 {
-	int8_t sd8 = d8;
-	uint8_t old_hl = hl;
-	cf = (uint32_t)sp + sd8 >= 65536;
-	hl = sp + sd8;
+	uint16_t d16 = (uint16_t)(int8_t)d8;
+	cf = (uint16_t)(uint8_t)sp + (uint8_t)d16 >= 256;
+	hl = sp + d16;
 	zf = 0;
 	nf = 0;
-	set_hf(old_hl, hl); // todo: find out what that should actually be
+	set_hf(4, sp, d16, 0);
 }
 
 static void
@@ -171,7 +170,7 @@ inc8(uint8_t *r8) // INC \w 1; 4; Z 0 H -
 	(*r8)++;
 	zf = !*r8;
 	nf = 0;
-	set_hf(old_r8, *r8);
+	set_hf(4, old_r8, 1, nf);
 }
 
 static void
@@ -181,7 +180,7 @@ dec8(uint8_t *r8) // DEC \w 1; 4; Z 1 H -
 	(*r8)--;
 	zf = !*r8;
 	nf = 1;
-	set_hf(old_r8, *r8);
+	set_hf(4, old_r8, -1, nf);
 }
 
 static void
@@ -190,7 +189,7 @@ cpa8(uint8_t d8) // CP \w; 1; 4; Z 1 H C
 	// todo: make cp behave like suba
 	zf = (a == d8);
 	nf = 1;
-	set_hf(a, a - d8);
+	set_hf(4, a, -d8, nf);
 	cf = a < d8;
 }
 
@@ -199,7 +198,7 @@ suba8(uint8_t d8) // SUB \w; 1; 4; Z 1 H C
 {
 	zf = (a == d8);
 	nf = 1;
-	set_hf(a, a - d8);
+	set_hf(4, a, -d8, nf);
 	cf = a < d8;
 	a = a - d8;
 }
@@ -209,20 +208,20 @@ sbca8(uint8_t d8) // SBC A,\w; 1; 4; Z 1 H C
 {
 	uint8_t old_cf = cf;
 	cf = (uint16_t)a - (d8 + old_cf) >= 256;
-	set_hf(a, a - (d8 + old_cf));
+	nf = 1;
+	set_hf(4, a, -(d8 + old_cf), nf);
 	a = a - (d8 + old_cf);
 	zf = !a;
-	nf = 1;
 }
 
 static void
 adda8(uint8_t d8) // ADD \w; 1; 8; Z 0 H C
 {
 	cf = (uint16_t)a + d8 >= 256;
-	set_hf(a, a + d8);
+	nf = 0;
+	set_hf(4, a, d8, nf);
 	a = a + d8;
 	zf = !a;
-	nf = 0;
 }
 
 static void
@@ -230,30 +229,32 @@ adca8(uint8_t d8) // ADC A,\w; 1; 4; Z 0 H C
 {
 	uint8_t old_cf = cf;
 	cf = (uint16_t)a + d8 + old_cf >= 256;
-	set_hf(a, a + d8 + old_cf);
+	nf = 0;
+	set_hf(4, a, d8 + old_cf, nf);
 	a = a + d8 + old_cf;
 	zf = !a;
-	nf = 0;
 }
 
 static void
 addhl(uint16_t d16) // ADD HL,\w\w; 1; 8; - 0 H C
 {
+	uint16_t old_hl = hl;
 	cf = (uint32_t)hl + d16 >= 65536;
-	set_hf(hl, hl + d16); // TODO: verify
-	hl = hl + d16;
 	nf = 0;
+	hl = hl + d16;
+	set_hf(12, old_hl, d16, nf);
 }
 
 static void
 addsp(uint8_t d8) // ADD SP,r8; 2; 16; 0 0 H C
 {
-	int8_t sd8 = d8;
-	cf = (uint32_t)sp + sd8 >= 65536;
-	set_hf(sp, sp + sd8); // TODO: verify
-	sp = sp + sd8;
-	zf = 0;
+	uint16_t old_sp = sp;
+	uint16_t d16 = (uint16_t)(int8_t)d8;
+	cf = (uint16_t)(uint8_t)sp + (uint8_t)d16 >= 256;
 	nf = 0;
+	sp = sp + d16;
+	set_hf(4, old_sp, d16, 0);
+	zf = 0;
 }
 
 
@@ -518,9 +519,9 @@ cpu_step()
 
 	uint8_t opcode = fetch8();
 //			if (++counter % 100 == 0) {
-//			if (!is_bootrom_enabled()) {
+			if (!is_bootrom_enabled()) {
 //				printf("A=%02x BC=%04x DE=%04x HL=%04x SP=%04x PC=%04x (ZF=%d,NF=%d,HF=%d,CF=%d) LY=%02x - opcode 0x%02x\n", a, bc, de, hl, sp, pc-1, zf, nf, hf, cf, mem_read(0xff44), opcode);
-//			}
+			}
 
 	switch (opcode) {
 		case 0x00: // NOP; 1; 4; ----
