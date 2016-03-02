@@ -285,10 +285,16 @@ ppu_init()
 	pixel_y = 0;
 }
 
+uint8_t oam_get_pixel(uint8_t x);
+
 int
 ppu_output_pixel(uint8_t p)
 {
 	if (++pixel_x < 160) {
+		uint8_t p2 = oam_get_pixel(pixel_x);
+		if (p2 != 255) {
+			p = p2;
+		}
 		picture[pixel_x][pixel_y] = p;
 		return 1;
 	} else {
@@ -357,6 +363,30 @@ struct {
 
 uint8_t sprites_visible;
 
+uint8_t
+oam_get_pixel(uint8_t x)
+{
+	uint8_t p = 255;
+	if (sprites_visible) {
+		for (int j = 0; j < sprites_visible; j++) {
+			//				printf("line: %d; sprit e %d: x=%d, y=%d, index=%d\n", current_y, j, spritegen[j].oam.x, spritegen[j].oam.y, spritegen[j].oam.tile);
+			uint8_t sprx = spritegen[j].oam.x - 8;
+			if (x >= sprx && x <= sprx + 8) {
+				uint8_t i = 7 - (x - sprx);
+				int b0 = (spritegen[j].data0 >> i) & 1;
+				int b1 = (spritegen[j].data1 >> i) & 1;
+				uint8_t p2 = b0 | (b1 << 1);
+				if (p2) {
+					p = p2;
+					break;
+				}
+//				printf("XXX: %d; sprite %d: x=%d, y=%d, index=%d, data=%02x/%02x -> p=%d\n", current_y, j, spritegen[j].oam.x, spritegen[j].oam.y, spritegen[j].oam.tile, spritegen[j].data0, spritegen[j].data1, i);
+			}
+		}
+	}
+	return p;
+}
+
 void
 oam_step()
 {
@@ -384,7 +414,8 @@ oam_step()
 			uint8_t minx = 255;
 			oam_index = -1;
 			for (int i = 0; i < 40; i++) {
-				if (!sprite_used[i] && oam[i].x && oam[i].y >= current_y && oam[i].y < current_y + sprite_height && oam[i].x < minx) {
+				uint8_t spry = oam[i].y - sprite_height;
+				if (!sprite_used[i] && oam[i].x && spry >= current_y && spry < current_y + sprite_height && oam[i].x < minx) {
 					oam_index = i;
 				}
 			}
@@ -396,11 +427,15 @@ oam_step()
 			}
 		} while (sprites_visible < 10 && oam_index >= 0);
 
-//		if (sprites_visible) {
-//			for (int j = 0; j < sprites_visible; j++) {
+		if (sprites_visible) {
+			for (int j = 0; j < sprites_visible; j++) {
 //				printf("line: %d; sprit e %d: x=%d, y=%d, index=%d\n", current_y, j, spritegen[j].oam.x, spritegen[j].oam.y, spritegen[j].oam.tile);
-//			}
-//		}
+				uint16_t address = 0x8000 + 16 * spritegen[j].oam.tile + ((current_y - spritegen[j].oam.y) & (sprite_height - 1)) * 2;
+				spritegen[j].data0 = vram_read(address);
+				spritegen[j].data1 = vram_read(address + 1);
+//				printf("line: %d; sprite %d: x=%d, y=%d, index=%d, address=%04x data=%02x/%02x\n", current_y, j, spritegen[j].oam.x, spritegen[j].oam.y, spritegen[j].oam.tile, address, spritegen[j].data0, spritegen[j].data1);
+			}
+		}
 	}
 }
 
