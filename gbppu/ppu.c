@@ -372,7 +372,10 @@ oam_get_pixel(uint8_t x)
 			//				printf("line: %d; sprit e %d: x=%d, y=%d, index=%d\n", current_y, j, spritegen[j].oam.x, spritegen[j].oam.y, spritegen[j].oam.tile);
 			uint8_t sprx = spritegen[j].oam.x - 8;
 			if (x >= sprx && x <= sprx + 8) {
-				uint8_t i = 7 - (x - sprx);
+				uint8_t i = x - sprx;
+				if (!(spritegen[j].oam.attr & 0x20)) { // X flip
+					i = 7 - i;
+				}
 				int b0 = (spritegen[j].data0 >> i) & 1;
 				int b1 = (spritegen[j].data1 >> i) & 1;
 				uint8_t p2 = b0 | (b1 << 1);
@@ -414,8 +417,8 @@ oam_step()
 			uint8_t minx = 255;
 			oam_index = -1;
 			for (int i = 0; i < 40; i++) {
-				uint8_t spry = oam[i].y - sprite_height;
-				if (!sprite_used[i] && oam[i].x && spry >= current_y && spry < current_y + sprite_height && oam[i].x < minx) {
+				uint8_t spry = oam[i].y - 16;
+				if (!sprite_used[i] && oam[i].x && current_y >= spry && current_y < spry + sprite_height && oam[i].x < minx) {
 					oam_index = i;
 				}
 			}
@@ -430,7 +433,11 @@ oam_step()
 		if (sprites_visible) {
 			for (int j = 0; j < sprites_visible; j++) {
 //				printf("line: %d; sprit e %d: x=%d, y=%d, index=%d\n", current_y, j, spritegen[j].oam.x, spritegen[j].oam.y, spritegen[j].oam.tile);
-				uint16_t address = 0x8000 + 16 * spritegen[j].oam.tile + ((current_y - spritegen[j].oam.y) & (sprite_height - 1)) * 2;
+				uint8_t i = ((current_y - spritegen[j].oam.y) & (sprite_height - 1));
+				if (spritegen[j].oam.attr & 0x40) { // Y flip
+					i = 7 - i;
+				}
+				uint16_t address = 0x8000 + 16 * spritegen[j].oam.tile + i * 2;
 				spritegen[j].data0 = vram_read(address);
 				spritegen[j].data1 = vram_read(address + 1);
 //				printf("line: %d; sprite %d: x=%d, y=%d, index=%d, address=%04x data=%02x/%02x\n", current_y, j, spritegen[j].oam.x, spritegen[j].oam.y, spritegen[j].oam.tile, address, spritegen[j].data0, spritegen[j].data1);
