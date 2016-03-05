@@ -13,13 +13,20 @@
 #include <assert.h>
 #include "ppu.h"
 
+// see references:
 
-// see: http://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html
-// see: http://gbdev.gg8.se/wiki/articles/Gameboy_Bootstrap_ROM
-// see: http://meatfighter.com/gameboy/GBCribSheet000129.pdf
-// see: http://www.z80.info/z80code.htm
-// see: http://z80-heaven.wikidot.com/instructions-set
-// see: http://gameboy.mongenel.com/dmg/opcodes.html
+// - bootstrap rom
+// http://gbdev.gg8.se/wiki/articles/Gameboy_Bootstrap_ROM
+
+// - gb instructions
+// http://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html
+// http://meatfighter.com/gameboy/GBCribSheet000129.pdf
+// http://gameboy.mongenel.com/dmg/opcodes.html
+
+// - z80 instructions
+// http://www.z80.info/z80code.htm
+// http://z80-heaven.wikidot.com/instructions-set
+
 
 uint16_t pc = 0;
 uint16_t sp = 0;
@@ -602,9 +609,9 @@ cpu_step()
 			d = fetch8();
 			break;
 		case 0x17: { // RLA; 1; 4; 0 0 0 C
-			uint8_t oldcf = cf;
+			uint8_t old_cf = cf;
 			cf = a >> 7;
-			a = (a << 1) | oldcf;
+			a = (a << 1) | old_cf;
 			zf = 0;
 			nf = 0;
 			hf = 0;
