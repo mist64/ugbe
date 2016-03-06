@@ -6,6 +6,7 @@
 //  Copyright © 2016 Michael Steil. All rights reserved.
 //
 
+#include <assert.h>
 #include "ppu.h"
 #include "ppu_private.h"
 #include "memory.h"
@@ -176,87 +177,206 @@ name_for_io_reg(uint8_t a8)
 }
 
 uint8_t
-io_read(uint8_t a8)
+buttons_read()
+{
+	uint8_t d8 = reg[rP1] & 0xf0;
+	if (reg[rP1] & 0x20) {
+		d8 |= (keys & 0xf) ^ 0xf;
+	}
+	if (reg[rP1] & 0x10) {
+		d8 |= (keys >> 4) ^ 0xf;
+	}
+	return d8;
+}
+
+uint8_t
+serial_read(uint8_t a8)
+{
+	printf("warning: serial read %s (0xff%02x) -> 0x%02x\n", name_for_io_reg(a8), a8, reg[a8]);
+	return 0xff;
+}
+
+uint8_t
+timer_read(uint8_t a8)
+{
+	// these behave like RAM
+	return reg[a8];
+}
+
+uint8_t
+irq_read(uint8_t a8)
+{
+	// these behave like RAM
+	return reg[a8];
+}
+
+uint8_t
+sound_read(uint8_t a8)
+{
+	printf("warning: sound read %s (0xff%02x) -> 0x%02x\n", name_for_io_reg(a8), a8, reg[a8]);
+	return 0xff;
+}
+
+uint8_t
+ppu_read(uint8_t a8)
 {
 	switch (a8) {
-		case rLY:
+		case rLCDC: /* 0x40 */
+			return reg[a8];
+		case rSTAT: /* 0x41 */
+			return reg[a8];
+		case rSCY:  /* 0x42 */
+			return reg[a8];
+		case rSCX:  /* 0x43 */
+			return reg[a8];
+		case rLY:   /* 0x44 */
 			return current_y;
-		case rLCDC:
-		case rSCX:
-		case rSCY:
-		case rBGP:
-		case rOBP0:
-		case rOBP1:
-		case rWX:
-		case rWY:
-		case rSTAT:
-		case rLYC:
-		case rTAC:
-		case 0xFF:
-			// these behave like RAM
+		case rLYC:  /* 0x45 */
 			return reg[a8];
-		case rP1:{
-			uint8_t d8 = reg[rP1] & 0xf0;
-			if (reg[rP1] & 0x20) {
-				d8 |= (keys & 0xf) ^ 0xf;
-			}
-			if (reg[rP1] & 0x10) {
-				d8 |= (keys >> 4) ^ 0xf;
-			}
-			return d8;
-		}
-		default:
-			printf("warning: I/O read %s (0xff%02x) -> 0x%02x\n", name_for_io_reg(a8), a8, reg[a8]);
+		case rDMA:  /* 0x46 */
 			return reg[a8];
+		case rBGP:  /* 0x47 */
+			return reg[a8];
+		case rOBP0: /* 0x48 */
+			return reg[a8];
+		case rOBP1: /* 0x49 */
+			return reg[a8];
+		case rWY:   /* 0x4A */
+			return reg[a8];
+		case rWX:   /* 0x4B */
+			return reg[a8];
+	}
+	assert(0);
+}
+
+uint8_t
+io_read(uint8_t a8)
+{
+	if (a8 == 0x00) {
+		return buttons_read();
+	} else if (a8 == 0x01 || a8 == 0x02) {
+		return serial_read(a8);
+	} else if (a8 >= 0x04 && a8 <= 0x07) {
+		return timer_read(a8);
+	} else if (a8 == 0x0F || a8 == 0xFF) {
+		return irq_read(a8);
+	} else if (a8 >= 0x10 && a8 <= 0x26) {
+		return sound_read(a8);
+	} else if (a8 >= 0x40 && a8 <= 0x4b) {
+		return ppu_read(a8);
+	} else {
+		// unassigned
+		return 0xff;
 	}
 }
 
 void
-io_write(uint8_t a8, uint8_t d8)
+buttons_write(uint8_t a8, uint8_t d8)
 {
-	extern uint16_t pc;
+	reg[a8] = d8;
+}
 
+void
+serial_write(uint8_t a8, uint8_t d8)
+{
+	reg[a8] = d8;
+	printf("warning: serial I/O write %s 0xff%02x <- 0x%02x\n", name_for_io_reg(a8), a8, d8);
+}
+
+void
+timer_write(uint8_t a8, uint8_t d8)
+{
 	switch (a8) {
-		case 0x50:
-			if (d8 & 1) {
-				disable_bootrom();
-			}
-			break;
-		case rLCDC:
-		case rSCX:
-		case rSCY:
-		case rBGP:
-		case rOBP0:
-		case rOBP1:
-		case rWX:
-		case rWY:
-		case rSTAT:
-		case rLYC:
-		case rP1:
-		case 0xFF:
-			reg[a8] = d8;
-			break;
-		case rDMA: {
-			// TODO this should take a while and block access
-			// to certain memory areas
-			for (uint8_t i = 0; i < 160; i++) {
-				mem_write(0xfe00 + i, mem_read((d8 << 8) + i));
-			}
-		}
-		case rIF: {
-			// set pending IRQs
-			reg[a8] = d8;
-			break;
-		}
 		case rTAC:
 		case rTIMA:
 			reg[a8] = d8;
 			timer_reset();
 			break;
 		default:
-			printf("warning: I/O write %s 0xff%02x <- 0x%02x (pc=%04x)\n", name_for_io_reg(a8), a8, d8, pc);
+			printf("warning: timer I/O write %s 0xff%02x <- 0x%02x\n", name_for_io_reg(a8), a8, d8);
 			reg[a8] = d8;
 			break;
+	}
+}
+
+void
+irq_write(uint8_t a8, uint8_t d8)
+{
+	switch (a8) {
+		case rIF:
+			// set pending IRQs
+			reg[a8] = d8;
+			break;
+		case rIE:
+			// set pending IRQs
+			reg[a8] = d8;
+			break;
+		default:
+			assert(0);
+	}
+}
+
+void
+sound_write(uint8_t a8, uint8_t d8)
+{
+	reg[a8] = d8;
+	printf("warning: sound I/O write %s 0xff%02x <- 0x%02x\n", name_for_io_reg(a8), a8, d8);
+}
+
+void
+ppu_write(uint8_t a8, uint8_t d8)
+{
+	reg[a8] = d8;
+
+	switch (a8) {
+		case rLCDC: /* 0x40 */
+		case rSTAT: /* 0x41 */
+		case rSCY:  /* 0x42 */
+		case rSCX:  /* 0x43 */
+		case rLY:   /* 0x44 */
+		case rLYC:  /* 0x45 */
+			break;
+		case rDMA: {/* 0x46 */
+			// TODO this should take a while and block access
+			// to certain memory areas
+			for (uint8_t i = 0; i < 160; i++) {
+				mem_write(0xfe00 + i, mem_read((d8 << 8) + i));
+			}
+			break;
+		}
+		case rBGP:  /* 0x47 */
+		case rOBP0: /* 0x48 */
+		case rOBP1: /* 0x49 */
+		case rWY:   /* 0x4A */
+		case rWX:   /* 0x4B */
+			break;
+		default:
+			printf("warning: ppu I/O write %s 0xff%02x <- 0x%02x\n", name_for_io_reg(a8), a8, d8);
+			break;
+	}
+}
+
+void
+io_write(uint8_t a8, uint8_t d8)
+{
+	if (a8 == 0x00) {
+		buttons_write(a8, d8);
+	} else if (a8 == 0x01 || a8 == 0x02) {
+		serial_write(a8, d8);
+	} else if (a8 >= 0x04 && a8 <= 0x07) {
+		timer_write(a8, d8);
+	} else if (a8 == 0x0F || a8 == 0xFF) {
+		irq_write(a8, d8);
+	} else if (a8 >= 0x10 && a8 <= 0x26) {
+		sound_write(a8, d8);
+	} else if (a8 >= 0x40 && a8 <= 0x4b) {
+		ppu_write(a8, d8);
+	} else if (a8 == 0x50) {
+		if (d8 & 1) {
+			disable_bootrom();
+		}
+	} else {
+		// do nothing
 	}
 }
 
