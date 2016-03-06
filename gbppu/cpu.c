@@ -237,11 +237,16 @@ suba8(uint8_t d8) // SUB \w; 1; 4; Z 1 H C
 static void
 sbca8(uint8_t d8) // SBC A,\w; 1; 4; Z 1 H C
 {
-	uint8_t addend = cf + d8;
-	set_hf_nf(4, a, addend, 1);
-	set_cf(8, a, addend, 1);
-	a = a - addend;
-	zf = !a;
+	suba8(cf);
+	uint8_t old_cf = cf;
+	uint8_t old_hf = hf;
+	suba8(d8);
+	if (!cf && old_cf) {
+		cf = 1;
+	}
+	if (!hf && old_hf) {
+		hf = 1;
+	}
 }
 
 static void
@@ -249,18 +254,23 @@ adda8(uint8_t d8) // ADD \w; 1; 8; Z 0 H C
 {
 	set_hf_nf(4, a, d8, 0);
 	set_cf(8, a, d8, 0);
-	a = a + d8;
+	a += d8;
 	zf = !a;
 }
 
 static void
 adca8(uint8_t d8) // ADC A,\w; 1; 4; Z 0 H C
 {
-	uint8_t addend = d8 + cf;
-	set_hf_nf(4, a, addend, 0);
-	set_cf(8, a, addend, 0);
-	a += addend;
-	zf = !a;
+	adda8(cf);
+	uint8_t old_cf = cf;
+	uint8_t old_hf = hf;
+	adda8(d8);
+	if (!cf && old_cf) {
+		cf = 1;
+	}
+	if (!hf && old_hf) {
+		hf = 1;
+	}
 }
 
 static void
