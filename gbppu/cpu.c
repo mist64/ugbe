@@ -1869,7 +1869,7 @@ cpu_step()
 					set8(&l, 2);
 					break;
 				case 0xd6: // SET 2,(HL); 2; 16; ----
-					sethl(1);
+					sethl(2);
 					break;
 				case 0xd7: // SET 2,A; 2; 8; ----
 					set8(&a, 2);
