@@ -209,21 +209,29 @@ dec8(uint8_t *r8) // DEC \w 1; 4; Z 1 H -
 }
 
 static void
-cpa8(uint8_t d8) // CP \w; 1; 4; Z 1 H C
+comparea8(uint8_t d8, int store) // X \w; 1; 4; Z 1 H C
 {
-	// todo: make cp behave like suba
 	zf = (a == d8);
 	set_hf_nf(4, a, d8, 1);
 	set_cf(8, a, d8, 1);
+
+	if (store) {
+		a -= d8;
+	}
+}
+
+static void
+cpa8(uint8_t d8) // CP \w; 1; 4; Z 1 H C
+{
+	int store = 0;
+	comparea8(d8, store);
 }
 
 static void
 suba8(uint8_t d8) // SUB \w; 1; 4; Z 1 H C
 {
-	zf = (a == d8);
-	set_hf_nf(4, a, d8, 1);
-	set_cf(8, a, d8, 1);
-	a = a - d8;
+	int store = 1;
+	comparea8(d8, store);
 }
 
 static void
