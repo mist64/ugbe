@@ -495,6 +495,22 @@ reshl(uint8_t bit)
 	mem_write(hl, d8);
 }
 
+#pragma mark
+
+static void
+daa() // DAA; 1; 4; Z - 0 C // decimal adjust a - BCD
+{
+	printf("todo: implement daa\n");
+	uint8_t old_nf = nf;
+//	printf("todo: implement daa - a=%02x cf=%01x hf=%01x nf=%01x\n", a, cf, hf, nf);
+
+
+	nf = old_nf;
+	hf = 0;
+	zf = !a;
+//	printf("         result daa - a=%02x cf=%01x hf=%01x nf=%01x\n", a, cf, hf, nf);
+}
+
 
 #pragma mark - Init
 
@@ -690,8 +706,7 @@ cpu_step()
 			h = fetch8();
 			break;
 		case 0x27: // DAA; 1; 4; Z - 0 C
-			// see: http://z80-heaven.wikidot.com/instructions-set:daa
-			NOT_YET_IMPLEMENTED();
+			daa();
 			break;
 		case 0x28: // JR Z,r8; 2; 12/8; ----
 			jrcc(zf);
