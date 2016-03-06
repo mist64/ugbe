@@ -74,7 +74,9 @@ mem_init()
 //	cartridge_filename = "/Users/mist/Downloads/cpu_instrs/individual/10-bit ops.gb";            // Passed
 //	cartridge_filename = "/Users/mist/Downloads/cpu_instrs/individual/11-op a,(hl).gb";          // x Failed - needs DAA
 
-	cartridge_filename = "/Users/mist/tmp/gb/World Bowling (U).gb";
+	cartridge_filename = "/Users/mist/tmp/gb/Tetris (W) (V1.1) [!].gb";
+
+//	cartridge_filename = "/Users/mist/tmp/gb/World Bowling (U).gb";
 //	cartridge_filename = "/Users/mist/tmp/gb/Tesserae (U) [!].gb";
 //	cartridge_filename = "/Users/mist/tmp/gb/Tennis (W) [!].gb";
 //	cartridge_filename = "/Users/mist/tmp/gb/Supreme 105 in 1 (Menu) [p1][b1].gb";
@@ -115,7 +117,7 @@ mem_init()
 
 	ram = calloc(0x2000, 1);
 	vram = calloc(0x2000, 1);
-	oamram = calloc(0x90, 1);
+	oamram = calloc(0xa0, 1);
 	hiram = calloc(0x7f, 1);
 
 	switch (rom[0x149]) {
