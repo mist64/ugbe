@@ -578,14 +578,10 @@ cpu_step()
 		case 0x06: // LD B,d8; 2; 8; ----
 			b = fetch8();
 			break;
-		case 0x07: { // RLCA; 1; 4; 0 0 0 C
-			cf = a >> 7;
-			a = a << 1;
+		case 0x07: // RLCA; 1; 4; 0 0 0 C
+			rlc8(&a);
 			zf = 0;
-			nf = 0;
-			hf = 0;
 			break;
-		}
 		case 0x08: { // LD (a16),SP; 3; 20; ----
 			uint16_t a16 = fetch16();
 			mem_write(a16, sp & 0xff);
