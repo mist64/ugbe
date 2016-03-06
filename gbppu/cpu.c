@@ -98,24 +98,34 @@ union reg16_t reg16_hl;
 #pragma mark - Helper
 
 uint8_t
-calc_carry(uint8_t bit, uint16_t da, uint16_t db)
+calc_carry(uint8_t bit, uint16_t da, uint16_t db, uint8_t substraction)
 {
 	uint32_t bb = 1 << bit;
 	uint32_t mask = bb - 1;
-	return ((da & mask) + (db & mask)) >= bb;
+	
+	uint8_t result;
+	if (substraction) {
+		result = (da & mask) < (db & mask);
+		
+	} else {
+	 result = ((da & mask) + (db & mask)) >= bb;
+	}
+	return result;
 }
 
 void
 set_hf_nf(uint8_t bit, uint16_t da, uint16_t db, uint8_t neg) // set the half carry flag
 {
 	nf = neg;
-	hf = calc_carry(bit, da, db) ^ neg;
+	hf = calc_carry(bit, da, db, neg);
+	// the neg flag is set every time this is a substraction, so this is used as the substraction flag
 }
 
 void
-set_cf(uint8_t bit, uint16_t da, uint16_t db)
+set_cf(uint8_t bit, uint16_t da, uint16_t db, uint8_t substraction)
 {
-	cf = calc_carry(bit, da, db);
+	// todo: check addsp, ldhlsp (relative data)
+	cf = calc_carry(bit, da, db, substraction);
 }
 
 
@@ -142,10 +152,10 @@ static void
 ldhlsp(uint8_t d8) //  LD HL,SP+r8; 2; 12; 0 0 H C // LDHL SP,r8
 {
 	uint16_t d16 = (uint16_t)(int8_t)d8;
-	set_cf(8, sp, d16);
 	hl = sp + d16;
 	zf = 0;
 	set_hf_nf(4, sp, d16, 0);
+	set_cf(8, sp, d16, 0);
 }
 
 static void
@@ -195,7 +205,7 @@ dec8(uint8_t *r8) // DEC \w 1; 4; Z 1 H -
 	uint8_t old_r8 = *r8;
 	(*r8)--;
 	zf = !*r8;
-	set_hf_nf(4, old_r8, -1, 1);
+	set_hf_nf(4, old_r8, 1, 1);
 }
 
 static void
@@ -203,34 +213,34 @@ cpa8(uint8_t d8) // CP \w; 1; 4; Z 1 H C
 {
 	// todo: make cp behave like suba
 	zf = (a == d8);
-	set_hf_nf(4, a, -d8, 1);
-	cf = a < d8;
+	set_hf_nf(4, a, d8, 1);
+	set_cf(8, a, d8, 1);
 }
 
 static void
 suba8(uint8_t d8) // SUB \w; 1; 4; Z 1 H C
 {
 	zf = (a == d8);
-	set_hf_nf(4, a, -d8, 1);
-	cf = a < d8;
+	set_hf_nf(4, a, d8, 1);
+	set_cf(8, a, d8, 1);
 	a = a - d8;
 }
 
 static void
 sbca8(uint8_t d8) // SBC A,\w; 1; 4; Z 1 H C
 {
-	uint8_t old_cf = cf;
-	cf = (uint16_t)a - (d8 + old_cf) >= 256;
-	set_hf_nf(4, a, -(d8 + old_cf), 1);
-	a = a - (d8 + old_cf);
+	uint8_t addend = cf + d8;
+	set_hf_nf(4, a, addend, 1);
+	set_cf(8, a, addend, 1);
+	a = a - addend;
 	zf = !a;
 }
 
 static void
 adda8(uint8_t d8) // ADD \w; 1; 8; Z 0 H C
 {
-	cf = (uint16_t)a + d8 >= 256;
 	set_hf_nf(4, a, d8, 0);
+	set_cf(8, a, d8, 0);
 	a = a + d8;
 	zf = !a;
 }
@@ -238,10 +248,10 @@ adda8(uint8_t d8) // ADD \w; 1; 8; Z 0 H C
 static void
 adca8(uint8_t d8) // ADC A,\w; 1; 4; Z 0 H C
 {
-	uint8_t old_cf = cf;
-	cf = (uint16_t)a + d8 + old_cf >= 256;
-	set_hf_nf(4, a, d8 + old_cf, 0);
-	a = a + d8 + old_cf;
+	uint8_t addend = d8 + cf;
+	set_hf_nf(4, a, addend, 0);
+	set_cf(8, a, addend, 0);
+	a += addend;
 	zf = !a;
 }
 
@@ -249,7 +259,7 @@ static void
 addhl(uint16_t d16) // ADD HL,\w\w; 1; 8; - 0 H C
 {
 	set_hf_nf(12, hl, d16, 0);
-	set_cf(16, hl, d16);
+	set_cf(16, hl, d16, 0);
 	hl = hl + d16;
 }
 
@@ -258,7 +268,7 @@ addsp(uint8_t d8) // ADD SP,r8; 2; 16; 0 0 H C
 {
 	uint16_t d16 = (uint16_t)(int8_t)d8;
 	set_hf_nf(4, sp, d16, 0);
-	set_cf(8, sp, d16);
+	set_cf(8, sp, d16, 0);
 	sp = sp + d16;
 	zf = 0;
 }
