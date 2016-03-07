@@ -54,13 +54,13 @@ irq_write(uint8_t a8, uint8_t d8)
 }
 
 uint8_t
-io_get_pending_irqs()
+irq_get_pending()
 {
 	return io[rIF] & io[rIE];
 }
 
 void
-io_clear_pending_irq(uint8_t irq)
+irq_clear_pending(uint8_t irq)
 {
 	io[rIF] &= ~(1 << irq);
 }
@@ -81,8 +81,6 @@ io_read(uint8_t a8)
 		return sound_read(a8);
 	} else if (a8 >= 0x40 && a8 <= 0x4b) {
 		return ppu_read(a8);
-	} else if (a8 >= 0x80 && a8 <= 0xFE) {
-		return io[a8]; // hi ram
 	} else {
 		// unassigned
 		return 0xff;
@@ -106,8 +104,6 @@ io_write(uint8_t a8, uint8_t d8)
 		ppu_write(a8, d8);
 	} else if (a8 == 0x50) {
 		mem_io_write(a8, d8);
-	} else if (a8 >= 0x80 && a8 <= 0xFE) {
-		io[a8] = d8; // hi ram
 	} else {
 		// do nothing
 	}

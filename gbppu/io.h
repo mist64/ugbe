@@ -68,8 +68,8 @@ extern uint8_t io[256];
 uint8_t io_read(uint8_t a8);
 void io_write(uint8_t a8, uint8_t d8);
 
-uint8_t io_get_pending_irqs();
-void io_clear_pending_irq(uint8_t irq);
+uint8_t irq_get_pending();
+void irq_clear_pending(uint8_t irq);
 
 void io_step();
 void io_step_4();

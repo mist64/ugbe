@@ -34,29 +34,19 @@ ppu_read(uint8_t a8)
 {
 	switch (a8) {
 		case rLCDC: /* 0x40 */
-			return io[a8];
 		case rSTAT: /* 0x41 */
-			return io[a8];
 		case rSCY:  /* 0x42 */
-			return io[a8];
 		case rSCX:  /* 0x43 */
+		case rLYC:  /* 0x45 */
+		case rDMA:  /* 0x46 */
+		case rBGP:  /* 0x47 */
+		case rOBP0: /* 0x48 */
+		case rOBP1: /* 0x49 */
+		case rWY:   /* 0x4A */
+		case rWX:   /* 0x4B */
 			return io[a8];
 		case rLY:   /* 0x44 */
 			return current_y;
-		case rLYC:  /* 0x45 */
-			return io[a8];
-		case rDMA:  /* 0x46 */
-			return io[a8];
-		case rBGP:  /* 0x47 */
-			return io[a8];
-		case rOBP0: /* 0x48 */
-			return io[a8];
-		case rOBP1: /* 0x49 */
-			return io[a8];
-		case rWY:   /* 0x4A */
-			return io[a8];
-		case rWX:   /* 0x4B */
-			return io[a8];
 	}
 	assert(0);
 }

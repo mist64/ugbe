@@ -176,6 +176,9 @@ mem_read(uint16_t a16)
 		return ram[a16 - 0xc000];
 	} else if (a16 >= 0xfe00 && a16 < 0xfea0) {
 		return oamram[a16 - 0xfe00];
+	} else if (a16 >= 0xfea0 && a16 < 0xff00) {
+		// unassigned
+		return 0xff;
 	} else if ((a16 >= 0xff00 && a16 < 0xff80) || a16 == 0xffff) {
 		return io_read(a16 & 0xff);
 	} else if (a16 >= 0xff80) {
@@ -203,6 +206,8 @@ mem_write_internal(uint16_t a16, uint8_t d8)
 		ram[a16 - 0xc000] = d8;
 	} else if (a16 >= 0xfe00 && a16 < 0xfea0) {
 		oamram[a16 - 0xfe00] = d8;
+	} else if (a16 >= 0xfea0 && a16 < 0xff00) {
+		// unassigned
 	} else if ((a16 >= 0xff00 && a16 < 0xff80) || a16 == 0xffff) {
 		io_write(a16 & 0xff, d8);
 	} else if (a16 >= 0xff80) {

@@ -548,7 +548,7 @@ int halted = 0;
 int
 cpu_step()
 {
-	uint8_t pending_irqs = io_get_pending_irqs();
+	uint8_t pending_irqs = irq_get_pending();
 	while ((interrupts_enabled || halted) && pending_irqs) {
 		interrupts_enabled = 0;
 		int i;
@@ -560,7 +560,7 @@ cpu_step()
 		if (halted) {
 			pc += 2; // DMG bug: skip instruction after HALT
 		} else {
-			io_clear_pending_irq(i);
+			irq_clear_pending(i);
 		}
 		halted = 0;
 //		printf("RST 0x%02x\n", 0x40 + i * 8);
