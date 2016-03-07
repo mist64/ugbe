@@ -9,9 +9,9 @@
 #include "cpu.h"
 
 #include <stdio.h>
-#include "memory.h"
 #include <assert.h>
-#include "ppu.h"
+#include "memory.h"
+#include "io.h"
 
 // see references:
 
@@ -518,7 +518,7 @@ void
 cpu_init()
 {
 #if 0
-	disable_bootrom();
+	mem_io_write(0xff50, 1);
 	a = 1;
 	bc = 0x13;
 	de = 0xd8;
@@ -569,7 +569,7 @@ cpu_step()
 
 	uint8_t opcode = fetch8();
 //			if (++counter % 100 == 0) {
-			if (!is_bootrom_enabled()) {
+			if (!mem_is_bootrom_enabled()) {
 //				printf("A=%02x BC=%04x DE=%04x HL=%04x SP=%04x PC=%04x (ZF=%d,NF=%d,HF=%d,CF=%d) LY=%02x - opcode 0x%02x\n", a, bc, de, hl, sp, pc-1, zf, nf, hf, cf, mem_read(0xff44), opcode);
 			}
 
@@ -2184,10 +2184,4 @@ cpu_step()
 	}
 
 	return 0;
-}
-
-int
-cpu_ie()
-{
-	return interrupts_enabled;
 }

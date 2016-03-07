@@ -10,6 +10,7 @@
 #import "memory.h"
 #import "ppu.h"
 #import "cpu.h"
+#import "buttons.h"
 
 @interface View : NSView
 @end
@@ -76,13 +77,13 @@ static uint8_t keys;
 - (void)keyDown:(NSEvent *)event
 {
 	keys |= [self keyMaskFromEvent:event];
-	io_set_keys(keys);
+	buttons_set(keys);
 }
 
 - (void)keyUp:(NSEvent *)event
 {
 	keys &= ~[self keyMaskFromEvent:event];
-	io_set_keys(keys);
+	buttons_set(keys);
 }
 
 @end

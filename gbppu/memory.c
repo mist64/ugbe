@@ -8,7 +8,7 @@
 
 #include <stdlib.h>
 #include "memory.h"
-#include "ppu.h"
+#include "io.h"
 
 uint8_t *bootrom;
 uint8_t *rom;
@@ -155,7 +155,7 @@ mem_init()
 uint8_t
 mem_read(uint16_t a16)
 {
-	ppu_step();
+	io_step_4();
 
 	if (a16 < 0x8000) {
 		if (bootrom_enabled && a16 < 0x100) {
@@ -215,22 +215,25 @@ mem_write_internal(uint16_t a16, uint8_t d8)
 void
 mem_write(uint16_t a16, uint8_t d8)
 {
-	ppu_step();
+	io_step_4();
 	mem_write_internal(a16, d8);
 }
 
 void
-disable_bootrom()
+mem_io_write(uint8_t a8, uint8_t d8)
 {
-	bootrom_enabled = 0;
+	if (d8 & 1) {
+		bootrom_enabled = 0;
+	}
 }
 
 int
-is_bootrom_enabled()
+mem_is_bootrom_enabled()
 {
 	return bootrom_enabled;
 }
 
+// this is used exclusively by the ppu
 uint8_t
 vram_read(uint16_t a16)
 {

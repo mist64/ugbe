@@ -14,6 +14,11 @@
 		CC6486F91C803EE200637024 /* cpu.c in Sources */ = {isa = PBXBuildFile; fileRef = CC6486F81C803EE200637024 /* cpu.c */; };
 		CC6486FC1C8068C000637024 /* ppu.c in Sources */ = {isa = PBXBuildFile; fileRef = CC6486FA1C8068C000637024 /* ppu.c */; };
 		CC6487001C82F63400637024 /* memory.c in Sources */ = {isa = PBXBuildFile; fileRef = CC6486FE1C82F63400637024 /* memory.c */; };
+		CCAB23741C8CF63F0019B444 /* sound.c in Sources */ = {isa = PBXBuildFile; fileRef = CCAB23721C8CF63F0019B444 /* sound.c */; };
+		CCAB23771C8CF6470019B444 /* timer.c in Sources */ = {isa = PBXBuildFile; fileRef = CCAB23751C8CF6470019B444 /* timer.c */; };
+		CCAB237B1C8CF78A0019B444 /* buttons.c in Sources */ = {isa = PBXBuildFile; fileRef = CCAB23791C8CF78A0019B444 /* buttons.c */; };
+		CCAB237E1C8CF7A30019B444 /* serial.c in Sources */ = {isa = PBXBuildFile; fileRef = CCAB237C1C8CF7A30019B444 /* serial.c */; };
+		CCAB23801C8CF98D0019B444 /* io.c in Sources */ = {isa = PBXBuildFile; fileRef = CCAB237F1C8CF98D0019B444 /* io.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -26,11 +31,21 @@
 		CC512A6B1C7BA65100ECFACA /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		CC512A6D1C7BA65100ECFACA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		CC6486F81C803EE200637024 /* cpu.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = cpu.c; sourceTree = "<group>"; };
-		CC6486FA1C8068C000637024 /* ppu.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ppu.c; sourceTree = "<group>"; };
+		CC6486FA1C8068C000637024 /* ppu.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; lineEnding = 0; path = ppu.c; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		CC6486FB1C8068C000637024 /* ppu.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ppu.h; sourceTree = "<group>"; };
 		CC6486FD1C806BC100637024 /* ppu_private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ppu_private.h; sourceTree = "<group>"; };
 		CC6486FE1C82F63400637024 /* memory.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = memory.c; sourceTree = "<group>"; };
 		CC6486FF1C82F63400637024 /* memory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = memory.h; sourceTree = "<group>"; };
+		CCAB23721C8CF63F0019B444 /* sound.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; lineEnding = 0; path = sound.c; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
+		CCAB23731C8CF63F0019B444 /* sound.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sound.h; sourceTree = "<group>"; };
+		CCAB23751C8CF6470019B444 /* timer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; lineEnding = 0; path = timer.c; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
+		CCAB23761C8CF6470019B444 /* timer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = timer.h; sourceTree = "<group>"; };
+		CCAB23781C8CF6B60019B444 /* io.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; lineEnding = 0; path = io.h; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.objcpp; };
+		CCAB23791C8CF78A0019B444 /* buttons.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; lineEnding = 0; path = buttons.c; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
+		CCAB237A1C8CF78A0019B444 /* buttons.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = buttons.h; sourceTree = "<group>"; };
+		CCAB237C1C8CF7A30019B444 /* serial.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; lineEnding = 0; path = serial.c; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
+		CCAB237D1C8CF7A30019B444 /* serial.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = serial.h; sourceTree = "<group>"; };
+		CCAB237F1C8CF98D0019B444 /* io.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; lineEnding = 0; path = io.c; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -71,10 +86,20 @@
 				CC6486F81C803EE200637024 /* cpu.c */,
 				425ADC0F1C84C88D00068F15 /* cpu.h */,
 				CC6486FE1C82F63400637024 /* memory.c */,
+				CCAB23721C8CF63F0019B444 /* sound.c */,
+				CCAB23731C8CF63F0019B444 /* sound.h */,
+				CCAB23751C8CF6470019B444 /* timer.c */,
+				CCAB23761C8CF6470019B444 /* timer.h */,
 				CC6486FF1C82F63400637024 /* memory.h */,
 				CC6486FA1C8068C000637024 /* ppu.c */,
 				CC6486FD1C806BC100637024 /* ppu_private.h */,
 				CC6486FB1C8068C000637024 /* ppu.h */,
+				CCAB237F1C8CF98D0019B444 /* io.c */,
+				CCAB23781C8CF6B60019B444 /* io.h */,
+				CCAB23791C8CF78A0019B444 /* buttons.c */,
+				CCAB237A1C8CF78A0019B444 /* buttons.h */,
+				CCAB237C1C8CF7A30019B444 /* serial.c */,
+				CCAB237D1C8CF7A30019B444 /* serial.h */,
 				CC512A651C7BA65100ECFACA /* Supporting Files */,
 			);
 			path = gbppu;
@@ -158,8 +183,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				CC6486F91C803EE200637024 /* cpu.c in Sources */,
+				CCAB237B1C8CF78A0019B444 /* buttons.c in Sources */,
 				CC512A671C7BA65100ECFACA /* main.m in Sources */,
+				CCAB237E1C8CF7A30019B444 /* serial.c in Sources */,
+				CCAB23771C8CF6470019B444 /* timer.c in Sources */,
+				CCAB23801C8CF98D0019B444 /* io.c in Sources */,
 				CC6487001C82F63400637024 /* memory.c in Sources */,
+				CCAB23741C8CF63F0019B444 /* sound.c in Sources */,
 				CC512A641C7BA65100ECFACA /* AppDelegate.m in Sources */,
 				CC6486FC1C8068C000637024 /* ppu.c in Sources */,
 			);
@@ -201,7 +231,7 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_C_LANGUAGE_STANDARD = c11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
@@ -209,8 +239,10 @@
 					"DEBUG=1",
 					"$(inherited)",
 				);
+				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_PEDANTIC = YES;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
@@ -244,10 +276,12 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_C_LANGUAGE_STANDARD = c11;
 				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_PEDANTIC = YES;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;

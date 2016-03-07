@@ -14,6 +14,4 @@
 void cpu_init();
 int cpu_step();
 
-int cpu_ie();
-
 #endif /* cpu_h */

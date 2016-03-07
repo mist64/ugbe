@@ -10,9 +10,7 @@
 #include "ppu.h"
 #include "ppu_private.h"
 #include "memory.h"
-#include "cpu.h"
-
-uint8_t reg[256];
+#include "io.h"
 
 int current_x;
 int current_y;
@@ -31,302 +29,42 @@ enum {
 	mode_pixel  = 3,
 } mode;
 
-uint8_t pending_irqs;
-
-int timer_counter;
-
-static uint8_t keys;
-
-void
-io_set_keys(uint8_t k)
-{
-	keys = k;
-}
-
-void
-timer_reset()
-{
-	timer_counter = 0;
-}
-
-void
-timer_step()
-{
-	if (!(reg[rTAC] & 4)) {
-		return;
-	}
-
-	int divider;
-	switch (reg[rTAC] & 3) {
-		default: // clang is stupid
-		case 0:
-			divider = 1024;
-			break;
-		case 1:
-			divider = 16;
-			break;
-		case 2:
-			divider = 64;
-			break;
-		case 3:
-			divider = 256;
-			break;
-	}
-
-//	printf("TIMER STEP %d %d %d\n", divider, timer_counter, reg[rTIMA]);
-
-	if (++timer_counter == divider) {
-		timer_counter = 0;
-		if (++reg[rTIMA] == 0) {
-			reg[rTIMA] = reg[rTMA];
-//			printf("TIMER FIRED %s:%d\n", __FILE__, __LINE__);
-			reg[rIF] |= 4;
-		}
-	}
-}
-
-static char *reg_name[] = {
-	"P1", /* 0x00 */
-	"SB", /* 0x01 */
-	"SC", /* 0x02 */
-	"0x03",
-	"DIV", /* 0x04 */
-	"TIMA", /* 0x05 */
-	"TMA", /* 0x06 */
-	"TAC", /* 0x07 */
-	"0x08",
-	"0x09",
-	"0x0A",
-	"0x0B",
-	"0x0C",
-	"0x0D",
-	"0x0E",
-	"IF", /* 0x0F */
-	"NR10", /* 0x10 */
-	"NR11", /* 0x11 */
-	"NR12", /* 0x12 */
-	"NR13", /* 0x13 */
-	"NR14", /* 0x14 */
-	"0x15",
-	"NR21", /* 0x16 */
-	"NR22", /* 0x17 */
-	"NR23", /* 0x18 */
-	"NR24", /* 0x19 */
-	"NR30", /* 0x1A */
-	"NR31", /* 0x1B */
-	"NR32", /* 0x1C */
-	"NR33", /* 0x1D */
-	"NR34", /* 0x1E */
-	"0x1F",
-	"NR41", /* 0x20 */
-	"NR42", /* 0x21 */
-	"NR42_2", /* 0x22 */
-	"NR43", /* 0x23 */
-	"NR50", /* 0x24 */
-	"NR51", /* 0x25 */
-	"NR52", /* 0x26 */
-	"0x27",
-	"0x28",
-	"0x29",
-	"0x2A",
-	"0x2B",
-	"0x2C",
-	"0x2D",
-	"0x2E",
-	"0x2F",
-	"0x30",
-	"0x31",
-	"0x32",
-	"0x33",
-	"0x34",
-	"0x35",
-	"0x36",
-	"0x37",
-	"0x38",
-	"0x39",
-	"0x3A",
-	"0x3B",
-	"0x3C",
-	"0x3D",
-	"0x3E",
-	"0x3F",
-	"LCDC", /* 0x40 */
-	"STAT", /* 0x41 */
-	"SCY", /* 0x42 */
-	"SCX", /* 0x43 */
-	"LY", /* 0x44 */
-	"LYC", /* 0x45 */
-	"DMA", /* 0x46 */
-	"BGP", /* 0x47 */
-	"OBP0", /* 0x48 */
-	"OBP1", /* 0x49 */
-	"WY", /* 0x4A */
-	"WX", /* 0x4B */
-};
-
-char *
-name_for_io_reg(uint8_t a8)
-{
-	if (a8 == 0xff) {
-		return "IE";
-	} else if (a8 < sizeof(reg_name) / sizeof(*reg_name)) {
-		return reg_name[a8];
-	} else {
-		return "???";
-	}
-}
-
-uint8_t
-buttons_read()
-{
-	uint8_t d8 = reg[rP1] & 0xf0;
-	if (reg[rP1] & 0x20) {
-		d8 |= (keys & 0xf) ^ 0xf;
-	}
-	if (reg[rP1] & 0x10) {
-		d8 |= (keys >> 4) ^ 0xf;
-	}
-	return d8;
-}
-
-uint8_t
-serial_read(uint8_t a8)
-{
-	printf("warning: serial read %s (0xff%02x) -> 0x%02x\n", name_for_io_reg(a8), a8, reg[a8]);
-	return 0xff;
-}
-
-uint8_t
-timer_read(uint8_t a8)
-{
-	// these behave like RAM
-	return reg[a8];
-}
-
-uint8_t
-irq_read(uint8_t a8)
-{
-	// these behave like RAM
-	return reg[a8];
-}
-
-uint8_t
-sound_read(uint8_t a8)
-{
-	printf("warning: sound read %s (0xff%02x) -> 0x%02x\n", name_for_io_reg(a8), a8, reg[a8]);
-	return 0xff;
-}
-
 uint8_t
 ppu_read(uint8_t a8)
 {
 	switch (a8) {
 		case rLCDC: /* 0x40 */
-			return reg[a8];
+			return io[a8];
 		case rSTAT: /* 0x41 */
-			return reg[a8];
+			return io[a8];
 		case rSCY:  /* 0x42 */
-			return reg[a8];
+			return io[a8];
 		case rSCX:  /* 0x43 */
-			return reg[a8];
+			return io[a8];
 		case rLY:   /* 0x44 */
 			return current_y;
 		case rLYC:  /* 0x45 */
-			return reg[a8];
+			return io[a8];
 		case rDMA:  /* 0x46 */
-			return reg[a8];
+			return io[a8];
 		case rBGP:  /* 0x47 */
-			return reg[a8];
+			return io[a8];
 		case rOBP0: /* 0x48 */
-			return reg[a8];
+			return io[a8];
 		case rOBP1: /* 0x49 */
-			return reg[a8];
+			return io[a8];
 		case rWY:   /* 0x4A */
-			return reg[a8];
+			return io[a8];
 		case rWX:   /* 0x4B */
-			return reg[a8];
+			return io[a8];
 	}
 	assert(0);
-}
-
-uint8_t
-io_read(uint8_t a8)
-{
-	if (a8 == 0x00) {
-		return buttons_read();
-	} else if (a8 == 0x01 || a8 == 0x02) {
-		return serial_read(a8);
-	} else if (a8 >= 0x04 && a8 <= 0x07) {
-		return timer_read(a8);
-	} else if (a8 == 0x0F || a8 == 0xFF) {
-		return irq_read(a8);
-	} else if (a8 >= 0x10 && a8 <= 0x26) {
-		return sound_read(a8);
-	} else if (a8 >= 0x40 && a8 <= 0x4b) {
-		return ppu_read(a8);
-	} else {
-		// unassigned
-		return 0xff;
-	}
-}
-
-void
-buttons_write(uint8_t a8, uint8_t d8)
-{
-	reg[a8] = d8;
-}
-
-void
-serial_write(uint8_t a8, uint8_t d8)
-{
-	reg[a8] = d8;
-	printf("warning: serial I/O write %s 0xff%02x <- 0x%02x\n", name_for_io_reg(a8), a8, d8);
-}
-
-void
-timer_write(uint8_t a8, uint8_t d8)
-{
-	switch (a8) {
-		case rTAC:
-		case rTIMA:
-			reg[a8] = d8;
-			timer_reset();
-			break;
-		default:
-			printf("warning: timer I/O write %s 0xff%02x <- 0x%02x\n", name_for_io_reg(a8), a8, d8);
-			reg[a8] = d8;
-			break;
-	}
-}
-
-void
-irq_write(uint8_t a8, uint8_t d8)
-{
-	switch (a8) {
-		case rIF:
-			// set pending IRQs
-			reg[a8] = d8;
-			break;
-		case rIE:
-			// set pending IRQs
-			reg[a8] = d8;
-			break;
-		default:
-			assert(0);
-	}
-}
-
-void
-sound_write(uint8_t a8, uint8_t d8)
-{
-	reg[a8] = d8;
-	printf("warning: sound I/O write %s 0xff%02x <- 0x%02x\n", name_for_io_reg(a8), a8, d8);
 }
 
 void
 ppu_write(uint8_t a8, uint8_t d8)
 {
-	reg[a8] = d8;
+	io[a8] = d8;
 
 	switch (a8) {
 		case rLCDC: /* 0x40 */
@@ -354,42 +92,6 @@ ppu_write(uint8_t a8, uint8_t d8)
 			printf("warning: ppu I/O write %s 0xff%02x <- 0x%02x\n", name_for_io_reg(a8), a8, d8);
 			break;
 	}
-}
-
-void
-io_write(uint8_t a8, uint8_t d8)
-{
-	if (a8 == 0x00) {
-		buttons_write(a8, d8);
-	} else if (a8 == 0x01 || a8 == 0x02) {
-		serial_write(a8, d8);
-	} else if (a8 >= 0x04 && a8 <= 0x07) {
-		timer_write(a8, d8);
-	} else if (a8 == 0x0F || a8 == 0xFF) {
-		irq_write(a8, d8);
-	} else if (a8 >= 0x10 && a8 <= 0x26) {
-		sound_write(a8, d8);
-	} else if (a8 >= 0x40 && a8 <= 0x4b) {
-		ppu_write(a8, d8);
-	} else if (a8 == 0x50) {
-		if (d8 & 1) {
-			disable_bootrom();
-		}
-	} else {
-		// do nothing
-	}
-}
-
-uint8_t
-io_get_pending_irqs()
-{
-	return reg[rIF] & reg[rIE];
-}
-
-void
-io_clear_pending_irq(uint8_t irq)
-{
-	reg[rIF] &= ~(1 << irq);
 }
 
 void
@@ -577,10 +279,10 @@ bg_step()
 	switch ((pixel_transfer_mode_counter / 2) & 3) {
 		case 0: {
 			// cycle 0: generate tile map address and prepare reading index
-			uint8_t xbase = ((reg[rSCX] >> 3) + pixel_transfer_mode_counter / 8) & 31;
-			ybase = reg[rSCY] + current_y;
+			uint8_t xbase = ((io[rSCX] >> 3) + pixel_transfer_mode_counter / 8) & 31;
+			ybase = io[rSCY] + current_y;
 			uint8_t ybase_hi = ybase >> 3;
-			uint16_t charaddr = 0x9800 | (!!(reg[rSTAT] & LCDCF_BG9C00) << 10) | (ybase_hi << 5) | xbase;
+			uint16_t charaddr = 0x9800 | (!!(io[rSTAT] & LCDCF_BG9C00) << 10) | (ybase_hi << 5) | xbase;
 			vram_set_address(charaddr);
 			//						printf("%s:%d %04x\n", __FILE__, __LINE__, charaddr);
 			break;
@@ -588,7 +290,7 @@ bg_step()
 		case 1: {
 			// cycle 1: read index, generate tile data address and prepare reading tile data #0
 			uint8_t index = vram_get_data();
-			if (reg[rLCDC] & LCDCF_BG8000) {
+			if (io[rLCDC] & LCDCF_BG8000) {
 				bgptr = 0x8000 + index * 16;
 			} else {
 				bgptr = 0x9000 + (int8_t)index * 16;
@@ -606,13 +308,13 @@ bg_step()
 			// cycle 3: read tile data #1, output pixels
 			// (VRAM is idle)
 			uint8_t data1 = vram_get_data();
-			int start = (pixel_transfer_mode_counter >> 3) ? 7 : (7 - (reg[rSCX] & 7));
+			int start = (pixel_transfer_mode_counter >> 3) ? 7 : (7 - (io[rSCX] & 7));
 
 			for (int i = start; i >= 0; i--) {
 				int b0 = (data0 >> i) & 1;
 				int b1 = (data1 >> i) & 1;
-				//							printf("%c", printable(paletted(reg[rBGP], b0 | b1 << 1)));
-				if (!ppu_output_pixel(paletted(reg[rBGP], b0 | b1 << 1))) {
+				//							printf("%c", printable(paletted(io[rBGP], b0 | b1 << 1)));
+				if (!ppu_output_pixel(paletted(io[rBGP], b0 | b1 << 1))) {
 					// line is full, end this
 					ppu_new_line();
 					mode = mode_hblank;
@@ -626,28 +328,15 @@ bg_step()
 
 // PPU steps are executed the CPU clock rate, i.e. at ~4 MHz
 void
-ppu_step_4()
+ppu_step()
 {
-	timer_step();
-
-//	if ((current_x & 3) == 0) {
-//		printf("%c", mode + '0');
-//	}
-
-	void cpu_update_irq();
-
-	uint8_t ie = io_read(rIE);
-	if (cpu_ie()) {
-		if (ie & 1 && current_y == 144 && current_x == 0) {
-			reg[rIF] |= 1;
-		} else {
-			if (ie & 2) {
-				if (io_read(rSTAT) & 0x40 && io_read(rLYC) == current_y && current_x == 0) {
-					reg[rIF] |= 2;
-				}
-			}
+	// IRQ
+	if (current_y == 144 && current_x == 0) {
+		io[rIF] |= 1;
+	} else {
+		if (io_read(rSTAT) & 0x40 && io_read(rLYC) == current_y && current_x == 0) {
+			io[rIF] |= 2;
 		}
-
 	}
 
 	if (current_y <= PPU_LAST_VISIBLE_LINE) {
@@ -685,14 +374,4 @@ ppu_step_4()
 			mode = mode_vblank;
 		}
 	}
-}
-
-// This needs to be called with ~1 MHz
-void
-ppu_step()
-{
-	ppu_step_4();
-	ppu_step_4();
-	ppu_step_4();
-	ppu_step_4();
 }
