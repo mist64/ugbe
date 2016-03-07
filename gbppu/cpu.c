@@ -517,8 +517,8 @@ daa() // DAA; 1; 4; Z - 0 C // decimal adjust a - BCD
 void
 cpu_init()
 {
-#if 0
-	mem_io_write(0xff50, 1);
+#if 1
+	mem_io_write(0x50, 1);
 	a = 1;
 	bc = 0x13;
 	de = 0xd8;

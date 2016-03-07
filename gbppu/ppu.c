@@ -25,6 +25,11 @@ int screen_off;
 int vram_locked;
 int oamram_locked;
 
+uint8_t bg_data0;
+uint8_t bg_data1;
+int bg_data_index;
+int bg_data_skip;
+
 int pixel_x, pixel_y;
 uint8_t picture[160][144];
 
@@ -143,6 +148,8 @@ new_screen()
 
 	pixel_x = 0;
 	pixel_y = 0;
+
+	bg_data_index = -1;
 }
 
 void
@@ -157,17 +164,20 @@ ppu_init()
 uint8_t oam_get_pixel(uint8_t x);
 
 int
-ppu_output_pixel(uint8_t p)
+ppu_output_pixel(uint8_t p, int skip)
 {
-	if (++pixel_x < 160) {
+	if (skip) {
+		return 1;
+	} else if (pixel_x >= 160) {
+		return 0;
+	} else {
 		uint8_t p2 = oam_get_pixel(pixel_x);
 		if (p2 != 255) {
 			p = p2;
 		}
 		picture[pixel_x][pixel_y] = p;
+		pixel_x++;
 		return 1;
-	} else {
-		return 0;
 	}
 }
 
@@ -338,20 +348,10 @@ bg_step()
 			// cycle 3: read tile data #1, output pixels
 			// (VRAM is idle)
 			uint8_t data1 = vram_get_data();
-			int start = (pixel_transfer_mode_counter >> 3) ? 7 : (7 - (io[rSCX] & 7));
-
-			for (int i = start; i >= 0; i--) {
-				int b0 = (data0 >> i) & 1;
-				int b1 = (data1 >> i) & 1;
-				if (!ppu_output_pixel(paletted(io[rBGP], b0 | b1 << 1))) {
-					// line is full, end this
-					ppu_new_line();
-					mode = mode_hblank;
-					vram_locked = 0;
-					oamram_locked = 0;
-					break;
-				}
-			}
+			bg_data0 = data0;
+			bg_data1 = data1;
+			bg_data_index = 7;
+			bg_data_skip = (pixel_transfer_mode_counter >> 3) ? 0 : io[rSCX] & 7;
 			break;
 		}
 	}
@@ -398,12 +398,31 @@ ppu_step()
 		}
 
 		if (mode == mode_pixel) {
+			// the background unit's speed is vram-bound, so it runs at 1/2 speed = 2 MHz
 			if (!(pixel_transfer_mode_counter & 1)) {
 				bg_step();
 			}
-			// TODO: pixel clocking @ 4 MHz
 
 			pixel_transfer_mode_counter++;
+		}
+	}
+
+	// shift pixels to the LCD @ 4 MHz
+	if (bg_data_index >= 0) {
+		int b0 = (bg_data0 >> bg_data_index) & 1;
+		int b1 = (bg_data1 >> bg_data_index) & 1;
+		int line_full = !ppu_output_pixel(paletted(io[rBGP], b0 | b1 << 1), bg_data_skip);
+		if (bg_data_skip) {
+			bg_data_skip--;
+		}
+		bg_data_index--;
+		if (line_full) {
+			// end this mode
+			bg_data_index = -1;
+			ppu_new_line();
+			mode = mode_hblank;
+			vram_locked = 0;
+			oamram_locked = 0;
 		}
 	}
 
