@@ -9,13 +9,12 @@
 #include <stdlib.h>
 #include "memory.h"
 #include "io.h"
+#include "ppu.h"
 
 uint8_t *bootrom;
 uint8_t *rom;
 uint8_t *ram;
-uint8_t *vram;
 uint8_t *extram;
-uint8_t *oamram;
 uint8_t *hiram;
 
 uint16_t extramsize;
@@ -116,8 +115,6 @@ mem_init()
 	fclose(file);
 
 	ram = calloc(0x2000, 1);
-	vram = calloc(0x2000, 1);
-	oamram = calloc(0xa0, 1);
 	hiram = calloc(0x7f, 1);
 
 	switch (rom[0x149]) {
@@ -164,7 +161,7 @@ mem_read(uint16_t a16)
 			return rom[a16];
 		}
 	} else if (a16 >= 0x8000 && a16 < 0xa000) {
-		return vram[a16 - 0x8000];
+		return ppu_vram_read(a16 - 0x8000);
 	} else if (a16 >= 0xa000 && a16 < 0xc000) {
 		if (a16 - 0xa000 < extramsize) {
 			return extram[a16 - 0xa000];
@@ -175,7 +172,7 @@ mem_read(uint16_t a16)
 	} else if (a16 >= 0xc000 && a16 < 0xe000) {
 		return ram[a16 - 0xc000];
 	} else if (a16 >= 0xfe00 && a16 < 0xfea0) {
-		return oamram[a16 - 0xfe00];
+		return ppu_oamram_read(a16 - 0xfe00);
 	} else if (a16 >= 0xfea0 && a16 < 0xff00) {
 		// unassigned
 		return 0xff;
@@ -195,7 +192,7 @@ mem_write_internal(uint16_t a16, uint8_t d8)
 	if (a16 < 0x8000) {
 		// TODO: MBC
 	} else if (a16 >= 0x8000 && a16 < 0xa000) {
-		vram[a16 - 0x8000] = d8;
+		ppu_vram_write(a16 - 0x8000, d8);
 	} else if (a16 >= 0xa000 && a16 < 0xc000) {
 		if (a16 - 0xa000 < extramsize) {
 			extram[a16 - 0xa000] = d8;
@@ -205,7 +202,7 @@ mem_write_internal(uint16_t a16, uint8_t d8)
 	} else if (a16 >= 0xc000 && a16 < 0xe000) {
 		ram[a16 - 0xc000] = d8;
 	} else if (a16 >= 0xfe00 && a16 < 0xfea0) {
-		oamram[a16 - 0xfe00] = d8;
+		ppu_oamram_write(a16 - 0xfe00, d8);
 	} else if (a16 >= 0xfea0 && a16 < 0xff00) {
 		// unassigned
 	} else if ((a16 >= 0xff00 && a16 < 0xff80) || a16 == 0xffff) {
@@ -236,11 +233,4 @@ int
 mem_is_bootrom_enabled()
 {
 	return bootrom_enabled;
-}
-
-// this is used exclusively by the ppu
-uint8_t
-vram_read(uint16_t a16)
-{
-	return vram[a16 - 0x8000];
 }

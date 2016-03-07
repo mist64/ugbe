@@ -6,11 +6,15 @@
 //  Copyright © 2016 Michael Steil. All rights reserved.
 //
 
+#include <stdlib.h>
 #include <assert.h>
 #include "ppu.h"
 #include "ppu_private.h"
 #include "memory.h"
 #include "io.h"
+
+uint8_t *vram;
+uint8_t *oamram;
 
 int current_x;
 int current_y;
@@ -30,7 +34,7 @@ enum {
 } mode;
 
 uint8_t
-ppu_read(uint8_t a8)
+ppu_io_read(uint8_t a8)
 {
 	switch (a8) {
 		case rLCDC: /* 0x40 */
@@ -53,7 +57,7 @@ ppu_read(uint8_t a8)
 }
 
 void
-ppu_write(uint8_t a8, uint8_t d8)
+ppu_io_write(uint8_t a8, uint8_t d8)
 {
 	io[a8] = d8;
 
@@ -85,9 +89,36 @@ ppu_write(uint8_t a8, uint8_t d8)
 	}
 }
 
+uint8_t
+ppu_vram_read(uint16_t a16)
+{
+	return vram[a16];
+}
+
+void
+ppu_vram_write(uint16_t a16, uint8_t d8)
+{
+	vram[a16] = d8;
+}
+
+uint8_t
+ppu_oamram_read(uint8_t a8)
+{
+	return oamram[a8];
+}
+
+void
+ppu_oamram_write(uint8_t a8, uint8_t d8)
+{
+	oamram[a8] = d8;
+}
+
 void
 ppu_init()
 {
+	vram = calloc(0x2000, 1);
+	oamram = calloc(0xa0, 1);
+
 	mode = mode_oam;
 	oam_mode_counter = 0;
 
@@ -157,7 +188,7 @@ vram_set_address(uint16_t addr)
 uint8_t
 vram_get_data()
 {
-	return vram_read(vram_address);
+	return ppu_vram_read(vram_address);
 }
 
 #pragma pack(1)
@@ -206,7 +237,6 @@ oam_get_pixel(uint8_t x)
 void
 oam_step()
 {
-	extern uint8_t *oamram;
 	oamentry *oam = (oamentry *)oamram;
 	int sprite_used[40];
 
@@ -250,9 +280,9 @@ oam_step()
 				if (spritegen[j].oam.attr & 0x40) { // Y flip
 					i = 7 - i;
 				}
-				uint16_t address = 0x8000 + 16 * spritegen[j].oam.tile + i * 2;
-				spritegen[j].data0 = vram_read(address);
-				spritegen[j].data1 = vram_read(address + 1);
+				uint16_t address = 16 * spritegen[j].oam.tile + i * 2;
+				spritegen[j].data0 = ppu_vram_read(address);
+				spritegen[j].data1 = ppu_vram_read(address + 1);
 //				printf("line: %d; sprite %d: x=%d, y=%d, index=%d, address=%04x data=%02x/%02x\n", current_y, j, spritegen[j].oam.x, spritegen[j].oam.y, spritegen[j].oam.tile, address, spritegen[j].data0, spritegen[j].data1);
 			}
 		}
@@ -273,7 +303,7 @@ bg_step()
 			uint8_t xbase = ((io[rSCX] >> 3) + pixel_transfer_mode_counter / 8) & 31;
 			ybase = io[rSCY] + current_y;
 			uint8_t ybase_hi = ybase >> 3;
-			uint16_t charaddr = 0x9800 | (!!(io[rSTAT] & LCDCF_BG9C00) << 10) | (ybase_hi << 5) | xbase;
+			uint16_t charaddr = 0x1800 | (!!(io[rSTAT] & LCDCF_BG9C00) << 10) | (ybase_hi << 5) | xbase;
 			vram_set_address(charaddr);
 			//						printf("%s:%d %04x\n", __FILE__, __LINE__, charaddr);
 			break;
@@ -282,9 +312,9 @@ bg_step()
 			// cycle 1: read index, generate tile data address and prepare reading tile data #0
 			uint8_t index = vram_get_data();
 			if (io[rLCDC] & LCDCF_BG8000) {
-				bgptr = 0x8000 + index * 16;
+				bgptr = index * 16;
 			} else {
-				bgptr = 0x9000 + (int8_t)index * 16;
+				bgptr = 0x1000 + (int8_t)index * 16;
 			}
 			bgptr += (ybase & 7) * 2;
 			vram_set_address(bgptr);

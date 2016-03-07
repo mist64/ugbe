@@ -19,6 +19,4 @@ void mem_io_write(uint8_t a8, uint8_t d8);
 
 int mem_is_bootrom_enabled();
 
-uint8_t vram_read(uint16_t a16);
-
 #endif /* memory_h */
