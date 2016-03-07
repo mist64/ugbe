@@ -29,8 +29,7 @@ size_t _getBytesCallback(void *info, void *buffer, off_t position, size_t count)
 
 @implementation View
 
-- (void)drawRect:(NSRect)dirtyRect
-{
+- (CGImageRef)createGameBoyScreenCGImageRef {
     CGDataProviderDirectCallbacks callbacks = {
         .version = 0,
         .getBytePointer = NULL,
@@ -44,9 +43,30 @@ size_t _getBytesCallback(void *info, void *buffer, off_t position, size_t count)
     
     CGImageRef image = CGImageCreate(160, 144, 8, 8, 160, grayspace, kCGBitmapByteOrderDefault | kCGImageAlphaNone, provider, NULL, NO, kCGRenderingIntentDefault);
     CFRelease(grayspace);
-    
-    CGContextDrawImage([[NSGraphicsContext currentContext] CGContext], self.bounds, image);
-    CFRelease(image);
+    CFRelease(provider);
+    return image;
+}
+
+- (id)initWithFrame:(NSRect)frame {
+    self = [super initWithFrame:frame];
+    if (self) {
+        self.layer = [CALayer layer];
+        self.wantsLayer = YES;
+        self.layer.magnificationFilter = kCAFilterNearest;
+        [self updateLayerContents];
+    }
+    return self;
+}
+
+- (void)drawRect:(NSRect)dirtyRect {
+    // intentionally nothing
+}
+
+- (void)updateLayerContents {
+    CGImageRef fullScreenImage = [self createGameBoyScreenCGImageRef];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        self.layer.contents = CFBridgingRelease(fullScreenImage);
+    });
 }
 
 - (BOOL)acceptsFirstResponder
@@ -106,11 +126,14 @@ static uint8_t keys;
 	int scale = 2;
 	[self.window setFrame:CGRectMake(0, 1000, 160 * scale, 144 * scale + 22) display:YES];
 
-	CGRect bounds = self.window.frame;
+	CGRect bounds = self.window.contentView.frame;
 	bounds.origin = CGPointZero;
-	NSView *view = [[View alloc] initWithFrame:bounds];
+	View *view = [[View alloc] initWithFrame:bounds];
+    [view setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
+    [self.window.contentView setAutoresizesSubviews:YES];
+    [self.window.contentView addSubview:view];
 	[self.window makeFirstResponder:view];
-	self.window.contentView = view;
+    
 
 	dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
 		mem_init();
@@ -128,9 +151,7 @@ static uint8_t keys;
 #endif
 			if (ppu_dirty) {
 				ppu_dirty = false;
-				dispatch_async(dispatch_get_main_queue(), ^{
-					[view setNeedsDisplay:YES];
-				});
+                [view updateLayerContents];
 #if ! BUILD_USER_Lisa
 				[NSThread sleepForTimeInterval:1.0/60];
 #endif
