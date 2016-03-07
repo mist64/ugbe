@@ -34,7 +34,6 @@ ppu_read(uint8_t a8)
 {
 	switch (a8) {
 		case rLCDC: /* 0x40 */
-		case rSTAT: /* 0x41 */
 		case rSCY:  /* 0x42 */
 		case rSCX:  /* 0x43 */
 		case rLYC:  /* 0x45 */
@@ -45,6 +44,8 @@ ppu_read(uint8_t a8)
 		case rWY:   /* 0x4A */
 		case rWX:   /* 0x4B */
 			return io[a8];
+		case rSTAT: /* 0x41 */
+			return (io[a8] & 0xFC) | mode;
 		case rLY:   /* 0x44 */
 			return current_y;
 	}

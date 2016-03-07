@@ -52,15 +52,6 @@
 #define rNR42_2 0x22
 #define rNR43 0x23
 
-#define LCDCF_ON      (1 << 7) /* LCD Control Operation */
-#define LCDCF_WIN9C00 (1 << 6) /* Window Tile Map Display Select */
-#define LCDCF_WINON   (1 << 5) /* Window Display */
-#define LCDCF_BG8000  (1 << 4) /* BG & Window Tile Data Select */
-#define LCDCF_BG9C00  (1 << 3) /* BG Tile Map Display Select */
-#define LCDCF_OBJ16   (1 << 2) /* OBJ Construction */
-#define LCDCF_OBJON   (1 << 1) /* OBJ Display */
-#define LCDCF_BGON    (1 << 0) /* BG Display */
-
 char *name_for_io_reg(uint8_t a8);
 
 extern uint8_t io[256];
