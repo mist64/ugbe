@@ -15,32 +15,38 @@
 @interface View : NSView
 @end
 
+size_t _getBytesCallback(void *info, void *buffer, off_t position, size_t count) {
+    static const uint8_t colors[4] = { 255, 170, 85, 0 };
+    uint8_t *target = buffer;
+    uint8_t *source = ((uint8_t *)info) + position;
+    uint8_t *sourceEnd = source + count;
+    while (source < sourceEnd) {
+        *(target++) = colors[*(source)];
+        source++;
+    }
+    return count;
+}
+
 @implementation View
 
 - (void)drawRect:(NSRect)dirtyRect
 {
-	static const NSUInteger colors[4] = { 255, 170, 85, 0 };
-
-	[super drawRect:dirtyRect];
-
-	NSBitmapImageRep *rep = [[NSBitmapImageRep alloc] initWithFocusedViewRect:dirtyRect];
-
-	for (int y = 0; y < rep.pixelsHigh; y++) {
-		for (int x = 0; x < rep.pixelsWide; x++) {
-			NSUInteger pixel[4];
-
-			uint8_t color = colors[picture[(int)(160.0 * x / rep.pixelsWide)][(int)(144.0 * y / rep.pixelsHigh)]];
-
-			pixel[0] = 0;
-			pixel[1] = color;
-			pixel[2] = color;
-			pixel[3] = color;
-
-			[rep setPixel:pixel atX:x y:y];
-		}
-	}
-
-	[rep drawInRect:dirtyRect];
+    CGDataProviderDirectCallbacks callbacks = {
+        .version = 0,
+        .getBytePointer = NULL,
+        .releaseBytePointer = NULL,
+        .getBytesAtPosition = _getBytesCallback,
+        .releaseInfo = NULL,
+    };
+    
+    CGDataProviderRef provider = CGDataProviderCreateDirect(picture, sizeof(picture), &callbacks);
+    CGColorSpaceRef grayspace = CGColorSpaceCreateDeviceGray();
+    
+    CGImageRef image = CGImageCreate(160, 144, 8, 8, 160, grayspace, kCGBitmapByteOrderDefault | kCGImageAlphaNone, provider, NULL, NO, kCGRenderingIntentDefault);
+    CFRelease(grayspace);
+    
+    CGContextDrawImage([[NSGraphicsContext currentContext] CGContext], self.bounds, image);
+    CFRelease(image);
 }
 
 - (BOOL)acceptsFirstResponder
@@ -126,7 +132,7 @@ static uint8_t keys;
 					[view setNeedsDisplay:YES];
 				});
 #if ! BUILD_USER_Lisa
-//				[NSThread sleepForTimeInterval:1.0/60];
+				[NSThread sleepForTimeInterval:1.0/60];
 #endif
 			}
 		}

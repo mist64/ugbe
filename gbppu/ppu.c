@@ -31,7 +31,7 @@ int bg_data_index;
 int bg_data_skip;
 
 int pixel_x, pixel_y;
-uint8_t picture[160][144];
+uint8_t picture[144][160];
 
 int ppu_dirty;
 
@@ -175,7 +175,7 @@ ppu_output_pixel(uint8_t p, int skip)
 		if (p2 != 255) {
 			p = p2;
 		}
-		picture[pixel_x][pixel_y] = p;
+		picture[pixel_y][pixel_x] = p;
 		pixel_x++;
 		return 1;
 	}
