@@ -21,6 +21,10 @@ int current_y;
 int oam_mode_counter;
 int pixel_transfer_mode_counter;
 
+int screen_off;
+int vram_locked;
+int oamram_locked;
+
 int pixel_x, pixel_y;
 uint8_t picture[160][144];
 
@@ -92,25 +96,53 @@ ppu_io_write(uint8_t a8, uint8_t d8)
 uint8_t
 ppu_vram_read(uint16_t a16)
 {
-	return vram[a16];
+	if (vram_locked) {
+		return 0xff;
+	} else {
+		return vram[a16];
+	}
 }
 
 void
 ppu_vram_write(uint16_t a16, uint8_t d8)
 {
-	vram[a16] = d8;
+	if (!vram_locked) {
+		vram[a16] = d8;
+	}
 }
 
 uint8_t
 ppu_oamram_read(uint8_t a8)
 {
-	return oamram[a8];
+	if (oamram_locked) {
+		return 0xff;
+	} else {
+		return oamram[a8];
+	}
 }
 
 void
 ppu_oamram_write(uint8_t a8, uint8_t d8)
 {
-	oamram[a8] = d8;
+	if (!oamram_locked) {
+		oamram[a8] = d8;
+	}
+}
+
+
+static void
+new_screen()
+{
+	mode = mode_oam;
+	oam_mode_counter = 0;
+	vram_locked = 0;
+	oamram_locked = 1;
+
+	current_x = 0;
+	current_y = 0;
+
+	pixel_x = 0;
+	pixel_y = 0;
 }
 
 void
@@ -119,14 +151,7 @@ ppu_init()
 	vram = calloc(0x2000, 1);
 	oamram = calloc(0xa0, 1);
 
-	mode = mode_oam;
-	oam_mode_counter = 0;
-
-	current_x = 0;
-	current_y = 0;
-
-	pixel_x = 0;
-	pixel_y = 0;
+	new_screen();
 }
 
 uint8_t oam_get_pixel(uint8_t x);
@@ -161,23 +186,7 @@ paletted(uint8_t pal, uint8_t p)
 	return (pal >> (p * 2)) & 3;
 }
 
-char
-printable(uint8_t p)
-{
-	switch (p) {
-		default:
-		case 0:
-			return 'X';
-		case 1:
-			return 'O';
-		case 2:
-			return '.';
-		case 3:
-			return ' ';
-	}
-}
-
-uint16_t vram_address;
+static uint16_t vram_address;
 
 void
 vram_set_address(uint16_t addr)
@@ -188,7 +197,7 @@ vram_set_address(uint16_t addr)
 uint8_t
 vram_get_data()
 {
-	return ppu_vram_read(vram_address);
+	return vram[vram_address];
 }
 
 #pragma pack(1)
@@ -281,8 +290,8 @@ oam_step()
 					i = 7 - i;
 				}
 				uint16_t address = 16 * spritegen[j].oam.tile + i * 2;
-				spritegen[j].data0 = ppu_vram_read(address);
-				spritegen[j].data1 = ppu_vram_read(address + 1);
+				spritegen[j].data0 = vram[address];
+				spritegen[j].data1 = vram[address + 1];
 //				printf("line: %d; sprite %d: x=%d, y=%d, index=%d, address=%04x data=%02x/%02x\n", current_y, j, spritegen[j].oam.x, spritegen[j].oam.y, spritegen[j].oam.tile, address, spritegen[j].data0, spritegen[j].data1);
 			}
 		}
@@ -334,11 +343,12 @@ bg_step()
 			for (int i = start; i >= 0; i--) {
 				int b0 = (data0 >> i) & 1;
 				int b1 = (data1 >> i) & 1;
-				//							printf("%c", printable(paletted(io[rBGP], b0 | b1 << 1)));
 				if (!ppu_output_pixel(paletted(io[rBGP], b0 | b1 << 1))) {
 					// line is full, end this
 					ppu_new_line();
 					mode = mode_hblank;
+					vram_locked = 0;
+					oamram_locked = 0;
 					break;
 				}
 			}
@@ -351,6 +361,21 @@ bg_step()
 void
 ppu_step()
 {
+	if ((io[rLCDC] & LCDCF_ON)) {
+		if (screen_off) {
+			screen_off = 0;
+			vram_locked = 0;
+			oamram_locked = 0;
+			new_screen();
+		}
+	} else {
+		screen_off = 1;
+	}
+
+	if (screen_off) {
+		return;
+	}
+
 	// IRQ
 	if (current_y == 144 && current_x == 0) {
 		io[rIF] |= 1;
@@ -367,6 +392,8 @@ ppu_step()
 			if (++oam_mode_counter == 80) {
 				mode = mode_pixel;
 				pixel_transfer_mode_counter = 0;
+				vram_locked = 1;
+				oamram_locked = 1;
 			}
 		}
 
@@ -391,6 +418,8 @@ ppu_step()
 		if (current_y <= PPU_LAST_VISIBLE_LINE) {
 			mode = mode_oam;
 			oam_mode_counter = 0;
+			vram_locked = 0;
+			oamram_locked = 1;
 		} else {
 			mode = mode_vblank;
 		}
