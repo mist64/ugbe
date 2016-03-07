@@ -11,11 +11,27 @@
 #import "ppu.h"
 #import "cpu.h"
 #import "buttons.h"
+#import <QuartzCore/QuartzCore.h>
+
 
 @interface View : NSView
+
+@property (atomic, strong) id nextLayerContents;
+- (void)swapToNextFrame;
 @end
 
-size_t _getBytesCallback(void *info, void *buffer, off_t position, size_t count) {
+static CVReturn renderCallback(CVDisplayLinkRef displayLink,
+                               const CVTimeStamp *inNow,
+                               const CVTimeStamp *inOutputTime,
+                               CVOptionFlags flagsIn,
+                               CVOptionFlags *flagsOut,
+                               void *displayLinkContext) {
+    [(__bridge View *)displayLinkContext swapToNextFrame];
+    return kCVReturnSuccess;
+}
+
+
+static size_t _getBytesCallback(void *info, void *buffer, off_t position, size_t count) {
     static const uint8_t colors[4] = { 255, 170, 85, 0 };
     uint8_t *target = buffer;
     uint8_t *source = ((uint8_t *)info) + position;
@@ -27,6 +43,10 @@ size_t _getBytesCallback(void *info, void *buffer, off_t position, size_t count)
     return count;
 }
 
+static void _releaseInfo(void *info) {
+    free(info);
+}
+
 @implementation View
 
 - (CGImageRef)createGameBoyScreenCGImageRef {
@@ -35,10 +55,14 @@ size_t _getBytesCallback(void *info, void *buffer, off_t position, size_t count)
         .getBytePointer = NULL,
         .releaseBytePointer = NULL,
         .getBytesAtPosition = _getBytesCallback,
-        .releaseInfo = NULL,
+        .releaseInfo = _releaseInfo,
     };
     
-    CGDataProviderRef provider = CGDataProviderCreateDirect(picture, sizeof(picture), &callbacks);
+    size_t pictureSize = sizeof(picture);
+    uint8_t *pictureCopy = malloc(pictureSize);
+    memcpy(pictureCopy, picture, pictureSize);
+    
+    CGDataProviderRef provider = CGDataProviderCreateDirect(pictureCopy, pictureSize, &callbacks);
     CGColorSpaceRef grayspace = CGColorSpaceCreateDeviceGray();
     
     CGImageRef image = CGImageCreate(160, 144, 8, 8, 160, grayspace, kCGBitmapByteOrderDefault | kCGImageAlphaNone, provider, NULL, NO, kCGRenderingIntentDefault);
@@ -53,7 +77,8 @@ size_t _getBytesCallback(void *info, void *buffer, off_t position, size_t count)
         self.layer = [CALayer layer];
         self.wantsLayer = YES;
         self.layer.magnificationFilter = kCAFilterNearest;
-        [self updateLayerContents];
+        
+        [self setupDisplayLink];
     }
     return self;
 }
@@ -62,11 +87,35 @@ size_t _getBytesCallback(void *info, void *buffer, off_t position, size_t count)
     // intentionally nothing
 }
 
+- (void)setupDisplayLink {
+    CVDisplayLinkRef displayLink;
+    CGDirectDisplayID   displayID = CGMainDisplayID();
+    CVReturn            error = kCVReturnSuccess;
+    error = CVDisplayLinkCreateWithCGDisplay(displayID, &displayLink);
+    if (error) {
+        NSLog(@"DisplayLink created with error:%d", error);
+        displayLink = NULL;
+    }
+    CVDisplayLinkSetOutputCallback(displayLink, renderCallback, (__bridge void *)self);
+    CVDisplayLinkStart(displayLink);
+}
+
 - (void)updateLayerContents {
     CGImageRef fullScreenImage = [self createGameBoyScreenCGImageRef];
-    dispatch_async(dispatch_get_main_queue(), ^{
-        self.layer.contents = CFBridgingRelease(fullScreenImage);
-    });
+    self.nextLayerContents = CFBridgingRelease(fullScreenImage);
+}
+
+- (void)swapToNextFrame {
+    id nextContents = self.nextLayerContents;
+    if (nextContents) {
+        self.nextLayerContents = nil;
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [CATransaction begin];
+            [CATransaction setDisableActions:YES];
+            self.layer.contents = nextContents;
+            [CATransaction commit];
+        });
+    }
 }
 
 - (BOOL)acceptsFirstResponder
@@ -117,6 +166,7 @@ static uint8_t keys;
 @interface AppDelegate ()
 
 @property (weak) IBOutlet NSWindow *window;
+@property (nonatomic) NSTimeInterval nextFrameTime;
 @end
 
 @implementation AppDelegate
@@ -140,6 +190,10 @@ static uint8_t keys;
 		cpu_init();
 		ppu_init();
 
+        NSTimeInterval timePerFrame = 1.0 / (1024.0 * 1024.0 / 114.0 / 154.0);
+        
+        self.nextFrameTime = [NSDate timeIntervalSinceReferenceDate] + timePerFrame;
+        
 		for (;;) {
 #if 1
 			int ret = cpu_step();
@@ -153,7 +207,14 @@ static uint8_t keys;
 				ppu_dirty = false;
                 [view updateLayerContents];
 #if ! BUILD_USER_Lisa
-				[NSThread sleepForTimeInterval:1.0/60];
+                // wait until the next 60 hz tick
+                NSTimeInterval interval = [NSDate timeIntervalSinceReferenceDate];
+                if (interval < self.nextFrameTime) {
+                    [NSThread sleepForTimeInterval:self.nextFrameTime - interval];
+                } else if (interval - 20 * timePerFrame > self.nextFrameTime) {
+                    self.nextFrameTime = interval;
+                }
+                self.nextFrameTime += timePerFrame;
 #endif
 			}
 		}
