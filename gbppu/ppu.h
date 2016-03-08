@@ -16,6 +16,8 @@ extern int ppu_dirty;
 
 void ppu_init();
 void ppu_step();
+// picture must be 144x160 bytes long
+void ppu_copy_picture(uint8_t *picture);
 
 uint8_t ppu_io_read(uint8_t a8);
 void ppu_io_write(uint8_t a8, uint8_t d8);

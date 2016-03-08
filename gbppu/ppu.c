@@ -12,6 +12,7 @@
 #include "ppu_private.h"
 #include "memory.h"
 #include "io.h"
+#include <string.h>
 
 uint8_t *vram;
 uint8_t *oamram;
@@ -34,6 +35,12 @@ int pixel_x, pixel_y;
 uint8_t picture[144][160];
 
 int ppu_dirty;
+
+void
+ppu_copy_picture(uint8_t *picture_copy)
+{
+    memcpy(picture_copy, picture, sizeof(picture));
+}
 
 enum {
 	mode_hblank = 0,

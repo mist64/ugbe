@@ -12,6 +12,7 @@
 #include <stdio.h>
 
 void mem_init();
+void mem_init_filenames(char *bootrom, char *cartridge);
 uint8_t mem_read(uint16_t a16);
 void mem_write(uint16_t a16, uint8_t d8);
 

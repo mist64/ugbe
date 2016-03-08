@@ -169,7 +169,12 @@ mem_init()
 
 	bootrom_filename = "/Users/mist/Documents/git/gbcpu/gbppu/DMG_ROM.bin";
 #endif
+    mem_init_filenames(bootrom_filename, cartridge_filename);
+}
 
+void
+mem_init_filenames(char *bootrom_filename, char *cartridge_filename)
+{
 	FILE *file = fopen(cartridge_filename, "r");
 
 	fseek(file, 0L, SEEK_END);
