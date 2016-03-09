@@ -8,6 +8,7 @@
 
 #include <stdlib.h>
 #include <assert.h>
+#include <string.h>
 #include "ppu.h"
 #include "ppu_private.h"
 #include "memory.h"
@@ -22,14 +23,12 @@ int oam_mode_counter;
 int bg_t; // internal BG fetch state (0-3)
 int bg_index_ctr; // offset of the current index within the line
 
+static uint8_t bg_pixel_queue[8];
+static uint8_t bg_pixel_queue_next;
+
 int screen_off;
 int vram_locked;
 int oamram_locked;
-
-uint8_t bg_data0;
-uint8_t bg_data1;
-int bg_data_index;
-int bg_data_skip;
 
 int pixel_x, pixel_y;
 uint8_t picture[144][160];
@@ -150,7 +149,7 @@ new_screen()
 	pixel_x = 0;
 	pixel_y = 0;
 
-	bg_data_index = -1;
+	bg_pixel_queue_next = 0;
 }
 
 void
@@ -165,11 +164,9 @@ ppu_init()
 uint8_t oam_get_pixel(uint8_t x);
 
 int
-ppu_output_pixel(uint8_t p, int skip)
+ppu_output_pixel(uint8_t p)
 {
-	if (skip) {
-		return 1;
-	} else if (pixel_x >= 160) {
+	if (pixel_x >= 160) {
 		return 0;
 	} else {
 		uint8_t p2 = oam_get_pixel(pixel_x);
@@ -313,7 +310,27 @@ bg_reset()
 	bg_t = 0;
 }
 
-void
+//static int fetch_is_sprite;
+
+static void
+bg_pixel_push(uint8_t p)
+{
+	bg_pixel_queue[bg_pixel_queue_next++] = p;
+	assert(bg_pixel_queue_next <= sizeof(bg_pixel_queue));
+}
+
+static uint8_t
+bg_pixel_get()
+{
+	if (!bg_pixel_queue_next) {
+		return 0xff;
+	}
+	uint8_t p = bg_pixel_queue[0];
+	memmove(bg_pixel_queue, bg_pixel_queue + 1, --bg_pixel_queue_next);
+	return p;
+}
+
+static void
 bg_step()
 {
 	static uint8_t ybase;
@@ -335,6 +352,10 @@ bg_step()
 				spritegen[cur_sprite].data0 = vram[address];
 				spritegen[cur_sprite].data1 = vram[address + 1];
 				cur_sprite++;
+
+//				fetch_is_sprite = 1;
+//			} else {
+//				fetch_is_sprite = 0;
 			}
 
 			// cycle 0: generate tile map address and prepare reading index
@@ -367,10 +388,17 @@ bg_step()
 			// cycle 3: read tile data #1, output pixels
 			// (VRAM is idle)
 			uint8_t data1 = vram_get_data();
-			bg_data0 = data0;
-			bg_data1 = data1;
-			bg_data_index = 7;
-			bg_data_skip = bg_index_ctr ? 0 : io[rSCX] & 7;
+			int skip = bg_index_ctr ? 0 : io[rSCX] & 7;
+			for (int i = 7; i >= 0; i--) {
+				int b0 = (data0 >> i) & 1;
+				int b1 = (data1 >> i) & 1;
+				if (skip) {
+					skip--;
+				} else {
+					bg_pixel_push(paletted(io[rBGP], b0 | b1 << 1));
+				}
+			}
+
 			bg_index_ctr++;
 			break;
 		}
@@ -428,17 +456,12 @@ ppu_step()
 	}
 
 	// shift pixels to the LCD @ 4 MHz
-	if (bg_data_index >= 0) {
-		int b0 = (bg_data0 >> bg_data_index) & 1;
-		int b1 = (bg_data1 >> bg_data_index) & 1;
-		int line_full = !ppu_output_pixel(paletted(io[rBGP], b0 | b1 << 1), bg_data_skip);
-		if (bg_data_skip) {
-			bg_data_skip--;
-		}
-		bg_data_index--;
+	uint8_t p = bg_pixel_get();
+	if (p != 0xff) {
+		int line_full = !ppu_output_pixel(p);
 		if (line_full) {
 			// end this mode
-			bg_data_index = -1;
+			bg_pixel_queue_next = 0;
 			ppu_new_line();
 			mode = mode_hblank;
 			vram_locked = 0;
