@@ -19,7 +19,8 @@ uint8_t *oamram;
 int current_x;
 int current_y;
 int oam_mode_counter;
-int pixel_transfer_mode_counter;
+int bg_t; // internal BG fetch state (0-3)
+int bg_index_ctr; // offset of the current index within the line
 
 int screen_off;
 int vram_locked;
@@ -224,7 +225,8 @@ struct {
 	uint8_t data1;
 } spritegen[10];
 
-uint8_t sprites_visible;
+static uint8_t sprites_visible;
+static uint8_t cur_sprite;
 
 uint8_t
 oam_get_pixel(uint8_t x)
@@ -253,6 +255,12 @@ oam_get_pixel(uint8_t x)
 	return p;
 }
 
+static uint8_t
+get_sprite_height()
+{
+	return io_read(rLCDC) & LCDCF_OBJ16 ? 16 : 8;
+}
+
 void
 oam_step()
 {
@@ -267,7 +275,7 @@ oam_step()
 	// do all the logic in the first cycle...
 	if (!oam_mode_counter && io_read(rLCDC) & LCDCF_OBJON) {
 		// fill the 10 sprite generators with the 10 leftmost sprites
-		uint8_t sprite_height = io_read(rLCDC) & LCDCF_OBJ16 ? 16 : 8;
+		uint8_t sprite_height = get_sprite_height();
 
 		for (int i = 0; i < 40; i++) {
 			sprite_used[i] = 0;
@@ -275,37 +283,34 @@ oam_step()
 
 		sprites_visible = 0;
 		int oam_index;
+//		printf("collecting: ");
 		do {
-			uint8_t minx = 255;
+			uint8_t minx = 0xff;
 			oam_index = -1;
 			for (int i = 0; i < 40; i++) {
 				uint8_t spry = oam[i].y - 16;
 				if (!sprite_used[i] && oam[i].x && current_y >= spry && current_y < spry + sprite_height && oam[i].x < minx) {
+					minx = oam[i].x;
 					oam_index = i;
 				}
 			}
 			if (oam_index >= 0) {
-				minx = oam[oam_index].x;
 				sprite_used[oam_index] = 1;
 				spritegen[sprites_visible].oam = oam[oam_index];
 				sprites_visible++;
 			}
 		} while (sprites_visible < 10 && oam_index >= 0);
+//		printf("\n");
 
-		if (sprites_visible) {
-			for (int j = 0; j < sprites_visible; j++) {
-//				printf("line: %d; sprit e %d: x=%d, y=%d, index=%d\n", current_y, j, spritegen[j].oam.x, spritegen[j].oam.y, spritegen[j].oam.tile);
-				uint8_t i = ((current_y - spritegen[j].oam.y) & (sprite_height - 1));
-				if (spritegen[j].oam.attr & 0x40) { // Y flip
-					i = 7 - i;
-				}
-				uint16_t address = 16 * spritegen[j].oam.tile + i * 2;
-				spritegen[j].data0 = vram[address];
-				spritegen[j].data1 = vram[address + 1];
-//				printf("line: %d; sprite %d: x=%d, y=%d, index=%d, address=%04x data=%02x/%02x\n", current_y, j, spritegen[j].oam.x, spritegen[j].oam.y, spritegen[j].oam.tile, address, spritegen[j].data0, spritegen[j].data1);
-			}
-		}
+		cur_sprite = 0;
 	}
+}
+
+void
+bg_reset()
+{
+	bg_index_ctr = 0;
+	bg_t = 0;
 }
 
 void
@@ -316,10 +321,24 @@ bg_step()
 	static uint8_t data0;
 
 	// background @ 2 MHz
-	switch ((pixel_transfer_mode_counter / 2) & 3) {
+	switch (bg_t) {
 		case 0: {
+			// decide whether we should do a sprite tile fetch here
+			while (cur_sprite != sprites_visible &&
+				   (((spritegen[cur_sprite].oam.x >> 3) - 2) == (pixel_x >> 3) || (spritegen[cur_sprite].oam.x >> 3) <= 1)) {
+				// sprite is due to be displayed soon, fetch its data
+				uint8_t i = ((current_y - spritegen[cur_sprite].oam.y) & (get_sprite_height() - 1));
+				if (spritegen[cur_sprite].oam.attr & 0x40) { // Y flip
+					i = 7 - i;
+				}
+				uint16_t address = 16 * spritegen[cur_sprite].oam.tile + i * 2;
+				spritegen[cur_sprite].data0 = vram[address];
+				spritegen[cur_sprite].data1 = vram[address + 1];
+				cur_sprite++;
+			}
+
 			// cycle 0: generate tile map address and prepare reading index
-			uint8_t xbase = ((io[rSCX] >> 3) + pixel_transfer_mode_counter / 8) & 31;
+			uint8_t xbase = ((io[rSCX] >> 3) + bg_index_ctr) & 31;
 			ybase = io[rSCY] + current_y;
 			uint8_t ybase_hi = ybase >> 3;
 			uint16_t charaddr = 0x1800 | (!!(io[rSTAT] & LCDCF_BG9C00) << 10) | (ybase_hi << 5) | xbase;
@@ -351,10 +370,13 @@ bg_step()
 			bg_data0 = data0;
 			bg_data1 = data1;
 			bg_data_index = 7;
-			bg_data_skip = (pixel_transfer_mode_counter >> 3) ? 0 : io[rSCX] & 7;
+			bg_data_skip = bg_index_ctr ? 0 : io[rSCX] & 7;
+			bg_index_ctr++;
 			break;
 		}
 	}
+
+	bg_t = (bg_t + 1 & 3);
 }
 
 // PPU steps are executed the CPU clock rate, i.e. at ~4 MHz
@@ -391,19 +413,17 @@ ppu_step()
 			oam_step();
 			if (++oam_mode_counter == 80) {
 				mode = mode_pixel;
-				pixel_transfer_mode_counter = 0;
 				vram_locked = 1;
 				oamram_locked = 1;
+				bg_reset();
 			}
 		}
 
 		if (mode == mode_pixel) {
 			// the background unit's speed is vram-bound, so it runs at 1/2 speed = 2 MHz
-			if (!(pixel_transfer_mode_counter & 1)) {
+			if (!(current_x & 1)) {
 				bg_step();
 			}
-
-			pixel_transfer_mode_counter++;
 		}
 	}
 
