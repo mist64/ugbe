@@ -23,8 +23,9 @@ int oam_mode_counter;
 int bg_t; // internal BG fetch state (0-3)
 int bg_index_ctr; // offset of the current index within the line
 
-static uint8_t bg_pixel_queue[8];
+static uint8_t bg_pixel_queue[16];
 static uint8_t bg_pixel_queue_next;
+static uint8_t oam_pixel_queue[24];
 
 int screen_off;
 int vram_locked;
@@ -150,6 +151,7 @@ new_screen()
 	pixel_y = 0;
 
 	bg_pixel_queue_next = 0;
+	memset(oam_pixel_queue, 0xff, sizeof(oam_pixel_queue));
 }
 
 void
@@ -225,31 +227,12 @@ struct {
 static uint8_t sprites_visible;
 static uint8_t cur_sprite;
 
+static uint8_t oam_pixel_get();
+
 uint8_t
 oam_get_pixel(uint8_t x)
 {
-	uint8_t p = 255;
-	if (sprites_visible) {
-		for (int j = 0; j < sprites_visible; j++) {
-			//				printf("line: %d; sprit e %d: x=%d, y=%d, index=%d\n", current_y, j, spritegen[j].oam.x, spritegen[j].oam.y, spritegen[j].oam.tile);
-			uint8_t sprx = spritegen[j].oam.x - 8;
-			if (x >= sprx && x <= sprx + 8) {
-				uint8_t i = x - sprx;
-				if (!(spritegen[j].oam.attr & 0x20)) { // X flip
-					i = 7 - i;
-				}
-				int b0 = (spritegen[j].data0 >> i) & 1;
-				int b1 = (spritegen[j].data1 >> i) & 1;
-				uint8_t p2 = b0 | (b1 << 1);
-				if (p2) {
-					p = paletted(io[spritegen[j].oam.attr & 0x10 ? rOBP1 : rOBP0], p2);
-					break;
-				}
-//				printf("XXX: %d; sprite %d: x=%d, y=%d, index=%d, data=%02x/%02x -> p=%d\n", current_y, j, spritegen[j].oam.x, spritegen[j].oam.y, spritegen[j].oam.tile, spritegen[j].data0, spritegen[j].data1, i);
-			}
-		}
-	}
-	return p;
+	return oam_pixel_get();
 }
 
 static uint8_t
@@ -331,6 +314,35 @@ bg_pixel_get()
 }
 
 static void
+oam_pixel_set(int i, uint8_t p)
+{
+	assert(i < sizeof(oam_pixel_queue));
+	if (oam_pixel_queue[i] == 0xff) {
+		oam_pixel_queue[i] = p;
+	}
+}
+
+static uint8_t
+oam_pixel_get()
+{
+	uint8_t total = 0xff;
+	for (int i = 0; i < sizeof(oam_pixel_queue); i++) {
+		total &= oam_pixel_queue[i];
+	}
+	if (total != 0xff) {
+//		printf("oam_pixel_queue: ");
+		for (int i = 0; i < sizeof(oam_pixel_queue); i++) {
+//			printf("%02x ", oam_pixel_queue[i]);
+		}
+//		printf("\n");
+	}
+	uint8_t p = oam_pixel_queue[0];
+	memmove(oam_pixel_queue, oam_pixel_queue + 1, sizeof(oam_pixel_queue) - 1);
+	return p;
+}
+
+
+static void
 bg_step()
 {
 	static uint8_t ybase;
@@ -349,6 +361,19 @@ bg_step()
 					i = 7 - i;
 				}
 				uint16_t address = 16 * spritegen[cur_sprite].oam.tile + i * 2;
+
+				for (int i = 0; i < 8; i++) {
+					int i2 = i;
+					if (!(spritegen[cur_sprite].oam.attr & 0x20)) { // X flip
+						i2 = 7 - i2;
+					}
+
+					int b0 = (vram[address] >> i2) & 1;
+					int b1 = (vram[address + 1] >> i2) & 1;
+					uint8_t p2 = b0 | (b1 << 1);
+					oam_pixel_set(i + (spritegen[cur_sprite].oam.x - pixel_x - 8), p2 ? paletted(io[spritegen[cur_sprite].oam.attr & 0x10 ? rOBP1 : rOBP0], p2) : 255);
+				}
+
 				spritegen[cur_sprite].data0 = vram[address];
 				spritegen[cur_sprite].data1 = vram[address + 1];
 				cur_sprite++;
@@ -456,16 +481,18 @@ ppu_step()
 	}
 
 	// shift pixels to the LCD @ 4 MHz
-	uint8_t p = bg_pixel_get();
-	if (p != 0xff) {
-		int line_full = !ppu_output_pixel(p);
-		if (line_full) {
-			// end this mode
-			bg_pixel_queue_next = 0;
-			ppu_new_line();
-			mode = mode_hblank;
-			vram_locked = 0;
-			oamram_locked = 0;
+	if (bg_pixel_queue_next >= 8) {
+		uint8_t p = bg_pixel_get();
+		if (p != 0xff) {
+			int line_full = !ppu_output_pixel(p);
+			if (line_full) {
+				// end this mode
+				bg_pixel_queue_next = 0;
+				ppu_new_line();
+				mode = mode_hblank;
+				vram_locked = 0;
+				oamram_locked = 0;
+			}
 		}
 	}
 
