@@ -14,12 +14,12 @@ static uint8_t buttons;
 uint8_t
 buttons_read()
 {
-	uint8_t d8 = io[rP1] & 0xf0;
+	uint8_t d8 = io[rP1] | 0xcf;
 	if (io[rP1] & 0x20) {
-		d8 |= (buttons & 0xf) ^ 0xf;
+		d8 &= (buttons ^ 0xff) | 0xf0;
 	}
 	if (io[rP1] & 0x10) {
-		d8 |= (buttons >> 4) ^ 0xf;
+		d8 &= ((buttons ^ 0xff) >> 4) | 0xf0;
 	}
 	return d8;
 }

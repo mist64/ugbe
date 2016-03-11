@@ -17,10 +17,229 @@ uint8_t *ram;
 uint8_t *extram;
 uint8_t *hiram;
 
+enum {
+	mbc_none,
+	mbc1,
+	mbc2,
+	mbc3,
+	mbc4,
+	mbc5,
+	mmm01,
+	huc1,
+	huc3,
+} mbc;
+int has_ram;
+int has_battery;
+int has_timer;
+int has_rumble;
+uint32_t romsize;
 uint16_t extramsize;
+int ram_enabled;
+uint8_t rom_bank;
+uint8_t ram_bank;
+int banking_mode;
 int bootrom_enabled;
 
+
 static void mem_write_internal(uint16_t a16, uint8_t d8);
+
+static void
+read_rom(char *filename)
+{
+	uint8_t header[0x100];
+	FILE *file = fopen(filename, "r");
+	fseek(file, 0x100, SEEK_SET);
+	fread(header, 0x100, 1, file);
+
+	mbc = mbc_none;
+	has_ram = 0;
+	has_battery = 0;
+	has_timer = 0;
+
+	switch (header[0x47]) {
+		default:
+		case 0x00: /* ROM ONLY */
+			break;
+		case 0x01: /* MBC1 */
+			mbc = mbc1;
+			break;
+		case 0x02: /* MBC1+RAM */
+			mbc = mbc1;
+			has_ram = 1;
+			break;
+		case 0x03: /* MBC1+RAM+BATTERY */
+			mbc = mbc1;
+			has_ram = 1;
+			has_battery = 1;
+			break;
+		case 0x05: /* MBC2 */
+			mbc = mbc2;
+			break;
+		case 0x06: /* MBC2+BATTERY */
+			mbc = mbc2;
+			has_battery = 1;
+			break;
+		case 0x08: /* ROM+RAM */
+			has_ram = 1;
+			break;
+		case 0x09: /* ROM+RAM+BATTERY */
+			has_ram = 1;
+			has_battery = 1;
+			break;
+		case 0x0B: /* MMM01 */
+			mbc = mmm01;
+			break;
+		case 0x0C: /* MMM01+RAM */
+			mbc = mmm01;
+			has_ram = 1;
+			break;
+		case 0x0D: /* MMM01+RAM+BATTERY */
+			mbc = mmm01;
+			has_ram = 1;
+			has_battery = 1;
+			break;
+		case 0x0F: /* MBC3+TIMER+BATTERY */
+			mbc = mbc3;
+			has_timer = 1;
+			has_battery = 1;
+			break;
+		case 0x10: /* MBC3+TIMER+RAM+BATTERY */
+			mbc = mbc3;
+			has_timer = 1;
+			has_ram = 1;
+			has_battery = 1;
+			break;
+		case 0x11: /* MBC3 */
+			mbc = mbc3;
+			break;
+		case 0x12: /* MBC3+RAM */
+			mbc = mbc3;
+			has_ram = 1;
+			break;
+		case 0x13: /* MBC3+RAM+BATTERY */
+			mbc = mbc3;
+			has_ram = 1;
+			has_battery = 1;
+			break;
+		case 0x15: /* MBC4 */
+			mbc = mbc4;
+			break;
+		case 0x16: /* MBC4+RAM */
+			mbc = mbc4;
+			has_ram = 1;
+			break;
+		case 0x17: /* MBC4+RAM+BATTERY */
+			mbc = mbc4;
+			has_ram = 1;
+			has_battery = 1;
+			break;
+		case 0x19: /* MBC5 */
+			mbc = mbc5;
+			break;
+		case 0x1A: /* MBC5+RAM */
+			mbc = mbc5;
+			has_ram = 1;
+			break;
+		case 0x1B: /* MBC5+RAM+BATTERY */
+			mbc = mbc5;
+			has_ram = 1;
+			has_battery = 1;
+			break;
+		case 0x1C: /* MBC5+RUMBLE */
+			mbc = mbc5;
+			has_rumble = 1;
+			break;
+		case 0x1D: /* MBC5+RUMBLE+RAM */
+			mbc = mbc5;
+			has_rumble = 1;
+			has_ram = 1;
+			break;
+		case 0x1E: /* MBC5+RUMBLE+RAM+BATTERY */
+			mbc = mbc5;
+			has_rumble = 1;
+			has_ram = 1;
+			has_battery = 1;
+			break;
+		case 0xFC: /* POCKET CAMERA */
+			break;
+		case 0xFD: /* BANDAI TAMA5 */
+			break;
+		case 0xFE: /* HuC3 */
+			mbc = huc3;
+			break;
+		case 0xFF: /* HuC1+RAM+BATTERY */
+			mbc = huc1;
+			has_ram = 1;
+			has_battery = 1;
+			break;
+	}
+
+	switch (header[0x48]) {
+		default:
+		case 0x00: /*  32KByte (no ROM banking) */
+			romsize = 32 * 1024;
+			break;
+		case 0x01: /*  64KByte (4 banks) */
+			romsize = 4 * 16384;
+			break;
+		case 0x02: /* 128KByte (8 banks) */
+			romsize = 8 * 16384;
+			break;
+		case 0x03: /* 256KByte (16 banks) */
+			romsize = 16 * 16384;
+			break;
+		case 0x04: /* 512KByte (32 banks) */
+			romsize = 32 * 16384;
+			break;
+		case 0x05: /*   1MByte (64 banks)  - only 63 banks used by MBC1 */
+			romsize = 64 * 16384;
+			break;
+		case 0x06: /*   2MByte (128 banks) - only 125 banks used by MBC1 */
+			romsize = 128 * 16384;
+			break;
+		case 0x07: /*   4MByte (256 banks) */
+			romsize = 256 * 16384;
+			break;
+		case 0x52: /* 1.1MByte (72 banks) */
+			romsize = 72 * 16384;
+			break;
+		case 0x53: /* 1.2MByte (80 banks) */
+			romsize = 80 * 16384;
+			break;
+		case 0x54: /* 1.5MByte (96 banks) */
+			romsize = 96 * 16384;
+			break;
+	}
+
+	if (has_ram) {
+		if (mbc == mbc2) {
+			extramsize = 512; /* TODO nybbles! */
+		} else {
+			switch (header[0x49]) {
+				default:
+				case 0:
+					extramsize = 0;
+					break;
+				case 1:
+					extramsize = 0x800;
+					break;
+				case 2:
+					extramsize = 0x2000;
+					break;
+				case 3:
+					extramsize = 0x8000;
+					break;
+			}
+		}
+	}
+
+	fseek(file, 0L, SEEK_SET);
+	rom = calloc(romsize, 1);
+	fread(rom, romsize, 1, file);
+	fclose(file);
+
+	rom_bank = 0;
+}
 
 void
 mem_init()
@@ -155,17 +374,77 @@ mem_init()
 //	cartridge_filename = "/Users/mist/tmp/gb/Supreme 105 in 1 (Menu) [p1][b1].gb";
 //	cartridge_filename = "/Users/mist/tmp/gb/Tasmania Story (J).gb";
 //	cartridge_filename = "/Users/mist/tmp/gb/Tasmania Story (U) [!].gb";
-//	cartridge_filename = "/Users/mist/tmp/gb/Tennis (W) [!].gb";
+	cartridge_filename = "/Users/mist/tmp/gb/Tennis (W) [!].gb";
 //	cartridge_filename = "/Users/mist/tmp/gb/Tesserae (U) [!].gb";
 //	cartridge_filename = "/Users/mist/tmp/gb/Tetris (W) (V1.0) [!].gb";
-	cartridge_filename = "/Users/mist/tmp/gb/Tetris (W) (V1.1) [!].gb";
+//	cartridge_filename = "/Users/mist/tmp/gb/Tetris (W) (V1.1) [!].gb";
 //	cartridge_filename = "/Users/mist/tmp/gb/Trump Boy (J).gb";
 //	cartridge_filename = "/Users/mist/tmp/gb/Volley Fire (J).gb";
 //	cartridge_filename = "/Users/mist/tmp/gb/World Bowling (J).gb";
 //	cartridge_filename = "/Users/mist/tmp/gb/World Bowling (U).gb";
 //	cartridge_filename = "/Users/mist/tmp/gb/Yakyuuman (J).gb";
 
-	
+//	cartridge_filename = "/Users/mist/Downloads/pocket/pocket.gb";
+
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/add_sp_e_timing.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/bits/mem_oam.gb"; // OK
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/bits/reg_f.gb"; OK
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/bits/unused_hwio-GS.gb"; // FAIL
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/boot_hwio-G.gb"; // FAIL
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/boot_regs-dmg.gb"; // OK
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/call_cc_timing.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/call_cc_timing2.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/call_timing.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/call_timing2.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/di_timing-GS.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/div_timing.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/ei_timing.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/gpu/hblank_ly_scx_timing-GS.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/gpu/intr_1_2_timing-GS.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/gpu/intr_2_0_timing.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/gpu/intr_2_mode0_timing.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/gpu/intr_2_mode0_timing_sprites.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/gpu/intr_2_mode3_timing.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/gpu/intr_2_oam_ok_timing.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/gpu/vblank_stat_intr-GS.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/halt_ime0_ei.gb"; // OK
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/halt_ime0_nointr_timing.gb"; // FAIL
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/halt_ime1_timing.gb"; // OK
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/halt_ime1_timing2-GS.gb"; // FAIL
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/if_ie_registers.gb"; // FAIL
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/intr_timing.gb"; // FAIL 
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/jp_cc_timing.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/jp_timing.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/ld_hl_sp_e_timing.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/oam_dma_restart.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/oam_dma_start.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/oam_dma_timing.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/pop_timing.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/push_timing.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/rapid_di_ei.gb"; // FAILED
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/ret_cc_timing.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/ret_timing.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/reti_intr_timing.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/reti_timing.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/rst_timing.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/timer/div_write.gb"; // FAIL
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/timer/rapid_toggle.gb"; // FAIL
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/emulator-only/mbc1_rom_4banks.gb"; // FAIL
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/logic-analysis/external-bus/read_timing/read_timing.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/logic-analysis/external-bus/write_timing/write_timing.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/logic-analysis/ppu/simple_scx/simple_scx.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/madness/mgb_oam_dma_halt_sprites.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/manual-only/sprite_priority.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/misc/bits/unused_hwio-C.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/misc/boot_hwio-C.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/misc/boot_hwio-S.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/misc/boot_regs-A.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/misc/boot_regs-cgb.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/misc/boot_regs-mgb.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/misc/boot_regs-sgb.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/misc/boot_regs-sgb2.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/misc/gpu/vblank_stat_intr-C.gb";
+//	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/utils/dump_boot_hwio.gb";
 
 	bootrom_filename = "/Users/mist/Documents/git/gbcpu/gbppu/DMG_ROM.bin";
 #endif
@@ -175,42 +454,16 @@ mem_init()
 void
 mem_init_filenames(char *bootrom_filename, char *cartridge_filename)
 {
-	FILE *file = fopen(cartridge_filename, "r");
-
-	fseek(file, 0L, SEEK_END);
-	long size = ftell(file);
-	if (size < 0x8000) {
-		size = 0x8000;
-	}
-	fseek(file, 0L, SEEK_SET);
-	rom = calloc(size, 1);
-	fread(rom, size, 1, file);
-	fclose(file);
+	read_rom(cartridge_filename);
 
 	bootrom = calloc(0x100, 1);
-	file = fopen(bootrom_filename, "r");
+	FILE *file = fopen(bootrom_filename, "r");
 	fread(bootrom, 0x100, 1, file);
 	fclose(file);
 
 	ram = calloc(0x2000, 1);
 	hiram = calloc(0x7f, 1);
 
-	switch (rom[0x149]) {
-		default:
-		case 0:
-			// TODO: MBC2
-			extramsize = 0;
-			break;
-		case 1:
-			extramsize = 0x800;
-			break;
-		case 2:
-			extramsize = 0x2000;
-			break;
-		case 3:
-			extramsize = 0x8000;
-			break;
-	}
 	extram = calloc(extramsize, 1);
 
 	bootrom_enabled = 1;
@@ -232,15 +485,37 @@ mem_read(uint16_t a16)
 {
 	io_step_4();
 
-	if (a16 < 0x8000) {
+	if (a16 < 0x4000) {
 		if (bootrom_enabled && a16 < 0x100) {
 			return bootrom[a16];
 		} else {
 			return rom[a16];
 		}
+	} else if (a16 >= 0x4000 && a16 < 0xa000) {
+		if (mbc == mbc_none) {
+			return rom[a16];
+		} else if (mbc == mbc1) {
+			uint8_t bank = rom_bank;
+			if (banking_mode) {
+				bank &= 0x1f;
+			}
+			if ((rom_bank & 0x1f) == 0) {
+				rom_bank++;
+			}
+			uint32_t address = a16 - 0x4000 + rom_bank * 0x4000;
+			if (address > romsize) {
+				return 0xff;
+			} else {
+				return rom[address];
+			}
+		} else {
+			printf("warning: unsupported MBC read!\n");
+			return rom[a16];
+		}
 	} else if (a16 >= 0x8000 && a16 < 0xa000) {
 		return ppu_vram_read(a16 - 0x8000);
 	} else if (a16 >= 0xa000 && a16 < 0xc000) {
+		// TODO: RAM banking
 		if (a16 - 0xa000 < extramsize) {
 			return extram[a16 - 0xa000];
 		} else {
@@ -268,7 +543,28 @@ static void
 mem_write_internal(uint16_t a16, uint8_t d8)
 {
 	if (a16 < 0x8000) {
-		// TODO: MBC
+		if (mbc == mbc1) {
+			switch (a16 >> 13) {
+				case 0:  /* 0x0000 - 0x1FFF: RAM enable */
+					ram_enabled = (d8 & 0xf) == 0xa;
+					break;
+				case 1:  /* 0x2000 - 0x3FFF: ROM bank (lo) */
+					rom_bank = (rom_bank & 0xe0 ) | (d8 & 0x1f);
+					break;
+				case 2: /* 0x4000 - 0x5FFF: RAM bank or ROM bank (hi) */
+					if (!banking_mode) {
+						rom_bank = (rom_bank & 0x1f) | ((d8 & 3) << 6);
+					} else {
+						ram_bank = d8 & 3;
+					}
+					break;
+				case 3:
+					banking_mode = d8 & 1;
+					break;
+			}
+		} else {
+			printf("warning: unsupported MBC write!\n");
+		}
 	} else if (a16 >= 0x8000 && a16 < 0xa000) {
 		ppu_vram_write(a16 - 0x8000, d8);
 	} else if (a16 >= 0xa000 && a16 < 0xc000) {
