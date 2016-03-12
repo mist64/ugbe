@@ -36,12 +36,15 @@ uint8_t picture[144][160];
 
 int ppu_dirty;
 
-enum {
+typedef enum {
 	mode_hblank = 0,
 	mode_vblank = 1,
 	mode_oam    = 2,
 	mode_pixel  = 3,
-} mode;
+} ppu_mode_t;
+ppu_mode_t mode;
+ppu_mode_t old_mode;
+
 
 uint8_t
 ppu_io_read(uint8_t a8)
@@ -159,6 +162,8 @@ ppu_init()
 {
 	vram = calloc(0x2000, 1);
 	oamram = calloc(0xa0, 1);
+
+	old_mode = mode_hblank;
 
 	new_screen();
 }
@@ -454,11 +459,21 @@ ppu_step()
 	// IRQ
 	if (current_y == 144 && current_x == 0) {
 		io[rIF] |= 1;
-	} else {
-		if (io_read(rSTAT) & 0x40 && io_read(rLYC) == current_y && current_x == 0) {
+	}
+	if (io_read(rSTAT) & 0x40 && io_read(rLYC) == current_y && current_x == 0) {
+		io[rIF] |= 2;
+	}
+	if (mode != old_mode) {
+		if (io_read(rSTAT) & 0x20 && mode == 2) {
+			io[rIF] |= 2;
+		} else if (io_read(rSTAT) & 0x10 && mode == 1) {
+			io[rIF] |= 2;
+		} else if (io_read(rSTAT) & 0x08 && mode == 0) {
 			io[rIF] |= 2;
 		}
 	}
+
+	old_mode = mode;
 
 	if (current_y <= PPU_LAST_VISIBLE_LINE) {
 
