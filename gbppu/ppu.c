@@ -23,6 +23,7 @@ int current_y;
 int oam_mode_counter;
 int bg_t; // internal BG fetch state (0-3)
 int bg_index_ctr; // offset of the current index within the line
+int window;
 
 static uint8_t bg_pixel_queue[16];
 static uint8_t bg_pixel_queue_next;
@@ -43,12 +44,15 @@ ppu_copy_picture(uint8_t *picture_copy)
     memcpy(picture_copy, picture, sizeof(picture));
 }
 
-enum {
+typedef enum {
 	mode_hblank = 0,
 	mode_vblank = 1,
 	mode_oam    = 2,
 	mode_pixel  = 3,
-} mode;
+} ppu_mode_t;
+ppu_mode_t mode;
+ppu_mode_t old_mode;
+
 
 uint8_t
 ppu_io_read(uint8_t a8)
@@ -166,6 +170,8 @@ ppu_init()
 {
 	vram = calloc(0x2000, 1);
 	oamram = calloc(0xa0, 1);
+
+	old_mode = mode_hblank;
 
 	new_screen();
 }
@@ -298,6 +304,7 @@ bg_reset()
 {
 	bg_index_ctr = 0;
 	bg_t = 0;
+	window = 0;
 }
 
 //static int fetch_is_sprite;
@@ -390,13 +397,29 @@ bg_step()
 //				fetch_is_sprite = 0;
 			}
 
+			// decide whether we need to switch to window
+			if (io[rLCDC] & LCDCF_WINON && pixel_y >= io[rWY] && (pixel_x >> 3) == (io[rWX] >> 3) - 2) {
+				window = 1;
+				bg_index_ctr = 0;
+				// TODO: we don't do perfect horizontal positioning - we'll have to
+				// refrain from pushing out the 0-7 last pixels from the bg fetches
+			}
+
 			// cycle 0: generate tile map address and prepare reading index
-			uint8_t xbase = ((io[rSCX] >> 3) + bg_index_ctr) & 31;
-			ybase = io[rSCY] + current_y;
+			uint8_t xbase;
+			uint8_t index_ram_select_mask;
+			if (window) {
+				xbase = bg_index_ctr;
+				ybase = current_y - io[rWY];
+				index_ram_select_mask = LCDCF_WIN9C00;
+			} else {
+				xbase = ((io[rSCX] >> 3) + bg_index_ctr) & 31;
+				ybase = io[rSCY] + current_y;
+				index_ram_select_mask = LCDCF_BG9C00;
+			}
 			uint8_t ybase_hi = ybase >> 3;
-			uint16_t charaddr = 0x1800 | (!!(io[rSTAT] & LCDCF_BG9C00) << 10) | (ybase_hi << 5) | xbase;
+			uint16_t charaddr = 0x1800 | (!!(io[rLCDC] & index_ram_select_mask) << 10) | (ybase_hi << 5) | xbase;
 			vram_set_address(charaddr);
-			//						printf("%s:%d %04x\n", __FILE__, __LINE__, charaddr);
 			break;
 		}
 		case 1: {
@@ -461,11 +484,21 @@ ppu_step()
 	// IRQ
 	if (current_y == 144 && current_x == 0) {
 		io[rIF] |= 1;
-	} else {
-		if (io_read(rSTAT) & 0x40 && io_read(rLYC) == current_y && current_x == 0) {
+	}
+	if (io_read(rSTAT) & 0x40 && io_read(rLYC) == current_y && current_x == 0) {
+		io[rIF] |= 2;
+	}
+	if (mode != old_mode) {
+		if (io_read(rSTAT) & 0x20 && mode == 2) {
+			io[rIF] |= 2;
+		} else if (io_read(rSTAT) & 0x10 && mode == 1) {
+			io[rIF] |= 2;
+		} else if (io_read(rSTAT) & 0x08 && mode == 0) {
 			io[rIF] |= 2;
 		}
 	}
+
+	old_mode = mode;
 
 	if (current_y <= PPU_LAST_VISIBLE_LINE) {
 
