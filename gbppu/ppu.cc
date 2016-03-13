@@ -27,6 +27,8 @@
 #define LCDCF_OBJON   (1 << 1) /* OBJ Display */
 #define LCDCF_BGON    (1 << 0) /* BG Display */
 
+#pragma mark - I/O
+
 uint8_t ppu::
 io_read(uint8_t a8)
 {
@@ -83,6 +85,9 @@ io_write(uint8_t a8, uint8_t d8)
 	}
 }
 
+
+#pragma mark - VRAM & OAM
+
 uint8_t ppu::
 vram_read(uint16_t a16)
 {
@@ -119,6 +124,8 @@ oamram_write(uint8_t a8, uint8_t d8)
 	}
 }
 
+
+#pragma mark - Init
 
 void ppu::
 new_screen()
@@ -166,6 +173,9 @@ paletted(uint8_t pal, uint8_t p)
 	return (pal >> (p * 2)) & 3;
 }
 
+
+#pragma mark - VRAM R/W
+
 void ppu::
 vram_set_address(uint16_t addr)
 {
@@ -177,6 +187,9 @@ vram_get_data()
 {
 	return vram[vram_address];
 }
+
+
+#pragma mark - Sprites
 
 uint8_t ppu::
 get_sprite_height()
@@ -230,17 +243,8 @@ oam_step()
 	}
 }
 
-void ppu::
-bg_reset()
-{
-	mode = mode_pixel;
-	vram_locked = 1;
-	oamram_locked = 1;
 
-	bg_index_ctr = 0;
-	bg_t = 0;
-	window = 0;
-}
+#pragma mark - Pixel Pipelines
 
 void ppu::
 bg_pixel_push(uint8_t p)
@@ -294,6 +298,20 @@ oam_pixel_get()
 	return p;
 }
 
+
+#pragma mark - Background
+
+void ppu::
+bg_reset()
+{
+	mode = mode_pixel;
+	vram_locked = 1;
+	oamram_locked = 1;
+
+	bg_index_ctr = 0;
+	bg_t = 0;
+	window = 0;
+}
 
 void ppu::
 bg_step()
@@ -418,9 +436,32 @@ bg_step()
 	}
 }
 
+
+#pragma mark - Mixer
+
 void ppu::
 pixel_step()
 {
+#if 0
+	bool sprites = false;
+	for (int i = 0; i < sizeof(oam_pixel_queue); i++) {
+		if (oam_pixel_queue[i] != 0xff) {
+			sprites = true;
+		}
+	}
+	if (sprites) {
+		printf("%03d/%03d BG  ", pixel_x, pixel_y);
+		for (int i = 0; i < bg_pixel_queue_next; i++) {
+			printf("%c", bg_pixel_queue[i] + '0');
+		}
+		printf("\n        SPR ");
+		for (int i = 0; i < sizeof(oam_pixel_queue); i++) {
+			printf("%c", oam_pixel_queue[i] + '0');
+		}
+		printf("\n");
+	}
+#endif
+
 	if (bg_pixel_queue_next >= 8) {
 		uint8_t p = bg_pixel_get();
 		if (p != 0xff) {
@@ -442,6 +483,9 @@ pixel_step()
 		}
 	}
 }
+
+
+#pragma mark - Main Logic
 
 // PPU steps are executed the CPU clock rate, i.e. at ~4 MHz
 void ppu::
