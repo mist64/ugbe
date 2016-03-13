@@ -224,16 +224,24 @@ read_rom(const char *filename)
     }
 
 	rom_bank = 0;
-    
-    extram = (uint8_t *)realloc(extram, extramsize);
+    if (extramsize == 0 && extram) {
+        free(extram);
+        extram = 0;
+    }
+    if (extramsize > 0) {
+        if (extram) {
+            extram = (uint8_t *)realloc(extram, extramsize);
+        } else {
+            extram = (uint8_t *)calloc(extramsize, 1);
+        }
+    }
 }
 
 memory::memory(ppu &ppu, io &io, const char *bootrom_filename, const char *cartridge_filename)
 	: _ppu(ppu)
 	, _io (io)
 {
-    extram = (uint8_t *)calloc(extramsize, 1);
-
+    extram = 0;
     read_rom(cartridge_filename);
     read_bootrom(bootrom_filename);
 

@@ -53,7 +53,7 @@
         menuItem.state = self.romDocument.turbo ? NSOnState : NSOffState;
         return YES;
     }
-    return [super validateMenuItem:menuItem];
+    return YES;
 }
 
 - (NSString *)windowTitleForDocumentDisplayName:(NSString *)displayName {
