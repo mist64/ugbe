@@ -9,16 +9,18 @@
 #include "buttons.h"
 #include "io.h"
 
+extern io *io;
+
 static uint8_t buttons;
 
 uint8_t
 buttons_read()
 {
-	uint8_t d8 = io[rP1] | 0xcf;
-	if (io[rP1] & 0x20) {
+	uint8_t d8 = io->reg[rP1] | 0xcf;
+	if (io->reg[rP1] & 0x20) {
 		d8 &= (buttons ^ 0xff) | 0xf0;
 	}
-	if (io[rP1] & 0x10) {
+	if (io->reg[rP1] & 0x10) {
 		d8 &= ((buttons ^ 0xff) >> 4) | 0xf0;
 	}
 	return d8;
@@ -27,7 +29,7 @@ buttons_read()
 void
 buttons_write(uint8_t a8, uint8_t d8)
 {
-	io[a8] = d8;
+	io->reg[a8] = d8;
 }
 
 void

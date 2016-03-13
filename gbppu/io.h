@@ -56,15 +56,22 @@
 
 const char *name_for_io_reg(uint8_t a8);
 
-extern uint8_t io[256];
+class io {
+private:
+	uint8_t irq_read(uint8_t a8);
+	void irq_write(uint8_t a8, uint8_t d8);
 
-uint8_t io_read(uint8_t a8);
-void io_write(uint8_t a8, uint8_t d8);
+public:
+	uint8_t io_read(uint8_t a8);
+	void io_write(uint8_t a8, uint8_t d8);
 
-uint8_t irq_get_pending();
-void irq_clear_pending(uint8_t irq);
+	uint8_t irq_get_pending();
+	void irq_clear_pending(uint8_t irq);
 
-void io_step();
-void io_step_4();
+	void io_step();
+	void io_step_4();
+
+	uint8_t reg[256];
+};
 
 #endif /* io_h */

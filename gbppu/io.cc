@@ -17,8 +17,9 @@
 #include "ppu.h"
 
 extern ppu *ppu;
-
-uint8_t io[256];
+extern timer *timer;
+extern memory *memory;
+extern sound *sound;
 
 static const char *reg_name[] = {
 	"P1", "SB", "SC", 0, "DIV", "TIMA", "TMA", "TAC", 0, 0, 0, 0, 0, 0, 0, "IF",
@@ -42,45 +43,45 @@ name_for_io_reg(uint8_t a8)
 }
 
 uint8_t
-irq_read(uint8_t a8)
+io::irq_read(uint8_t a8)
 {
 	// these behave like RAM
-	return io[a8];
+	return reg[a8];
 }
 
 void
-irq_write(uint8_t a8, uint8_t d8)
+io::irq_write(uint8_t a8, uint8_t d8)
 {
 	// these behave like RAM
-	io[a8] = d8;
+	reg[a8] = d8;
 }
 
 uint8_t
-irq_get_pending()
+io::irq_get_pending()
 {
-	return io[rIF] & io[rIE];
+	return reg[rIF] & reg[rIE];
 }
 
 void
-irq_clear_pending(uint8_t irq)
+io::irq_clear_pending(uint8_t irq)
 {
-	io[rIF] &= ~(1 << irq);
+	reg[rIF] &= ~(1 << irq);
 }
 
 
 uint8_t
-io_read(uint8_t a8)
+io::io_read(uint8_t a8)
 {
 	if (a8 == 0x00) {
 		return buttons_read();
 	} else if (a8 == 0x01 || a8 == 0x02) {
 		return serial_read(a8);
 	} else if (a8 >= 0x04 && a8 <= 0x07) {
-		return timer_read(a8);
+		return timer->timer_read(a8);
 	} else if (a8 == 0x0F || a8 == 0xFF) {
 		return irq_read(a8);
 	} else if (a8 >= 0x10 && a8 <= 0x26) {
-		return sound_read(a8);
+		return sound->sound_read(a8);
 	} else if (a8 >= 0x40 && a8 <= 0x4b) {
 		return ppu->ppu_io_read(a8);
 	} else {
@@ -90,36 +91,36 @@ io_read(uint8_t a8)
 }
 
 void
-io_write(uint8_t a8, uint8_t d8)
+io::io_write(uint8_t a8, uint8_t d8)
 {
 	if (a8 == 0x00) {
 		buttons_write(a8, d8);
 	} else if (a8 == 0x01 || a8 == 0x02) {
 		serial_write(a8, d8);
 	} else if (a8 >= 0x04 && a8 <= 0x07) {
-		timer_write(a8, d8);
+		timer->timer_write(a8, d8);
 	} else if (a8 == 0x0F || a8 == 0xFF) {
 		irq_write(a8, d8);
 	} else if (a8 >= 0x10 && a8 <= 0x26) {
-		sound_write(a8, d8);
+		sound->sound_write(a8, d8);
 	} else if (a8 >= 0x40 && a8 <= 0x4b) {
 		ppu->ppu_io_write(a8, d8);
 	} else if (a8 == 0x50) {
-		mem_io_write(a8, d8);
+		memory->mem_io_write(a8, d8);
 	} else {
 		// do nothing
 	}
 }
 
 void
-io_step()
+io::io_step()
 {
-	timer_step();
+	timer->timer_step();
 	ppu->ppu_step();
 }
 
 void
-io_step_4()
+io::io_step_4()
 {
 	io_step();
 	io_step();

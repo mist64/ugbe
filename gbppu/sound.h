@@ -12,7 +12,10 @@
 #include <stdint.h>
 #include <stdio.h>
 
-uint8_t sound_read(uint8_t a8);
-void sound_write(uint8_t a8, uint8_t d8);
+class sound {
+public:
+	uint8_t sound_read(uint8_t a8);
+	void sound_write(uint8_t a8, uint8_t d8);
+};
 
 #endif /* sound_h */

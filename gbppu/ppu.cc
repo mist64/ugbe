@@ -14,6 +14,9 @@
 #include "memory.h"
 #include "io.h"
 
+extern memory *memory;
+extern io *io;
+
 uint8_t
 ppu::ppu_io_read(uint8_t a8)
 {
@@ -28,9 +31,9 @@ ppu::ppu_io_read(uint8_t a8)
 		case rOBP1: /* 0x49 */
 		case rWY:   /* 0x4A */
 		case rWX:   /* 0x4B */
-			return io[a8];
+			return io->reg[a8];
 		case rSTAT: /* 0x41 */
-			return (io[a8] & 0xFC) | mode;
+			return (io->reg[a8] & 0xFC) | mode;
 		case rLY:   /* 0x44 */
 			return current_y;
 	}
@@ -40,7 +43,7 @@ ppu::ppu_io_read(uint8_t a8)
 void
 ppu::ppu_io_write(uint8_t a8, uint8_t d8)
 {
-	io[a8] = d8;
+	io->reg[a8] = d8;
 
 	switch (a8) {
 		case rLCDC: /* 0x40 */
@@ -54,7 +57,7 @@ ppu::ppu_io_write(uint8_t a8, uint8_t d8)
 			// TODO this should take a while and block access
 			// to certain memory areas
 			for (uint8_t i = 0; i < 160; i++) {
-				mem_write(0xfe00 + i, mem_read((d8 << 8) + i));
+				memory->mem_write(0xfe00 + i, memory->mem_read((d8 << 8) + i));
 			}
 			break;
 		}
@@ -187,7 +190,7 @@ ppu::oam_get_pixel(uint8_t x)
 uint8_t
 ppu::get_sprite_height()
 {
-	return io_read(rLCDC) & LCDCF_OBJ16 ? 16 : 8;
+	return io->reg[rLCDC] & LCDCF_OBJ16 ? 16 : 8;
 }
 
 void
@@ -202,7 +205,7 @@ ppu::oam_step()
 //	printf("\n");
 
 	// do all the logic in the first cycle...
-	if (!oam_mode_counter && io_read(rLCDC) & LCDCF_OBJON) {
+	if (!oam_mode_counter && io->reg[rLCDC] & LCDCF_OBJON) {
 		// fill the 10 sprite generators with the 10 leftmost sprites
 		uint8_t sprite_height = get_sprite_height();
 
@@ -329,7 +332,7 @@ ppu::bg_step()
 					int b0 = (vram[address] >> i2) & 1;
 					int b1 = (vram[address + 1] >> i2) & 1;
 					uint8_t p2 = b0 | (b1 << 1);
-					oam_pixel_set(i + (spritegen[cur_sprite].oam.x - pixel_x - 8), p2 ? paletted(io[spritegen[cur_sprite].oam.attr & 0x10 ? rOBP1 : rOBP0], p2) : 255);
+					oam_pixel_set(i + (spritegen[cur_sprite].oam.x - pixel_x - 8), p2 ? paletted(io->reg[spritegen[cur_sprite].oam.attr & 0x10 ? rOBP1 : rOBP0], p2) : 255);
 				}
 
 				spritegen[cur_sprite].data0 = vram[address];
@@ -342,7 +345,7 @@ ppu::bg_step()
 			}
 
 			// decide whether we need to switch to window
-			if (io[rLCDC] & LCDCF_WINON && pixel_y >= io[rWY] && (pixel_x >> 3) == (io[rWX] >> 3) - 2) {
+			if (io->reg[rLCDC] & LCDCF_WINON && pixel_y >= io->reg[rWY] && (pixel_x >> 3) == (io->reg[rWX] >> 3) - 2) {
 				window = 1;
 				bg_index_ctr = 0;
 				// TODO: we don't do perfect horizontal positioning - we'll have to
@@ -354,22 +357,22 @@ ppu::bg_step()
 			uint8_t index_ram_select_mask;
 			if (window) {
 				xbase = bg_index_ctr;
-				ybase = current_y - io[rWY];
+				ybase = current_y - io->reg[rWY];
 				index_ram_select_mask = LCDCF_WIN9C00;
 			} else {
-				xbase = ((io[rSCX] >> 3) + bg_index_ctr) & 31;
-				ybase = io[rSCY] + current_y;
+				xbase = ((io->reg[rSCX] >> 3) + bg_index_ctr) & 31;
+				ybase = io->reg[rSCY] + current_y;
 				index_ram_select_mask = LCDCF_BG9C00;
 			}
 			uint8_t ybase_hi = ybase >> 3;
-			uint16_t charaddr = 0x1800 | (!!(io[rLCDC] & index_ram_select_mask) << 10) | (ybase_hi << 5) | xbase;
+			uint16_t charaddr = 0x1800 | (!!(io->reg[rLCDC] & index_ram_select_mask) << 10) | (ybase_hi << 5) | xbase;
 			vram_set_address(charaddr);
 			break;
 		}
 		case 1: {
 			// cycle 1: read index, generate tile data address and prepare reading tile data #0
 			uint8_t index = vram_get_data();
-			if (io[rLCDC] & LCDCF_BG8000) {
+			if (io->reg[rLCDC] & LCDCF_BG8000) {
 				bgptr = index * 16;
 			} else {
 				bgptr = 0x1000 + (int8_t)index * 16;
@@ -387,14 +390,14 @@ ppu::bg_step()
 			// cycle 3: read tile data #1, output pixels
 			// (VRAM is idle)
 			uint8_t data1 = vram_get_data();
-			int skip = bg_index_ctr ? 0 : io[rSCX] & 7;
+			int skip = bg_index_ctr ? 0 : io->reg[rSCX] & 7;
 			for (int i = 7; i >= 0; i--) {
 				int b0 = (data0 >> i) & 1;
 				int b1 = (data1 >> i) & 1;
 				if (skip) {
 					skip--;
 				} else {
-					bg_pixel_push(paletted(io[rBGP], b0 | b1 << 1));
+					bg_pixel_push(paletted(io->reg[rBGP], b0 | b1 << 1));
 				}
 			}
 
@@ -429,7 +432,7 @@ ppu::pixel_step()
 void
 ppu::ppu_step()
 {
-	if ((io[rLCDC] & LCDCF_ON)) {
+	if ((io->reg[rLCDC] & LCDCF_ON)) {
 		if (screen_off) {
 			screen_off = 0;
 			vram_locked = 0;
@@ -450,22 +453,22 @@ ppu::ppu_step()
 
 	// V-Blank interrupt
 	if (current_y == 144 && current_x == 0) {
-		io[rIF] |= 1;
+		io->reg[rIF] |= 1;
 	}
 	// LY == LYC interrupt
-	if (io_read(rSTAT) & 0x40 && io_read(rLYC) == current_y && current_x == 0) {
-		io[rIF] |= 2;
+	if (io->reg[rSTAT] & 0x40 && io->reg[rLYC] == current_y && current_x == 0) {
+		io->reg[rIF] |= 2;
 	}
 	if (mode != old_mode) {
-		if (io_read(rSTAT) & 0x20 && mode == 2) {
+		if (io->reg[rSTAT] & 0x20 && mode == 2) {
 			// Mode 2 interrupt
-			io[rIF] |= 2;
-		} else if (io_read(rSTAT) & 0x10 && mode == 1) {
+			io->reg[rIF] |= 2;
+		} else if (io->reg[rSTAT] & 0x10 && mode == 1) {
 			// Mode 1 interrupt
-			io[rIF] |= 2;
-		} else if (io_read(rSTAT) & 0x08 && mode == 0) {
+			io->reg[rIF] |= 2;
+		} else if (io->reg[rSTAT] & 0x08 && mode == 0) {
 			// Mode 0 interrupt
-			io[rIF] |= 2;
+			io->reg[rIF] |= 2;
 		}
 	}
 

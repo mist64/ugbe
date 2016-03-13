@@ -12,41 +12,10 @@
 #include "ppu.h"
 
 extern ppu *ppu;
+extern io *io;
 
-uint8_t *bootrom;
-uint8_t *rom;
-uint8_t *ram;
-uint8_t *extram;
-uint8_t *hiram;
-
-enum {
-	mbc_none,
-	mbc1,
-	mbc2,
-	mbc3,
-	mbc4,
-	mbc5,
-	mmm01,
-	huc1,
-	huc3,
-} mbc;
-int has_ram;
-int has_battery;
-int has_timer;
-int has_rumble;
-uint32_t romsize;
-uint16_t extramsize;
-int ram_enabled;
-uint8_t rom_bank;
-uint8_t ram_bank;
-int banking_mode;
-int bootrom_enabled;
-
-
-static void mem_write_internal(uint16_t a16, uint8_t d8);
-
-static void
-read_rom(const char *filename)
+void
+memory::read_rom(const char *filename)
 {
 	uint8_t header[0x100];
 	FILE *file = fopen(filename, "r");
@@ -243,8 +212,7 @@ read_rom(const char *filename)
 	rom_bank = 0;
 }
 
-void
-mem_init()
+memory::memory()
 {
 	const char *bootrom_filename;
 	const char *cartridge_filename;
@@ -481,9 +449,9 @@ mem_init()
 }
 
 uint8_t
-mem_read(uint16_t a16)
+memory::mem_read(uint16_t a16)
 {
-	io_step_4();
+	io->io_step_4();
 
 	if (a16 < 0x4000) {
 		if (bootrom_enabled && a16 < 0x100) {
@@ -530,7 +498,7 @@ mem_read(uint16_t a16)
 		// unassigned
 		return 0xff;
 	} else if ((a16 >= 0xff00 && a16 < 0xff80) || a16 == 0xffff) {
-		return io_read(a16 & 0xff);
+		return io->io_read(a16 & 0xff);
 	} else if (a16 >= 0xff80) {
 		return hiram[a16 - 0xff80];
 	} else {
@@ -539,8 +507,8 @@ mem_read(uint16_t a16)
 	}
 }
 
-static void
-mem_write_internal(uint16_t a16, uint8_t d8)
+void
+memory::mem_write_internal(uint16_t a16, uint8_t d8)
 {
 	if (a16 < 0x8000) {
 		if (mbc == mbc1) {
@@ -580,7 +548,7 @@ mem_write_internal(uint16_t a16, uint8_t d8)
 	} else if (a16 >= 0xfea0 && a16 < 0xff00) {
 		// unassigned
 	} else if ((a16 >= 0xff00 && a16 < 0xff80) || a16 == 0xffff) {
-		io_write(a16 & 0xff, d8);
+		io->io_write(a16 & 0xff, d8);
 	} else if (a16 >= 0xff80) {
 		hiram[a16 - 0xff80] = d8;
 	} else {
@@ -589,14 +557,14 @@ mem_write_internal(uint16_t a16, uint8_t d8)
 }
 
 void
-mem_write(uint16_t a16, uint8_t d8)
+memory::mem_write(uint16_t a16, uint8_t d8)
 {
-	io_step_4();
+	io->io_step_4();
 	mem_write_internal(a16, d8);
 }
 
 void
-mem_io_write(uint8_t a8, uint8_t d8)
+memory::mem_io_write(uint8_t a8, uint8_t d8)
 {
 	if (d8 & 1) {
 		bootrom_enabled = 0;
@@ -604,7 +572,7 @@ mem_io_write(uint8_t a8, uint8_t d8)
 }
 
 int
-mem_is_bootrom_enabled()
+memory::mem_is_bootrom_enabled()
 {
 	return bootrom_enabled;
 }

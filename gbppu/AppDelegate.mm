@@ -10,11 +10,18 @@
 #import "memory.h"
 #import "ppu.h"
 #import "cpu.h"
+#import "timer.h"
+#import "sound.h"
+#import "io.h"
 #import "buttons.h"
 #import <QuartzCore/QuartzCore.h>
 
 ppu *ppu;
 cpu *cpu;
+memory *memory;
+timer *timer;
+sound *sound;
+io *io;
 
 @interface View : NSView
 
@@ -187,9 +194,12 @@ static uint8_t keys;
     
 
 	dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-		mem_init();
+		memory = new class memory();
 		cpu = new class cpu();
 		ppu = new class ppu();
+		timer = new class timer();
+		sound = new class sound();
+		io = new class io();
 
         NSTimeInterval timePerFrame = 1.0 / (1024.0 * 1024.0 / 114.0 / 154.0);
         

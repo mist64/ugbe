@@ -12,9 +12,17 @@
 #include <stdint.h>
 #include <stdio.h>
 
-uint8_t timer_read(uint8_t a8);
-void timer_write(uint8_t a8, uint8_t d8);
+class timer {
+private:
+	int timer_counter;
 
-void timer_step();
+	void timer_reset();
+
+public:
+	uint8_t timer_read(uint8_t a8);
+	void timer_write(uint8_t a8, uint8_t d8);
+
+	void timer_step();
+};
 
 #endif /* timer_h */
