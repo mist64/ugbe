@@ -353,7 +353,6 @@ bg_step()
 				if (cur_oam->attr & 0x40) { // Y flip
 					line_within_tile = get_sprite_height() - line_within_tile - 1;
 				}
-				goto case1;
 			} else {
 				if (window) {
 					xbase = bg_index_ctr;
@@ -369,11 +368,11 @@ bg_step()
 				uint16_t charaddr = 0x1800 | (!!(_io.reg[rLCDC] & index_ram_select_mask) << 10) | (ybase_hi << 5) | xbase;
 				vram_set_address(charaddr);
 			}
+			bg_t = 1;
 			break;
 		}
 		case 1: {
 			// T1: read index, generate tile data address and prepare reading tile data #0
-		case1:
 			uint8_t index;
 			if (fetch_is_sprite) {
 				index = cur_oam->tile;
@@ -387,12 +386,14 @@ bg_step()
 			}
 			bgptr += line_within_tile * 2;
 			vram_set_address(bgptr);
+			bg_t = 2;
 			break;
 		}
 		case 2: {
 			// T2: read tile data #0, prepare reading tile data #1
 			data0 = vram_get_data();
 			vram_set_address(bgptr + 1);
+			bg_t = 3;
 			break;
 		}
 		case 3: {
@@ -427,12 +428,11 @@ bg_step()
 				bg_index_ctr++;
 				// VRAM is idle in T3, but background fetches have to take
 				// 4 cycles, otherwise 8 MHz pixel output cannot keep up
+				bg_t = 0;
 			}
 			break;
 		}
 	}
-
-	bg_t = (bg_t + 1 & 3);
 }
 
 void ppu::
