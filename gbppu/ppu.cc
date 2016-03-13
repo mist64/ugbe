@@ -151,22 +151,6 @@ ppu(memory &memory, io &io)
 	new_screen();
 }
 
-int ppu::
-output_pixel(uint8_t p)
-{
-	if (pixel_x >= 160) {
-		return 0;
-	} else {
-		uint8_t p2 = oam_get_pixel(pixel_x);
-		if (p2 != 255) {
-			p = p2;
-		}
-		picture[pixel_y][pixel_x] = p;
-		pixel_x++;
-		return 1;
-	}
-}
-
 void ppu::
 new_line()
 {
@@ -192,12 +176,6 @@ uint8_t ppu::
 vram_get_data()
 {
 	return vram[vram_address];
-}
-
-uint8_t ppu::
-oam_get_pixel(uint8_t x)
-{
-	return oam_pixel_get();
 }
 
 uint8_t ppu::
@@ -332,7 +310,7 @@ bg_step()
 			// decide whether we should do a sprite tile fetch here
 			if (cur_sprite != sprites_visible &&
 				   (((cur_oam->x >> 3) - 2) == (pixel_x >> 3) || (cur_oam->x >> 3) <= 1)) {
-				// sprite is due to be displayed soon, fetch its data
+				// sprite is due to be displayed soon, fetch its data instead of bg
 				fetch_is_sprite = 1;
 			} else {
 				fetch_is_sprite = 0;
@@ -355,6 +333,9 @@ bg_step()
 				if (cur_oam->attr & 0x40) { // Y flip
 					line_within_tile = get_sprite_height() - line_within_tile - 1;
 				}
+				// when fetching a sprite, we don't use VRAM in T0, because the
+				// tile index comes from OAM, not VRAM; nevertheless, it seems we have
+				// to use up this cycle
 			} else {
 				if (window) {
 					xbase = bg_index_ctr;
@@ -443,14 +424,20 @@ pixel_step()
 	if (bg_pixel_queue_next >= 8) {
 		uint8_t p = bg_pixel_get();
 		if (p != 0xff) {
-			int line_full = !output_pixel(p);
-			if (line_full) {
+			if (pixel_x >= 160) {
 				// end this mode
 				bg_pixel_queue_next = 0;
 				new_line();
 				mode = mode_hblank;
 				vram_locked = 0;
 				oamram_locked = 0;
+			} else {
+				uint8_t p2 = oam_pixel_get();
+				if (p2 != 0xff) {
+					p = p2;
+				}
+				picture[pixel_y][pixel_x] = p;
+				pixel_x++;
 			}
 		}
 	}
