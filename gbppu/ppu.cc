@@ -14,42 +14,8 @@
 #include "memory.h"
 #include "io.h"
 
-uint8_t *vram;
-uint8_t *oamram;
-
-int current_x;
-int current_y;
-int oam_mode_counter;
-int bg_t; // internal BG fetch state (0-3)
-int bg_index_ctr; // offset of the current index within the line
-int window;
-
-static uint8_t bg_pixel_queue[16];
-static uint8_t bg_pixel_queue_next;
-static uint8_t oam_pixel_queue[24];
-
-int screen_off;
-int vram_locked;
-int oamram_locked;
-
-int pixel_x, pixel_y;
-uint8_t picture[144][160];
-
-int ppu_dirty;
-
-typedef enum {
-	mode_hblank = 0,
-	mode_vblank = 1,
-	mode_oam    = 2,
-	mode_pixel  = 3,
-} ppu_mode_t;
-ppu_mode_t mode;
-ppu_mode_t old_mode;
-
-void bg_reset();
-
 uint8_t
-ppu_io_read(uint8_t a8)
+ppu::ppu_io_read(uint8_t a8)
 {
 	switch (a8) {
 		case rLCDC: /* 0x40 */
@@ -72,7 +38,7 @@ ppu_io_read(uint8_t a8)
 }
 
 void
-ppu_io_write(uint8_t a8, uint8_t d8)
+ppu::ppu_io_write(uint8_t a8, uint8_t d8)
 {
 	io[a8] = d8;
 
@@ -105,7 +71,7 @@ ppu_io_write(uint8_t a8, uint8_t d8)
 }
 
 uint8_t
-ppu_vram_read(uint16_t a16)
+ppu::ppu_vram_read(uint16_t a16)
 {
 	if (vram_locked) {
 		return 0xff;
@@ -115,7 +81,7 @@ ppu_vram_read(uint16_t a16)
 }
 
 void
-ppu_vram_write(uint16_t a16, uint8_t d8)
+ppu::ppu_vram_write(uint16_t a16, uint8_t d8)
 {
 	if (!vram_locked) {
 		vram[a16] = d8;
@@ -123,7 +89,7 @@ ppu_vram_write(uint16_t a16, uint8_t d8)
 }
 
 uint8_t
-ppu_oamram_read(uint8_t a8)
+ppu::ppu_oamram_read(uint8_t a8)
 {
 	if (oamram_locked) {
 		return 0xff;
@@ -133,7 +99,7 @@ ppu_oamram_read(uint8_t a8)
 }
 
 void
-ppu_oamram_write(uint8_t a8, uint8_t d8)
+ppu::ppu_oamram_write(uint8_t a8, uint8_t d8)
 {
 	if (!oamram_locked) {
 		oamram[a8] = d8;
@@ -141,8 +107,8 @@ ppu_oamram_write(uint8_t a8, uint8_t d8)
 }
 
 
-static void
-new_screen()
+void
+ppu::new_screen()
 {
 	mode = mode_oam;
 	oam_mode_counter = 0;
@@ -160,7 +126,7 @@ new_screen()
 }
 
 void
-ppu_init()
+ppu::ppu_init()
 {
 	vram = (uint8_t *)calloc(0x2000, 1);
 	oamram = (uint8_t *)calloc(0xa0, 1);
@@ -170,10 +136,8 @@ ppu_init()
 	new_screen();
 }
 
-uint8_t oam_get_pixel(uint8_t x);
-
 int
-ppu_output_pixel(uint8_t p)
+ppu::ppu_output_pixel(uint8_t p)
 {
 	if (pixel_x >= 160) {
 		return 0;
@@ -189,7 +153,7 @@ ppu_output_pixel(uint8_t p)
 }
 
 void
-ppu_new_line()
+ppu::ppu_new_line()
 {
 	pixel_x = 0;
 	if (++pixel_y == 144) {
@@ -198,58 +162,37 @@ ppu_new_line()
 }
 
 uint8_t
-paletted(uint8_t pal, uint8_t p)
+ppu::paletted(uint8_t pal, uint8_t p)
 {
 	return (pal >> (p * 2)) & 3;
 }
 
-static uint16_t vram_address;
-
 void
-vram_set_address(uint16_t addr)
+ppu::vram_set_address(uint16_t addr)
 {
 	vram_address = addr;
 }
 
 uint8_t
-vram_get_data()
+ppu::vram_get_data()
 {
 	return vram[vram_address];
 }
 
-#pragma pack(1)
-typedef struct {
-	uint8_t y;
-	uint8_t x;
-	uint8_t tile;
-	uint8_t attr;
-} oamentry;
-
-struct {
-	oamentry oam;
-	uint8_t data0;
-	uint8_t data1;
-} spritegen[10];
-
-static uint8_t sprites_visible;
-static uint8_t cur_sprite;
-
-static uint8_t oam_pixel_get();
-
 uint8_t
-oam_get_pixel(uint8_t x)
+ppu::oam_get_pixel(uint8_t x)
 {
 	return oam_pixel_get();
 }
 
-static uint8_t
-get_sprite_height()
+uint8_t
+ppu::get_sprite_height()
 {
 	return io_read(rLCDC) & LCDCF_OBJ16 ? 16 : 8;
 }
 
 void
-oam_step()
+ppu::oam_step()
 {
 	oamentry *oam = (oamentry *)oamram;
 	int sprite_used[40];
@@ -298,7 +241,7 @@ oam_step()
 }
 
 void
-bg_reset()
+ppu::bg_reset()
 {
 	mode = mode_pixel;
 	vram_locked = 1;
@@ -309,17 +252,15 @@ bg_reset()
 	window = 0;
 }
 
-//static int fetch_is_sprite;
-
-static void
-bg_pixel_push(uint8_t p)
+void
+ppu::bg_pixel_push(uint8_t p)
 {
 	bg_pixel_queue[bg_pixel_queue_next++] = p;
 	assert(bg_pixel_queue_next <= sizeof(bg_pixel_queue));
 }
 
-static uint8_t
-bg_pixel_get()
+uint8_t
+ppu::bg_pixel_get()
 {
 	if (!bg_pixel_queue_next) {
 		return 0xff;
@@ -329,8 +270,8 @@ bg_pixel_get()
 	return p;
 }
 
-static void
-oam_pixel_set(int i, uint8_t p)
+void
+ppu::oam_pixel_set(int i, uint8_t p)
 {
 #if 0 // TODO: this sometimes happens, needs to be debugged
 	assert(i < sizeof(oam_pixel_queue));
@@ -344,8 +285,8 @@ oam_pixel_set(int i, uint8_t p)
 	}
 }
 
-static uint8_t
-oam_pixel_get()
+uint8_t
+ppu::oam_pixel_get()
 {
 	uint8_t total = 0xff;
 	for (int i = 0; i < sizeof(oam_pixel_queue); i++) {
@@ -364,13 +305,9 @@ oam_pixel_get()
 }
 
 
-static void
-bg_step()
+void
+ppu::bg_step()
 {
-	static uint8_t ybase;
-	static uint16_t bgptr;
-	static uint8_t data0;
-
 	// background @ 2 MHz
 	switch (bg_t) {
 		case 0: {
@@ -470,8 +407,8 @@ bg_step()
 	bg_t = (bg_t + 1 & 3);
 }
 
-static void
-pixel_step()
+void
+ppu::pixel_step()
 {
 	if (bg_pixel_queue_next >= 8) {
 		uint8_t p = bg_pixel_get();
@@ -491,7 +428,7 @@ pixel_step()
 
 // PPU steps are executed the CPU clock rate, i.e. at ~4 MHz
 void
-ppu_step()
+ppu::ppu_step()
 {
 	if ((io[rLCDC] & LCDCF_ON)) {
 		if (screen_off) {

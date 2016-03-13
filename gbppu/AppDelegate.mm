@@ -13,6 +13,7 @@
 #import "buttons.h"
 #import <QuartzCore/QuartzCore.h>
 
+ppu ppu;
 
 @interface View : NSView
 
@@ -57,9 +58,9 @@ static void _releaseInfo(void *info) {
 	callbacks.getBytesAtPosition = _getBytesCallback;
 	callbacks.releaseInfo = _releaseInfo;
 
-    size_t pictureSize = sizeof(picture);
+    size_t pictureSize = sizeof(ppu.picture);
     uint8_t *pictureCopy = (uint8_t *)malloc(pictureSize);
-    memcpy(pictureCopy, picture, pictureSize);
+    memcpy(pictureCopy, ppu.picture, pictureSize);
     
     CGDataProviderRef provider = CGDataProviderCreateDirect(pictureCopy, pictureSize, &callbacks);
     CGColorSpaceRef grayspace = CGColorSpaceCreateDeviceGray();
@@ -187,7 +188,7 @@ static uint8_t keys;
 	dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
 		mem_init();
 		cpu_init();
-		ppu_init();
+		ppu.ppu_init();
 
         NSTimeInterval timePerFrame = 1.0 / (1024.0 * 1024.0 / 114.0 / 154.0);
         
@@ -202,8 +203,8 @@ static uint8_t keys;
 #else
 			ppu_step();
 #endif
-			if (ppu_dirty) {
-				ppu_dirty = false;
+			if (ppu.ppu_dirty) {
+				ppu.ppu_dirty = false;
                 [view updateLayerContents];
 #if ! BUILD_USER_Lisa
                 // wait until the next 60 hz tick
