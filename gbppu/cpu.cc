@@ -28,50 +28,8 @@
 // http://z80-heaven.wikidot.com/instructions-set
 
 
-uint16_t pc = 0;
-uint16_t sp = 0;
-
-int interrupts_enabled = 0;
 
 #pragma mark - Registers
-
-// registers, can be used as 16 bit registers in the following combinations:
-// a,f,
-// b,c,
-// d,e,
-// h,l
-
-// f - flags register in detail
-// 7	6	5	4	3	2	1	0
-// Z	N	H	C	0	0	0	0
-// Z - Zero Flag
-// N - Subtract Flag
-// H - Half Carry Flag - did a carry from 3 to 4 bit happen
-// C - Carry Flag
-// 0 - Not used, always zero
-
-#pragma pack(1)
-union reg16_t {
-	uint16_t full;
-	struct {
-        union {
-            uint8_t full;
-            struct {
-				unsigned int bit3_0 : 4;
-                unsigned int bit4 : 1;
-				unsigned int bit5 : 1;
-				unsigned int bit6 : 1;
-				unsigned int bit7 : 1;
-            } bits;
-        } low;
-		uint8_t high;
-	} bytes;
-};
-
-union reg16_t reg16_af;
-union reg16_t reg16_bc;
-union reg16_t reg16_de;
-union reg16_t reg16_hl;
 
 #define af reg16_af.full
 #define a reg16_af.bytes.high
@@ -114,7 +72,7 @@ calc_carry(uint8_t bit, uint16_t da, uint16_t db, uint8_t substraction)
 }
 
 void
-set_hf_nf(uint8_t bit, uint16_t da, uint16_t db, uint8_t neg) // set the half carry flag
+cpu::set_hf_nf(uint8_t bit, uint16_t da, uint16_t db, uint8_t neg) // set the half carry flag
 {
 	nf = neg;
 	hf = calc_carry(bit, da, db, neg);
@@ -122,7 +80,7 @@ set_hf_nf(uint8_t bit, uint16_t da, uint16_t db, uint8_t neg) // set the half ca
 }
 
 void
-set_cf(uint8_t bit, uint16_t da, uint16_t db, uint8_t substraction)
+cpu::set_cf(uint8_t bit, uint16_t da, uint16_t db, uint8_t substraction)
 {
 	// todo: check addsp, ldhlsp (relative data)
 	cf = calc_carry(bit, da, db, substraction);
@@ -131,16 +89,16 @@ set_cf(uint8_t bit, uint16_t da, uint16_t db, uint8_t substraction)
 
 #pragma mark
 
-static uint8_t
-fetch8()
+uint8_t
+cpu::fetch8()
 {
 	uint8_t d8 = mem_read(pc++);
 	return d8;
 
 }
 
-static uint16_t
-fetch16()
+uint16_t
+cpu::fetch16()
 {
 	uint8_t d16l = fetch8();
 	uint8_t d16h = fetch8();
@@ -148,8 +106,8 @@ fetch16()
 	return d16;
 }
 
-static void
-ldhlsp(uint8_t d8) //  LD HL,SP+r8; 2; 12; 0 0 H C // LDHL SP,r8
+void
+cpu::ldhlsp(uint8_t d8) //  LD HL,SP+r8; 2; 12; 0 0 H C // LDHL SP,r8
 {
 	uint16_t d16 = (uint16_t)(int8_t)d8;
 	hl = sp + d16;
@@ -158,28 +116,28 @@ ldhlsp(uint8_t d8) //  LD HL,SP+r8; 2; 12; 0 0 H C // LDHL SP,r8
 	set_cf(8, sp, d16, 0);
 }
 
-static void
-push8(uint8_t d8)
+void
+cpu::push8(uint8_t d8)
 {
 	mem_write(--sp, d8);
 }
 
-static void
-push16(uint16_t d16)
+void
+cpu::push16(uint16_t d16)
 {
 	push8(d16 >> 8);
 	push8(d16 & 0xff);
 }
 
-static uint8_t
-pop8()
+uint8_t
+cpu::pop8()
 {
 	uint8_t d8 = mem_read(sp++);
 	return d8;
 }
 
-static uint16_t
-pop16()
+uint16_t
+cpu::pop16()
 {
 	uint8_t d16l = pop8();
 	uint8_t d16h = pop8();
@@ -190,8 +148,8 @@ pop16()
 
 #pragma mark
 
-static void
-inc8(uint8_t *r8) // INC \w 1; 4; Z 0 H -
+void
+cpu::inc8(uint8_t *r8) // INC \w 1; 4; Z 0 H -
 {
 	uint8_t old_r8 = *r8;
 	(*r8)++;
@@ -199,8 +157,8 @@ inc8(uint8_t *r8) // INC \w 1; 4; Z 0 H -
 	set_hf_nf(4, old_r8, 1, 0);
 }
 
-static void
-dec8(uint8_t *r8) // DEC \w 1; 4; Z 1 H -
+void
+cpu::dec8(uint8_t *r8) // DEC \w 1; 4; Z 1 H -
 {
 	uint8_t old_r8 = *r8;
 	(*r8)--;
@@ -208,8 +166,8 @@ dec8(uint8_t *r8) // DEC \w 1; 4; Z 1 H -
 	set_hf_nf(4, old_r8, 1, 1);
 }
 
-static void
-comparea8(uint8_t d8, int store) // X \w; 1; 4; Z 1 H C
+void
+cpu::comparea8(uint8_t d8, int store) // X \w; 1; 4; Z 1 H C
 {
 	zf = (a == d8);
 	set_hf_nf(4, a, d8, 1);
@@ -220,22 +178,22 @@ comparea8(uint8_t d8, int store) // X \w; 1; 4; Z 1 H C
 	}
 }
 
-static void
-cpa8(uint8_t d8) // CP \w; 1; 4; Z 1 H C
+void
+cpu::cpa8(uint8_t d8) // CP \w; 1; 4; Z 1 H C
 {
 	int store = 0;
 	comparea8(d8, store);
 }
 
-static void
-suba8(uint8_t d8) // SUB \w; 1; 4; Z 1 H C
+void
+cpu::suba8(uint8_t d8) // SUB \w; 1; 4; Z 1 H C
 {
 	int store = 1;
 	comparea8(d8, store);
 }
 
-static void
-sbca8(uint8_t d8) // SBC A,\w; 1; 4; Z 1 H C
+void
+cpu::sbca8(uint8_t d8) // SBC A,\w; 1; 4; Z 1 H C
 {
 	suba8(cf);
 	uint8_t old_cf = cf;
@@ -249,8 +207,8 @@ sbca8(uint8_t d8) // SBC A,\w; 1; 4; Z 1 H C
 	}
 }
 
-static void
-adda8(uint8_t d8) // ADD \w; 1; 8; Z 0 H C
+void
+cpu::adda8(uint8_t d8) // ADD \w; 1; 8; Z 0 H C
 {
 	set_hf_nf(4, a, d8, 0);
 	set_cf(8, a, d8, 0);
@@ -258,8 +216,8 @@ adda8(uint8_t d8) // ADD \w; 1; 8; Z 0 H C
 	zf = !a;
 }
 
-static void
-adca8(uint8_t d8) // ADC A,\w; 1; 4; Z 0 H C
+void
+cpu::adca8(uint8_t d8) // ADC A,\w; 1; 4; Z 0 H C
 {
 	adda8(cf);
 	uint8_t old_cf = cf;
@@ -273,16 +231,16 @@ adca8(uint8_t d8) // ADC A,\w; 1; 4; Z 0 H C
 	}
 }
 
-static void
-addhl(uint16_t d16) // ADD HL,\w\w; 1; 8; - 0 H C
+void
+cpu::addhl(uint16_t d16) // ADD HL,\w\w; 1; 8; - 0 H C
 {
 	set_hf_nf(12, hl, d16, 0);
 	set_cf(16, hl, d16, 0);
 	hl = hl + d16;
 }
 
-static void
-addsp(uint8_t d8) // ADD SP,r8; 2; 16; 0 0 H C
+void
+cpu::addsp(uint8_t d8) // ADD SP,r8; 2; 16; 0 0 H C
 {
 	uint16_t d16 = (uint16_t)(int8_t)d8;
 	set_hf_nf(4, sp, d16, 0);
@@ -294,8 +252,8 @@ addsp(uint8_t d8) // ADD SP,r8; 2; 16; 0 0 H C
 
 #pragma mark - Jumping
 
-static void
-jrcc(int condition) // jump relative condition code
+void
+cpu::jrcc(int condition) // jump relative condition code
 {
 	int8_t r8 = fetch8();
 	if (condition) {
@@ -303,8 +261,8 @@ jrcc(int condition) // jump relative condition code
 	}
 }
 
-static void
-jpcc(int condition) // jump condition code
+void
+cpu::jpcc(int condition) // jump condition code
 {
 	int16_t d16 = fetch16();
 	if (condition) {
@@ -312,23 +270,23 @@ jpcc(int condition) // jump condition code
 	}
 }
 
-static void
-rst8(uint8_t d8)
+void
+cpu::rst8(uint8_t d8)
 {
 	push16(pc);
 	pc = d8;
 }
 
-static void
-retcc(int condition)
+void
+cpu::retcc(int condition)
 {
 	if (condition) {
 		pc = pop16();
 	}
 }
 
-static void
-callcc(int condition)
+void
+cpu::callcc(int condition)
 {
 	uint16_t a16 = fetch16();
 	if (condition) {
@@ -340,8 +298,8 @@ callcc(int condition)
 
 #pragma mark - Bitwise Boolean Operations
 
-static void
-anda(uint8_t d8) // AND \w; 1; 4; Z 0 1 0
+void
+cpu::anda(uint8_t d8) // AND \w; 1; 4; Z 0 1 0
 {
 	a = a & d8;
 	zf = !a;
@@ -350,8 +308,8 @@ anda(uint8_t d8) // AND \w; 1; 4; Z 0 1 0
 	cf = 0;
 }
 
-static void
-ora(uint8_t d8) // OR \w; 1; 4; Z 0 0 0
+void
+cpu::ora(uint8_t d8) // OR \w; 1; 4; Z 0 0 0
 {
 	a = a | d8;
 	zf = !a;
@@ -360,8 +318,8 @@ ora(uint8_t d8) // OR \w; 1; 4; Z 0 0 0
 	cf = 0;
 }
 
-static void
-xora(uint8_t d8) // XOR \w; 1; 4; Z 0 0 0
+void
+cpu::xora(uint8_t d8) // XOR \w; 1; 4; Z 0 0 0
 {
 	a = a ^ d8;
 	zf = !a;
@@ -373,8 +331,8 @@ xora(uint8_t d8) // XOR \w; 1; 4; Z 0 0 0
 
 #pragma mark - Shifting
 
-static void
-rl8(uint8_t *r8) // RL \w; 2; 8; Z 0 0 C
+void
+cpu::rl8(uint8_t *r8) // RL \w; 2; 8; Z 0 0 C
 {
 	uint8_t old_cf = cf;
 	cf = *r8 >> 7;
@@ -384,8 +342,8 @@ rl8(uint8_t *r8) // RL \w; 2; 8; Z 0 0 C
 	hf = 0;
 }
 
-static void
-rlc8(uint8_t *r8) // RLC \w; 2; 8; Z 0 0 C
+void
+cpu::rlc8(uint8_t *r8) // RLC \w; 2; 8; Z 0 0 C
 {
 	cf = *r8 >> 7;
 	*r8 = (*r8 << 1) | cf;
@@ -394,8 +352,8 @@ rlc8(uint8_t *r8) // RLC \w; 2; 8; Z 0 0 C
 	hf = 0;
 }
 
-static void
-rr8(uint8_t *r8) // RR \w; 2; 8; Z 0 0 C
+void
+cpu::rr8(uint8_t *r8) // RR \w; 2; 8; Z 0 0 C
 {
 	uint8_t old_cf = cf;
 	cf = *r8 & 1;
@@ -405,8 +363,8 @@ rr8(uint8_t *r8) // RR \w; 2; 8; Z 0 0 C
 	hf = 0;
 }
 
-static void
-rrc8(uint8_t *r8) // RRC \w; 2; 8; Z 0 0 C
+void
+cpu::rrc8(uint8_t *r8) // RRC \w; 2; 8; Z 0 0 C
 {
 	cf = *r8 & 1;
 	*r8 = (cf << 7) | (*r8 >> 1);
@@ -415,8 +373,8 @@ rrc8(uint8_t *r8) // RRC \w; 2; 8; Z 0 0 C
 	hf = 0;
 }
 
-static void
-sla8(uint8_t *r8) // SLA \w; 2; 8; Z 0 0 C
+void
+cpu::sla8(uint8_t *r8) // SLA \w; 2; 8; Z 0 0 C
 {
 	cf = *r8 >> 7;
 	*r8 =  *r8 << 1;
@@ -425,8 +383,8 @@ sla8(uint8_t *r8) // SLA \w; 2; 8; Z 0 0 C
 	hf = 0;
 }
 
-static void
-sra8(uint8_t *r8) // SRA \w; 2; 8; Z 0 0 0
+void
+cpu::sra8(uint8_t *r8) // SRA \w; 2; 8; Z 0 0 0
 {
 	uint8_t old_bit7 = *r8 & (1 << 7);
 	cf = *r8 & 1;
@@ -436,8 +394,8 @@ sra8(uint8_t *r8) // SRA \w; 2; 8; Z 0 0 0
 	hf = 0;
 }
 
-static void
-srl8(uint8_t *r8) // SRL \w; 2; 8; Z 0 0 C
+void
+cpu::srl8(uint8_t *r8) // SRL \w; 2; 8; Z 0 0 C
 {
 	cf = *r8 & 1;
 	*r8 = *r8 >> 1;
@@ -449,8 +407,8 @@ srl8(uint8_t *r8) // SRL \w; 2; 8; Z 0 0 C
 
 #pragma mark - Changing Bits
 
-static void
-swap8(uint8_t *r8) // SWAP \w; 2; 8; Z 0 0 0
+void
+cpu::swap8(uint8_t *r8) // SWAP \w; 2; 8; Z 0 0 0
 {
 	*r8 = (*r8 << 4) | (*r8 >> 4);
 	zf = !*r8;
@@ -459,36 +417,36 @@ swap8(uint8_t *r8) // SWAP \w; 2; 8; Z 0 0 0
 	cf = 0;
 }
 
-static void
-bit8(uint8_t d8, uint8_t bit) // BIT \d,\w; 2; 8; Z 0 1 -
+void
+cpu::bit8(uint8_t d8, uint8_t bit) // BIT \d,\w; 2; 8; Z 0 1 -
 {
 	zf = !(d8 & (1 << bit));
 	nf = 0;
 	hf = 1;
 }
 
-static void
-set8(uint8_t *r8, uint8_t bit) // SET \d,\w; 2; 8; ----
+void
+cpu::set8(uint8_t *r8, uint8_t bit) // SET \d,\w; 2; 8; ----
 {
 	*r8 |= 1 << bit;
 }
 
-static void
-sethl(uint8_t bit)
+void
+cpu::sethl(uint8_t bit)
 {
 	uint8_t d8 = mem_read(hl);
 	set8(&d8, bit);
 	mem_write(hl, d8);
 }
 
-static void
-res8(uint8_t *r8, uint8_t bit) // RES \d,\w; 2; 8; ----
+void
+cpu::res8(uint8_t *r8, uint8_t bit) // RES \d,\w; 2; 8; ----
 {
 	*r8 &= ~(1 << bit);
 }
 
-static void
-reshl(uint8_t bit)
+void
+cpu::reshl(uint8_t bit)
 {
 	uint8_t d8 = mem_read(hl);
 	res8(&d8, bit);
@@ -497,8 +455,8 @@ reshl(uint8_t bit)
 
 #pragma mark
 
-static void
-daa() // DAA; 1; 4; Z - 0 C // decimal adjust a - BCD
+void
+cpu::daa() // DAA; 1; 4; Z - 0 C // decimal adjust a - BCD
 {
 	printf("todo: implement daa\n");
 	uint8_t old_nf = nf;
@@ -514,8 +472,7 @@ daa() // DAA; 1; 4; Z - 0 C // decimal adjust a - BCD
 
 #pragma mark - Init
 
-void
-cpu_init()
+cpu::cpu()
 {
 #if 0
 	mem_io_write(0x50, 1);
@@ -533,7 +490,6 @@ cpu_init()
 
 
 #pragma mark - Steps
-int counter = 0;
 
 #define NOT_YET_IMPLEMENTED()	do { \
 	printf("todo: pc=0x%04x, opcode=0x%02x\n", pc, opcode); \
@@ -541,12 +497,9 @@ int counter = 0;
 } while(0);
 
 
-#pragma mark - IRQ
-
-int halted = 0;
 
 int
-cpu_step()
+cpu::cpu_step()
 {
 	uint8_t pending_irqs = irq_get_pending();
 	while ((interrupts_enabled || halted) && pending_irqs) {

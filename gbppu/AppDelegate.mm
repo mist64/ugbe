@@ -14,6 +14,7 @@
 #import <QuartzCore/QuartzCore.h>
 
 ppu *ppu;
+cpu *cpu;
 
 @interface View : NSView
 
@@ -187,7 +188,7 @@ static uint8_t keys;
 
 	dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
 		mem_init();
-		cpu_init();
+		cpu = new class cpu();
 		ppu = new class ppu();
 
         NSTimeInterval timePerFrame = 1.0 / (1024.0 * 1024.0 / 114.0 / 154.0);
@@ -196,7 +197,7 @@ static uint8_t keys;
         
 		for (;;) {
 #if 1
-			int ret = cpu_step();
+			int ret = cpu->cpu_step();
 			if (ret) {
 				exit(ret);
 			}
