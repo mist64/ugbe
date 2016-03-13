@@ -11,17 +11,19 @@
 
 #include <stdio.h>
 
-class gb;
 class io;
 
 class serial {
-	friend gb;
+private:
+	io &_io;
+
 protected:
-	io *io;
+	friend class gb;
+	serial(io &io);
 
 public:
-	uint8_t serial_read(uint8_t a8);
-	void serial_write(uint8_t a8, uint8_t d8);
+	uint8_t read(uint8_t a8);
+	void write(uint8_t a8, uint8_t d8);
 };
 
 #endif /* serial_h */

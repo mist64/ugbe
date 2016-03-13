@@ -56,7 +56,6 @@
 
 const char *name_for_io_reg(uint8_t a8);
 
-class gb;
 class memory;
 class buttons;
 class serial;
@@ -65,31 +64,36 @@ class sound;
 class ppu;
 
 class io {
-	friend gb;
+private:
+	ppu     &_ppu;
+	memory  &_memory;
+	timer   &_timer;
+	serial  &_serial;
+	buttons &_buttons;
+	sound   &_sound;
+
+public:
+	uint8_t reg[256];
+
+protected:
+	friend class gb;
+	io(ppu &ppu, memory &memory, timer &timer, serial &serial, buttons &buttons, sound &sound);
+
 private:
 	uint8_t irq_read(uint8_t a8);
 	void irq_write(uint8_t a8, uint8_t d8);
-
-protected:
-	ppu *ppu;
-	timer *timer;
-	memory *memory;
-	sound *sound;
-	buttons *buttons;
-	serial *serial;
-
 
 public:
 	uint8_t io_read(uint8_t a8);
 	void io_write(uint8_t a8, uint8_t d8);
 
+public:
 	uint8_t irq_get_pending();
 	void irq_clear_pending(uint8_t irq);
 
+public:
 	void io_step();
 	void io_step_4();
-
-	uint8_t reg[256];
 };
 
 #endif /* io_h */

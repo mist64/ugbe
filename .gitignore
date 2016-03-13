@@ -1,0 +1,9 @@
+.DS_Store
+.gdb_history
+*~
+*.rej
+*.orig
+*.BAK
+*.bak
+._*
+*.o

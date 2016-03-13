@@ -7,29 +7,35 @@
 //
 
 #include "buttons.h"
+#include "io.h"
 
-uint8_t
-buttons::buttons_read()
+buttons::buttons(io &io)
+	: _io     (io)
+	, _buttons(0)
 {
-	uint8_t d8 = io->reg[rP1] | 0xcf;
-	if (io->reg[rP1] & 0x20) {
-		d8 &= (buttons ^ 0xff) | 0xf0;
+}
+
+uint8_t buttons::
+read()
+{
+	uint8_t d8 = _io.reg[rP1] | 0xcf;
+	if (_io.reg[rP1] & 0x20) {
+		d8 &= (_buttons ^ 0xff) | 0xf0;
 	}
-	if (io->reg[rP1] & 0x10) {
-		d8 &= ((buttons ^ 0xff) >> 4) | 0xf0;
+	if (_io.reg[rP1] & 0x10) {
+		d8 &= ((_buttons ^ 0xff) >> 4) | 0xf0;
 	}
 	return d8;
 }
 
-void
-buttons::buttons_write(uint8_t a8, uint8_t d8)
+void buttons::
+write(uint8_t a8, uint8_t d8)
 {
-	io->reg[a8] = d8;
+	_io.reg[a8] = d8;
 }
 
-void
-buttons::buttons_set(uint8_t k)
+void buttons::
+set(uint8_t k)
 {
-	buttons = k;
+    _buttons = k;
 }
-

@@ -19,6 +19,7 @@
 		CCAB237B1C8CF78A0019B444 /* buttons.cc in Sources */ = {isa = PBXBuildFile; fileRef = CCAB23791C8CF78A0019B444 /* buttons.cc */; };
 		CCAB237E1C8CF7A30019B444 /* serial.cc in Sources */ = {isa = PBXBuildFile; fileRef = CCAB237C1C8CF7A30019B444 /* serial.cc */; };
 		CCAB23801C8CF98D0019B444 /* io.cc in Sources */ = {isa = PBXBuildFile; fileRef = CCAB237F1C8CF98D0019B444 /* io.cc */; };
+		D002FC441C952070006722DE /* gb.cc in Sources */ = {isa = PBXBuildFile; fileRef = D002FC421C952070006722DE /* gb.cc */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -45,6 +46,8 @@
 		CCAB237C1C8CF7A30019B444 /* serial.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; path = serial.cc; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		CCAB237D1C8CF7A30019B444 /* serial.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = serial.h; sourceTree = "<group>"; };
 		CCAB237F1C8CF98D0019B444 /* io.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; path = io.cc; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
+		D002FC421C952070006722DE /* gb.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = gb.cc; sourceTree = "<group>"; };
+		D002FC431C952070006722DE /* gb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gb.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -82,6 +85,8 @@
 				CC512A681C7BA65100ECFACA /* Assets.xcassets */,
 				CC512A6A1C7BA65100ECFACA /* MainMenu.xib */,
 				CC512A6D1C7BA65100ECFACA /* Info.plist */,
+				D002FC421C952070006722DE /* gb.cc */,
+				D002FC431C952070006722DE /* gb.h */,
 				CC6486F81C803EE200637024 /* cpu.cc */,
 				425ADC0F1C84C88D00068F15 /* cpu.h */,
 				CC6486FE1C82F63400637024 /* memory.cc */,
@@ -180,6 +185,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D002FC441C952070006722DE /* gb.cc in Sources */,
 				CC6486F91C803EE200637024 /* cpu.cc in Sources */,
 				CCAB237B1C8CF78A0019B444 /* buttons.cc in Sources */,
 				CC512A671C7BA65100ECFACA /* main.m in Sources */,

@@ -11,30 +11,32 @@
 
 #include <stdio.h>
 
-class gb;
 class memory;
 class io;
 
 class ppu {
-	friend gb;
-public:
-	ppu();
-	void ppu_step();
-
-	uint8_t ppu_io_read(uint8_t a8);
-	void ppu_io_write(uint8_t a8, uint8_t d8);
-
-	uint8_t ppu_vram_read(uint16_t a16);
-	void ppu_vram_write(uint16_t a16, uint8_t d8);
-	uint8_t ppu_oamram_read(uint8_t a8);
-	void ppu_oamram_write(uint8_t a8, uint8_t d8);
-
-	uint8_t picture[144][160];
-	int ppu_dirty;
+private:
+	memory &_memory;
+	io     &_io;
 
 protected:
-	memory *memory;
-	io *io;
+	friend class gb;
+	ppu(memory &memory, io &io);
+
+public:
+	void step();
+
+	uint8_t io_read(uint8_t a8);
+	void io_write(uint8_t a8, uint8_t d8);
+
+	uint8_t vram_read(uint16_t a16);
+	void vram_write(uint16_t a16, uint8_t d8);
+	uint8_t oamram_read(uint8_t a8);
+	void oamram_write(uint8_t a8, uint8_t d8);
+
+public:
+	uint8_t picture[144][160];
+    bool dirty;
 
 private:
 	uint8_t *vram;
@@ -89,8 +91,8 @@ private:
 	} spritegen[10];
 
 	void new_screen();
-	int ppu_output_pixel(uint8_t p);
-	void ppu_new_line();
+	int output_pixel(uint8_t p);
+	void new_line();
 	uint8_t paletted(uint8_t pal, uint8_t p);
 	void vram_set_address(uint16_t addr);
 	uint8_t vram_get_data();

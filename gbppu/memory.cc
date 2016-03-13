@@ -11,13 +11,15 @@
 #include "io.h"
 #include "ppu.h"
 
-void
-memory::read_rom(const char *filename)
+void memory::
+read_rom(const char *filename)
 {
 	uint8_t header[0x100];
 	FILE *file = fopen(filename, "r");
-	fseek(file, 0x100, SEEK_SET);
-	fread(header, 0x100, 1, file);
+	if (file) {
+		fseek(file, 0x100, SEEK_SET);
+		fread(header, 0x100, 1, file);
+	}
 
 	mbc = mbc_none;
 	has_ram = 0;
@@ -201,15 +203,19 @@ memory::read_rom(const char *filename)
 		}
 	}
 
-	fseek(file, 0L, SEEK_SET);
-	rom = (uint8_t *)calloc(romsize, 1);
-	fread(rom, romsize, 1, file);
-	fclose(file);
+    if (file) {
+		fseek(file, 0L, SEEK_SET);
+		rom = (uint8_t *)calloc(romsize, 1);
+		fread(rom, romsize, 1, file);
+		fclose(file);
+    }
 
 	rom_bank = 0;
 }
 
-memory::memory()
+memory::memory(ppu &ppu, io &io)
+	: _ppu(ppu)
+	, _io (io)
 {
 	const char *bootrom_filename;
 	const char *cartridge_filename;
@@ -423,8 +429,10 @@ memory::memory()
 
 	bootrom = (uint8_t *)calloc(0x100, 1);
 	FILE *file = fopen(bootrom_filename, "r");
-	fread(bootrom, 0x100, 1, file);
-	fclose(file);
+	if (file) {
+		fread(bootrom, 0x100, 1, file);
+		fclose(file);
+	}
 
 	ram = (uint8_t *)calloc(0x2000, 1);
 	hiram = (uint8_t *)calloc(0x7f, 1);
@@ -440,15 +448,15 @@ memory::memory()
 	fclose(file);
 
 	for (int addr = 0; addr < 65536; addr++) {
-		mem_write_internal(addr, data[addr]);
+		write_internal(addr, data[addr]);
 	}
 #endif
 }
 
-uint8_t
-memory::mem_read(uint16_t a16)
+uint8_t memory::
+read(uint16_t a16)
 {
-	io->io_step_4();
+	_io.io_step_4();
 
 	if (a16 < 0x4000) {
 		if (bootrom_enabled && a16 < 0x100) {
@@ -478,7 +486,7 @@ memory::mem_read(uint16_t a16)
 			return rom[a16];
 		}
 	} else if (a16 >= 0x8000 && a16 < 0xa000) {
-		return ppu->ppu_vram_read(a16 - 0x8000);
+		return _ppu.vram_read(a16 - 0x8000);
 	} else if (a16 >= 0xa000 && a16 < 0xc000) {
 		// TODO: RAM banking
 		if (a16 - 0xa000 < extramsize) {
@@ -490,12 +498,12 @@ memory::mem_read(uint16_t a16)
 	} else if (a16 >= 0xc000 && a16 < 0xe000) {
 		return ram[a16 - 0xc000];
 	} else if (a16 >= 0xfe00 && a16 < 0xfea0) {
-		return ppu->ppu_oamram_read(a16 - 0xfe00);
+		return _ppu.oamram_read(a16 - 0xfe00);
 	} else if (a16 >= 0xfea0 && a16 < 0xff00) {
 		// unassigned
 		return 0xff;
 	} else if ((a16 >= 0xff00 && a16 < 0xff80) || a16 == 0xffff) {
-		return io->io_read(a16 & 0xff);
+		return _io.io_read(a16 & 0xff);
 	} else if (a16 >= 0xff80) {
 		return hiram[a16 - 0xff80];
 	} else {
@@ -504,8 +512,8 @@ memory::mem_read(uint16_t a16)
 	}
 }
 
-void
-memory::mem_write_internal(uint16_t a16, uint8_t d8)
+void memory::
+write_internal(uint16_t a16, uint8_t d8)
 {
 	if (a16 < 0x8000) {
 		if (mbc == mbc1) {
@@ -531,7 +539,7 @@ memory::mem_write_internal(uint16_t a16, uint8_t d8)
 			printf("warning: unsupported MBC write!\n");
 		}
 	} else if (a16 >= 0x8000 && a16 < 0xa000) {
-		ppu->ppu_vram_write(a16 - 0x8000, d8);
+		_ppu.vram_write(a16 - 0x8000, d8);
 	} else if (a16 >= 0xa000 && a16 < 0xc000) {
 		if (a16 - 0xa000 < extramsize) {
 			extram[a16 - 0xa000] = d8;
@@ -541,11 +549,11 @@ memory::mem_write_internal(uint16_t a16, uint8_t d8)
 	} else if (a16 >= 0xc000 && a16 < 0xe000) {
 		ram[a16 - 0xc000] = d8;
 	} else if (a16 >= 0xfe00 && a16 < 0xfea0) {
-		ppu->ppu_oamram_write(a16 - 0xfe00, d8);
+		_ppu.oamram_write(a16 - 0xfe00, d8);
 	} else if (a16 >= 0xfea0 && a16 < 0xff00) {
 		// unassigned
 	} else if ((a16 >= 0xff00 && a16 < 0xff80) || a16 == 0xffff) {
-		io->io_write(a16 & 0xff, d8);
+		_io.io_write(a16 & 0xff, d8);
 	} else if (a16 >= 0xff80) {
 		hiram[a16 - 0xff80] = d8;
 	} else {
@@ -553,23 +561,23 @@ memory::mem_write_internal(uint16_t a16, uint8_t d8)
 	}
 }
 
-void
-memory::mem_write(uint16_t a16, uint8_t d8)
+void memory::
+write(uint16_t a16, uint8_t d8)
 {
-	io->io_step_4();
-	mem_write_internal(a16, d8);
+	_io.io_step_4();
+	write_internal(a16, d8);
 }
 
-void
-memory::mem_io_write(uint8_t a8, uint8_t d8)
+void memory::
+io_write(uint8_t a8, uint8_t d8)
 {
 	if (d8 & 1) {
 		bootrom_enabled = 0;
 	}
 }
 
-int
-memory::mem_is_bootrom_enabled()
+int memory::
+is_bootrom_enabled()
 {
 	return bootrom_enabled;
 }

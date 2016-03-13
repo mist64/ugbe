@@ -7,65 +7,8 @@
 //
 
 #import "AppDelegate.h"
-#import "memory.h"
-#import "ppu.h"
-#import "cpu.h"
-#import "timer.h"
-#import "sound.h"
-#import "io.h"
-#import "buttons.h"
-#import "serial.h"
+#import "gb.h"
 #import <QuartzCore/QuartzCore.h>
-
-class gb {
-public:
-	ppu *ppu;
-	cpu *cpu;
-	memory *memory;
-	timer *timer;
-	sound *sound;
-	io *io;
-	buttons *buttons;
-	serial *serial;
-
-	gb();
-};
-
-gb::gb()
-{
-	memory = new class memory();
-	cpu = new class cpu();
-	ppu = new class ppu();
-	timer = new class timer();
-	sound = new class sound();
-	io = new class io();
-	buttons = new class buttons();
-	serial = new class serial();
-
-	buttons->io = io;
-
-	cpu->memory = memory;
-	cpu->io = io;
-
-	io->ppu = ppu;
-	io->timer = timer;
-	io->memory = memory;
-	io->sound = sound;
-	io->buttons = buttons;
-	io->serial = serial;
-
-	memory->ppu = ppu;
-	memory->io = io;
-
-	ppu->memory = memory;
-	ppu->io = io;
-
-	serial->io = io;
-	sound->io = io;
-	timer->io = io;
- printf("%s:%d %p\n", __FILE__, __LINE__, timer);
- printf("%s:%d %p\n", __FILE__, __LINE__, timer->io);
-}
 
 gb *gb;
 
@@ -112,9 +55,8 @@ static void _releaseInfo(void *info) {
 	callbacks.getBytesAtPosition = _getBytesCallback;
 	callbacks.releaseInfo = _releaseInfo;
 
-    size_t pictureSize = sizeof(gb->ppu->picture);
-    uint8_t *pictureCopy = (uint8_t *)malloc(pictureSize);
-    memcpy(pictureCopy, gb->ppu->picture, pictureSize);
+	size_t pictureSize;
+    uint8_t *pictureCopy = gb->copy_ppu_picture(pictureSize);
     
     CGDataProviderRef provider = CGDataProviderCreateDirect(pictureCopy, pictureSize, &callbacks);
     CGColorSpaceRef grayspace = CGColorSpaceCreateDeviceGray();
@@ -206,13 +148,13 @@ static uint8_t keys;
 - (void)keyDown:(NSEvent *)event
 {
 	keys |= [self keyMaskFromEvent:event];
-	gb->buttons->buttons_set(keys);
+	gb->set_buttons(keys);
 }
 
 - (void)keyUp:(NSEvent *)event
 {
 	keys &= ~[self keyMaskFromEvent:event];
-	gb->buttons->buttons_set(keys);
+	gb->set_buttons(keys);
 }
 
 @end
@@ -247,22 +189,19 @@ static uint8_t keys;
         self.nextFrameTime = [NSDate timeIntervalSinceReferenceDate] + timePerFrame;
         
 		for (;;) {
-#if 1
-			int ret = gb->cpu->cpu_step();
+			int ret = gb->step();
 			if (ret) {
 				exit(ret);
 			}
-#else
-			gb->ppu->ppu_step();
-#endif
-			if (gb->ppu->ppu_dirty) {
-				gb->ppu->ppu_dirty = false;
+
+			if (gb->is_ppu_dirty()) {
+				gb->clear_ppu_dirty();
                 [view updateLayerContents];
 #if ! BUILD_USER_Lisa
                 // wait until the next 60 hz tick
                 NSTimeInterval interval = [NSDate timeIntervalSinceReferenceDate];
                 if (interval < self.nextFrameTime) {
-//                    [NSThread sleepForTimeInterval:self.nextFrameTime - interval];
+                    // [NSThread sleepForTimeInterval:self.nextFrameTime - interval];
                 } else if (interval - 20 * timePerFrame > self.nextFrameTime) {
                     self.nextFrameTime = interval;
                 }

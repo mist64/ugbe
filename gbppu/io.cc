@@ -37,89 +37,98 @@ name_for_io_reg(uint8_t a8)
 	}
 }
 
-uint8_t
-io::irq_read(uint8_t a8)
+io::io(ppu &ppu, memory &memory, timer &timer, serial &serial, buttons &buttons, sound &sound)
+	: _ppu    (ppu)
+	, _memory (memory)
+	, _timer  (timer)
+	, _serial (serial)
+	, _buttons(buttons)
+	, _sound  (sound)
+{
+}
+
+uint8_t io::
+irq_read(uint8_t a8)
 {
 	// these behave like RAM
 	return reg[a8];
 }
 
-void
-io::irq_write(uint8_t a8, uint8_t d8)
+void io::
+irq_write(uint8_t a8, uint8_t d8)
 {
 	// these behave like RAM
 	reg[a8] = d8;
 }
 
-uint8_t
-io::irq_get_pending()
+uint8_t io::
+irq_get_pending()
 {
 	return reg[rIF] & reg[rIE];
 }
 
-void
-io::irq_clear_pending(uint8_t irq)
+void io::
+irq_clear_pending(uint8_t irq)
 {
 	reg[rIF] &= ~(1 << irq);
 }
 
 
-uint8_t
-io::io_read(uint8_t a8)
+uint8_t io::
+io_read(uint8_t a8)
 {
 	if (a8 == 0x00) {
-		return buttons->buttons_read();
+		return _buttons.read();
 	} else if (a8 == 0x01 || a8 == 0x02) {
-		return serial->serial_read(a8);
+		return _serial.read(a8);
 	} else if (a8 >= 0x04 && a8 <= 0x07) {
-		return timer->timer_read(a8);
+		return _timer.read(a8);
 	} else if (a8 == 0x0F || a8 == 0xFF) {
 		return irq_read(a8);
 	} else if (a8 >= 0x10 && a8 <= 0x26) {
-		return sound->sound_read(a8);
+		return _sound.read(a8);
 	} else if (a8 >= 0x40 && a8 <= 0x4b) {
-		return ppu->ppu_io_read(a8);
+		return _ppu.io_read(a8);
 	} else {
 		// unassigned
 		return 0xff;
 	}
 }
 
-void
-io::io_write(uint8_t a8, uint8_t d8)
+void io::
+io_write(uint8_t a8, uint8_t d8)
 {
 	if (a8 == 0x00) {
-		buttons->buttons_write(a8, d8);
+		_buttons.write(a8, d8);
 	} else if (a8 == 0x01 || a8 == 0x02) {
-		serial->serial_write(a8, d8);
+		_serial.write(a8, d8);
 	} else if (a8 >= 0x04 && a8 <= 0x07) {
-		timer->timer_write(a8, d8);
+		_timer.write(a8, d8);
 	} else if (a8 == 0x0F || a8 == 0xFF) {
 		irq_write(a8, d8);
 	} else if (a8 >= 0x10 && a8 <= 0x26) {
-		sound->sound_write(a8, d8);
+		_sound.write(a8, d8);
 	} else if (a8 >= 0x40 && a8 <= 0x4b) {
-		ppu->ppu_io_write(a8, d8);
+		_ppu.io_write(a8, d8);
 	} else if (a8 == 0x50) {
-		memory->mem_io_write(a8, d8);
+		_memory.io_write(a8, d8);
 	} else {
 		// do nothing
 	}
 }
 
-void
-io::io_step()
+void io::
+io_step()
 {
-	timer->timer_step();
-	ppu->ppu_step();
+	_timer.step();
+	_ppu.step();
 }
 
-void
-io::io_step_4()
+void io::
+io_step_4()
 {
 	io_step();
 	io_step();
 	io_step();
 	io_step();
 }
-

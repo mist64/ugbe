@@ -12,24 +12,26 @@
 #include <stdint.h>
 #include <stdio.h>
 
-class gb;
 class io;
 
 class timer {
-	friend gb;
 private:
-	int timer_counter;
+	io  &_io;
+	int  counter;
 
-	void timer_reset();
+private:
+	void reset();
 
 protected:
-	io *io;
+    friend class gb;
+	timer(io &io);
 
 public:
-	uint8_t timer_read(uint8_t a8);
-	void timer_write(uint8_t a8, uint8_t d8);
+	uint8_t read(uint8_t a8);
+	void write(uint8_t a8, uint8_t d8);
 
-	void timer_step();
+public:
+	void step();
 };
 
 #endif /* timer_h */

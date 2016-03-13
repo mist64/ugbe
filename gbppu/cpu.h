@@ -11,18 +11,20 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#include "memory.h"
-#include "io.h"
 
-class gb;
+class memory;
+class io;
 
 class cpu {
-	friend gb;
 private:
-	uint16_t pc = 0;
-	uint16_t sp = 0;
+	memory &_memory;
+	io     &_io;
 
-	int interrupts_enabled = 0;
+private:
+	uint16_t pc;
+	uint16_t sp;
+
+	int interrupts_enabled;
 
 	// registers, can be used as 16 bit registers in the following combinations:
 	// a,f,
@@ -39,7 +41,7 @@ private:
 	// C - Carry Flag
 	// 0 - Not used, always zero
 
-#pragma pack(1)
+#pragma pack(push, 1)
 	union reg16_t {
 		uint16_t full;
 		struct {
@@ -56,15 +58,17 @@ private:
 			uint8_t high;
 		} bytes;
 	};
+#pragma pack(pop)
 
 	union reg16_t reg16_af;
 	union reg16_t reg16_bc;
 	union reg16_t reg16_de;
 	union reg16_t reg16_hl;
 
-	int counter = 0;
-	int halted = 0;
+	int counter;
+	int halted;
 
+private:
 	void set_hf_nf(uint8_t bit, uint16_t da, uint16_t db, uint8_t neg);
 	void set_cf(uint8_t bit, uint16_t da, uint16_t db, uint8_t substraction);
 	uint8_t fetch8();
@@ -108,12 +112,11 @@ private:
 	void daa();
 
 protected:
-	memory *memory;
-	io *io;
+    friend class gb;
+	cpu(memory &memory, io &io);
 
 public:
-	cpu();
-	int cpu_step();
+	int step();
 };
 
 #endif /* cpu_h */

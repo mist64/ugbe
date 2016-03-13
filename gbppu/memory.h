@@ -12,12 +12,14 @@
 #include <stdio.h>
 #include <stdint.h>
 
-class gb;
 class io;
 class ppu;
 
 class memory {
-	friend gb;
+private:
+	ppu &_ppu;
+	io  &_io;
+
 private:
 	uint8_t *bootrom;
 	uint8_t *rom;
@@ -49,21 +51,20 @@ private:
 	int bootrom_enabled;
 
 	void read_rom(const char *filename);
-	void mem_write_internal(uint16_t a16, uint8_t d8);
+	void write_internal(uint16_t a16, uint8_t d8);
 
 protected:
-	ppu *ppu;
-	io *io;
+	friend class gb;
+	memory(ppu &ppu, io &io);
 
 public:
-	memory();
-	void mem_init();
-	uint8_t mem_read(uint16_t a16);
-	void mem_write(uint16_t a16, uint8_t d8);
+	void init();
+	uint8_t read(uint16_t a16);
+	void write(uint16_t a16, uint8_t d8);
 
-	void mem_io_write(uint8_t a8, uint8_t d8);
+	void io_write(uint8_t a8, uint8_t d8);
 
-	int mem_is_bootrom_enabled();
+	int is_bootrom_enabled();
 };
 
 #endif /* memory_h */
