@@ -11,45 +11,15 @@
 #include "io.h"
 #include "ppu.h"
 
-uint8_t *bootrom;
-uint8_t *rom;
-uint8_t *ram;
-uint8_t *extram;
-uint8_t *hiram;
-
-enum {
-	mbc_none,
-	mbc1,
-	mbc2,
-	mbc3,
-	mbc4,
-	mbc5,
-	mmm01,
-	huc1,
-	huc3,
-} mbc;
-int has_ram;
-int has_battery;
-int has_timer;
-int has_rumble;
-uint32_t romsize;
-uint16_t extramsize;
-int ram_enabled;
-uint8_t rom_bank;
-uint8_t ram_bank;
-int banking_mode;
-int bootrom_enabled;
-
-
-static void mem_write_internal(uint16_t a16, uint8_t d8);
-
-static void
-read_rom(char *filename)
+void memory::
+read_rom(const char *filename)
 {
 	uint8_t header[0x100];
 	FILE *file = fopen(filename, "r");
-	fseek(file, 0x100, SEEK_SET);
-	fread(header, 0x100, 1, file);
+	if (file) {
+		fseek(file, 0x100, SEEK_SET);
+		fread(header, 0x100, 1, file);
+	}
 
 	mbc = mbc_none;
 	has_ram = 0;
@@ -233,19 +203,22 @@ read_rom(char *filename)
 		}
 	}
 
-	fseek(file, 0L, SEEK_SET);
-	rom = calloc(romsize, 1);
-	fread(rom, romsize, 1, file);
-	fclose(file);
+    if (file) {
+		fseek(file, 0L, SEEK_SET);
+		rom = (uint8_t *)calloc(romsize, 1);
+		fread(rom, romsize, 1, file);
+		fclose(file);
+    }
 
 	rom_bank = 0;
 }
 
-void
-mem_init()
+memory::memory(ppu &ppu, io &io)
+	: _ppu(ppu)
+	, _io (io)
 {
-	char *bootrom_filename;
-	char *cartridge_filename;
+	const char *bootrom_filename;
+	const char *cartridge_filename;
 
 #if BUILD_USER_Lisa
 	bootrom_filename = "/Users/lisa/Projects/game_boy/gbcpu/gbppu/DMG_ROM.bin";
@@ -277,7 +250,7 @@ mem_init()
 #else
 //	cartridge_filename = "/Users/mist/Documents/git/gbcpu/gbppu/tetris.gb";
 //	cartridge_filename = "/Users/mist/Documents/git/gb-timing/gb-scy.gb";
-//	cartridge_filename = "/Users/mist/Documents/git/gb-timing/gb-timing.gb";
+	cartridge_filename = "/Users/mist/Documents/git/gb-timing/gb-timing.gb";
 //	cartridge_filename = "/Users/mist/Documents/git/gb-platformer/gb-platformer.gb";
 
 //	cartridge_filename = "/Users/mist/Downloads/cpu_instrs/individual/01-special.gb";            // x Failed #6 - DAA
@@ -385,6 +358,9 @@ mem_init()
 //	cartridge_filename = "/Users/mist/tmp/gb/Yakyuuman (J).gb";
 
 //	cartridge_filename = "/Users/mist/Downloads/pocket/pocket.gb";
+//	cartridge_filename = "/Users/mist/Downloads/oh/oh.gb";
+//	cartridge_filename = "/Users/mist/Downloads/gejmboj/gejmboj.gb";
+//	cartridge_filename = "/Users/mist/Downloads/SP-20Y/20y.gb";
 
 //	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/add_sp_e_timing.gb";
 //	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/bits/mem_oam.gb"; // OK
@@ -448,23 +424,20 @@ mem_init()
 
 	bootrom_filename = "/Users/mist/Documents/git/gbcpu/gbppu/DMG_ROM.bin";
 #endif
-    mem_init_filenames(bootrom_filename, cartridge_filename);
-}
 
-void
-mem_init_filenames(char *bootrom_filename, char *cartridge_filename)
-{
 	read_rom(cartridge_filename);
 
-	bootrom = calloc(0x100, 1);
+	bootrom = (uint8_t *)calloc(0x100, 1);
 	FILE *file = fopen(bootrom_filename, "r");
-	fread(bootrom, 0x100, 1, file);
-	fclose(file);
+	if (file) {
+		fread(bootrom, 0x100, 1, file);
+		fclose(file);
+	}
 
-	ram = calloc(0x2000, 1);
-	hiram = calloc(0x7f, 1);
+	ram = (uint8_t *)calloc(0x2000, 1);
+	hiram = (uint8_t *)calloc(0x7f, 1);
 
-	extram = calloc(extramsize, 1);
+	extram = (uint8_t *)calloc(extramsize, 1);
 
 	bootrom_enabled = 1;
 
@@ -475,15 +448,15 @@ mem_init_filenames(char *bootrom_filename, char *cartridge_filename)
 	fclose(file);
 
 	for (int addr = 0; addr < 65536; addr++) {
-		mem_write_internal(addr, data[addr]);
+		write_internal(addr, data[addr]);
 	}
 #endif
 }
 
-uint8_t
-mem_read(uint16_t a16)
+uint8_t memory::
+read(uint16_t a16)
 {
-	io_step_4();
+	_io.io_step_4();
 
 	if (a16 < 0x4000) {
 		if (bootrom_enabled && a16 < 0x100) {
@@ -513,7 +486,7 @@ mem_read(uint16_t a16)
 			return rom[a16];
 		}
 	} else if (a16 >= 0x8000 && a16 < 0xa000) {
-		return ppu_vram_read(a16 - 0x8000);
+		return _ppu.vram_read(a16 - 0x8000);
 	} else if (a16 >= 0xa000 && a16 < 0xc000) {
 		// TODO: RAM banking
 		if (a16 - 0xa000 < extramsize) {
@@ -525,12 +498,12 @@ mem_read(uint16_t a16)
 	} else if (a16 >= 0xc000 && a16 < 0xe000) {
 		return ram[a16 - 0xc000];
 	} else if (a16 >= 0xfe00 && a16 < 0xfea0) {
-		return ppu_oamram_read(a16 - 0xfe00);
+		return _ppu.oamram_read(a16 - 0xfe00);
 	} else if (a16 >= 0xfea0 && a16 < 0xff00) {
 		// unassigned
 		return 0xff;
 	} else if ((a16 >= 0xff00 && a16 < 0xff80) || a16 == 0xffff) {
-		return io_read(a16 & 0xff);
+		return _io.io_read(a16 & 0xff);
 	} else if (a16 >= 0xff80) {
 		return hiram[a16 - 0xff80];
 	} else {
@@ -539,8 +512,8 @@ mem_read(uint16_t a16)
 	}
 }
 
-static void
-mem_write_internal(uint16_t a16, uint8_t d8)
+void memory::
+write_internal(uint16_t a16, uint8_t d8)
 {
 	if (a16 < 0x8000) {
 		if (mbc == mbc1) {
@@ -566,7 +539,7 @@ mem_write_internal(uint16_t a16, uint8_t d8)
 			printf("warning: unsupported MBC write!\n");
 		}
 	} else if (a16 >= 0x8000 && a16 < 0xa000) {
-		ppu_vram_write(a16 - 0x8000, d8);
+		_ppu.vram_write(a16 - 0x8000, d8);
 	} else if (a16 >= 0xa000 && a16 < 0xc000) {
 		if (a16 - 0xa000 < extramsize) {
 			extram[a16 - 0xa000] = d8;
@@ -576,11 +549,11 @@ mem_write_internal(uint16_t a16, uint8_t d8)
 	} else if (a16 >= 0xc000 && a16 < 0xe000) {
 		ram[a16 - 0xc000] = d8;
 	} else if (a16 >= 0xfe00 && a16 < 0xfea0) {
-		ppu_oamram_write(a16 - 0xfe00, d8);
+		_ppu.oamram_write(a16 - 0xfe00, d8);
 	} else if (a16 >= 0xfea0 && a16 < 0xff00) {
 		// unassigned
 	} else if ((a16 >= 0xff00 && a16 < 0xff80) || a16 == 0xffff) {
-		io_write(a16 & 0xff, d8);
+		_io.io_write(a16 & 0xff, d8);
 	} else if (a16 >= 0xff80) {
 		hiram[a16 - 0xff80] = d8;
 	} else {
@@ -588,23 +561,23 @@ mem_write_internal(uint16_t a16, uint8_t d8)
 	}
 }
 
-void
-mem_write(uint16_t a16, uint8_t d8)
+void memory::
+write(uint16_t a16, uint8_t d8)
 {
-	io_step_4();
-	mem_write_internal(a16, d8);
+	_io.io_step_4();
+	write_internal(a16, d8);
 }
 
-void
-mem_io_write(uint8_t a8, uint8_t d8)
+void memory::
+io_write(uint8_t a8, uint8_t d8)
 {
 	if (d8 & 1) {
 		bootrom_enabled = 0;
 	}
 }
 
-int
-mem_is_bootrom_enabled()
+int memory::
+is_bootrom_enabled()
 {
 	return bootrom_enabled;
 }

@@ -9,6 +9,8 @@
 #ifndef io_h
 #define io_h
 
+#include <stdint.h>
+
 #define rP1 0x00
 #define rLCDC 0x40
 #define rSTAT 0x41
@@ -52,17 +54,46 @@
 #define rNR42_2 0x22
 #define rNR43 0x23
 
-char *name_for_io_reg(uint8_t a8);
+const char *name_for_io_reg(uint8_t a8);
 
-extern uint8_t io[256];
+class memory;
+class buttons;
+class serial;
+class timer;
+class sound;
+class ppu;
 
-uint8_t io_read(uint8_t a8);
-void io_write(uint8_t a8, uint8_t d8);
+class io {
+private:
+	ppu     &_ppu;
+	memory  &_memory;
+	timer   &_timer;
+	serial  &_serial;
+	buttons &_buttons;
+	sound   &_sound;
 
-uint8_t irq_get_pending();
-void irq_clear_pending(uint8_t irq);
+public:
+	uint8_t reg[256];
 
-void io_step();
-void io_step_4();
+protected:
+	friend class gb;
+	io(ppu &ppu, memory &memory, timer &timer, serial &serial, buttons &buttons, sound &sound);
+
+private:
+	uint8_t irq_read(uint8_t a8);
+	void irq_write(uint8_t a8, uint8_t d8);
+
+public:
+	uint8_t io_read(uint8_t a8);
+	void io_write(uint8_t a8, uint8_t d8);
+
+public:
+	uint8_t irq_get_pending();
+	void irq_clear_pending(uint8_t irq);
+
+public:
+	void io_step();
+	void io_step_4();
+};
 
 #endif /* io_h */

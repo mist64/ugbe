@@ -10,14 +10,61 @@
 #define memory_h
 
 #include <stdio.h>
+#include <stdint.h>
 
-void mem_init();
-void mem_init_filenames(char *bootrom, char *cartridge);
-uint8_t mem_read(uint16_t a16);
-void mem_write(uint16_t a16, uint8_t d8);
+class io;
+class ppu;
 
-void mem_io_write(uint8_t a8, uint8_t d8);
+class memory {
+private:
+	ppu &_ppu;
+	io  &_io;
 
-int mem_is_bootrom_enabled();
+private:
+	uint8_t *bootrom;
+	uint8_t *rom;
+	uint8_t *ram;
+	uint8_t *extram;
+	uint8_t *hiram;
+
+	enum {
+		mbc_none,
+		mbc1,
+		mbc2,
+		mbc3,
+		mbc4,
+		mbc5,
+		mmm01,
+		huc1,
+		huc3,
+	} mbc;
+	int has_ram;
+	int has_battery;
+	int has_timer;
+	int has_rumble;
+	uint32_t romsize;
+	uint16_t extramsize;
+	int ram_enabled;
+	uint8_t rom_bank;
+	uint8_t ram_bank;
+	int banking_mode;
+	int bootrom_enabled;
+
+	void read_rom(const char *filename);
+	void write_internal(uint16_t a16, uint8_t d8);
+
+protected:
+	friend class gb;
+	memory(ppu &ppu, io &io);
+
+public:
+	void init();
+	uint8_t read(uint16_t a16);
+	void write(uint16_t a16, uint8_t d8);
+
+	void io_write(uint8_t a8, uint8_t d8);
+
+	int is_bootrom_enabled();
+};
 
 #endif /* memory_h */

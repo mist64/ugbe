@@ -9,11 +9,29 @@
 #ifndef timer_h
 #define timer_h
 
+#include <stdint.h>
 #include <stdio.h>
 
-uint8_t timer_read(uint8_t a8);
-void timer_write(uint8_t a8, uint8_t d8);
+class io;
 
-void timer_step();
+class timer {
+private:
+	io  &_io;
+	int  counter;
+
+private:
+	void reset();
+
+protected:
+    friend class gb;
+	timer(io &io);
+
+public:
+	uint8_t read(uint8_t a8);
+	void write(uint8_t a8, uint8_t d8);
+
+public:
+	void step();
+};
 
 #endif /* timer_h */

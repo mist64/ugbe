@@ -10,53 +10,25 @@
 #include <assert.h>
 #include <string.h>
 #include "ppu.h"
-#include "ppu_private.h"
 #include "memory.h"
 #include "io.h"
 #include <string.h>
 
-uint8_t *vram;
-uint8_t *oamram;
+#define PPU_NUM_LINES 154
+#define PPU_CLOCKS_PER_LINE (114*4)
+#define PPU_LAST_VISIBLE_LINE 143
 
-int current_x;
-int current_y;
-int oam_mode_counter;
-int bg_t; // internal BG fetch state (0-3)
-int bg_index_ctr; // offset of the current index within the line
-int window;
+#define LCDCF_ON      (1 << 7) /* LCD Control Operation */
+#define LCDCF_WIN9C00 (1 << 6) /* Window Tile Map Display Select */
+#define LCDCF_WINON   (1 << 5) /* Window Display */
+#define LCDCF_BG8000  (1 << 4) /* BG & Window Tile Data Select */
+#define LCDCF_BG9C00  (1 << 3) /* BG Tile Map Display Select */
+#define LCDCF_OBJ16   (1 << 2) /* OBJ Construction */
+#define LCDCF_OBJON   (1 << 1) /* OBJ Display */
+#define LCDCF_BGON    (1 << 0) /* BG Display */
 
-static uint8_t bg_pixel_queue[16];
-static uint8_t bg_pixel_queue_next;
-static uint8_t oam_pixel_queue[24];
-
-int screen_off;
-int vram_locked;
-int oamram_locked;
-
-int pixel_x, pixel_y;
-uint8_t picture[144][160];
-
-int ppu_dirty;
-
-void
-ppu_copy_picture(uint8_t *picture_copy)
-{
-    memcpy(picture_copy, picture, sizeof(picture));
-}
-
-typedef enum {
-	mode_hblank = 0,
-	mode_vblank = 1,
-	mode_oam    = 2,
-	mode_pixel  = 3,
-} ppu_mode_t;
-ppu_mode_t mode;
-ppu_mode_t old_mode;
-
-void bg_reset();
-
-uint8_t
-ppu_io_read(uint8_t a8)
+uint8_t ppu::
+io_read(uint8_t a8)
 {
 	switch (a8) {
 		case rLCDC: /* 0x40 */
@@ -69,19 +41,19 @@ ppu_io_read(uint8_t a8)
 		case rOBP1: /* 0x49 */
 		case rWY:   /* 0x4A */
 		case rWX:   /* 0x4B */
-			return io[a8];
+			return _io.reg[a8];
 		case rSTAT: /* 0x41 */
-			return (io[a8] & 0xFC) | mode;
+			return (_io.reg[a8] & 0xFC) | mode;
 		case rLY:   /* 0x44 */
 			return current_y;
 	}
 	assert(0);
 }
 
-void
-ppu_io_write(uint8_t a8, uint8_t d8)
+void ppu::
+io_write(uint8_t a8, uint8_t d8)
 {
-	io[a8] = d8;
+	_io.reg[a8] = d8;
 
 	switch (a8) {
 		case rLCDC: /* 0x40 */
@@ -95,7 +67,7 @@ ppu_io_write(uint8_t a8, uint8_t d8)
 			// TODO this should take a while and block access
 			// to certain memory areas
 			for (uint8_t i = 0; i < 160; i++) {
-				mem_write(0xfe00 + i, mem_read((d8 << 8) + i));
+				_memory.write(0xfe00 + i, _memory.read((d8 << 8) + i));
 			}
 			break;
 		}
@@ -111,8 +83,8 @@ ppu_io_write(uint8_t a8, uint8_t d8)
 	}
 }
 
-uint8_t
-ppu_vram_read(uint16_t a16)
+uint8_t ppu::
+vram_read(uint16_t a16)
 {
 	if (vram_locked) {
 		return 0xff;
@@ -121,16 +93,16 @@ ppu_vram_read(uint16_t a16)
 	}
 }
 
-void
-ppu_vram_write(uint16_t a16, uint8_t d8)
+void ppu::
+vram_write(uint16_t a16, uint8_t d8)
 {
 	if (!vram_locked) {
 		vram[a16] = d8;
 	}
 }
 
-uint8_t
-ppu_oamram_read(uint8_t a8)
+uint8_t ppu::
+oamram_read(uint8_t a8)
 {
 	if (oamram_locked) {
 		return 0xff;
@@ -139,8 +111,8 @@ ppu_oamram_read(uint8_t a8)
 	}
 }
 
-void
-ppu_oamram_write(uint8_t a8, uint8_t d8)
+void ppu::
+oamram_write(uint8_t a8, uint8_t d8)
 {
 	if (!oamram_locked) {
 		oamram[a8] = d8;
@@ -148,7 +120,7 @@ ppu_oamram_write(uint8_t a8, uint8_t d8)
 }
 
 
-static void
+void ppu::
 new_screen()
 {
 	mode = mode_oam;
@@ -166,21 +138,21 @@ new_screen()
 	memset(oam_pixel_queue, 0xff, sizeof(oam_pixel_queue));
 }
 
-void
-ppu_init()
+ppu::
+ppu(memory &memory, io &io)
+	: _memory(memory)
+	, _io    (io)
 {
-	vram = calloc(0x2000, 1);
-	oamram = calloc(0xa0, 1);
+	vram = (uint8_t *)calloc(0x2000, 1);
+	oamram = (uint8_t *)calloc(0xa0, 1);
 
 	old_mode = mode_hblank;
 
 	new_screen();
 }
 
-uint8_t oam_get_pixel(uint8_t x);
-
-int
-ppu_output_pixel(uint8_t p)
+int ppu::
+output_pixel(uint8_t p)
 {
 	if (pixel_x >= 160) {
 		return 0;
@@ -195,8 +167,8 @@ ppu_output_pixel(uint8_t p)
 	}
 }
 
-void
-ppu_new_line()
+void ppu::
+new_line()
 {
 	pixel_x = 0;
 	if (++pixel_y == 144) {
@@ -204,70 +176,44 @@ ppu_new_line()
 	}
 }
 
-uint8_t
+uint8_t ppu::
 paletted(uint8_t pal, uint8_t p)
 {
 	return (pal >> (p * 2)) & 3;
 }
 
-static uint16_t vram_address;
-
-void
+void ppu::
 vram_set_address(uint16_t addr)
 {
 	vram_address = addr;
 }
 
-uint8_t
+uint8_t ppu::
 vram_get_data()
 {
 	return vram[vram_address];
 }
 
-#pragma pack(1)
-typedef struct {
-	uint8_t y;
-	uint8_t x;
-	uint8_t tile;
-	uint8_t attr;
-} oamentry;
-
-struct {
-	oamentry oam;
-	uint8_t data0;
-	uint8_t data1;
-} spritegen[10];
-
-static uint8_t sprites_visible;
-static uint8_t cur_sprite;
-
-static uint8_t oam_pixel_get();
-
-uint8_t
+uint8_t ppu::
 oam_get_pixel(uint8_t x)
 {
 	return oam_pixel_get();
 }
 
-static uint8_t
+uint8_t ppu::
 get_sprite_height()
 {
-	return io_read(rLCDC) & LCDCF_OBJ16 ? 16 : 8;
+	return _io.reg[rLCDC] & LCDCF_OBJ16 ? 16 : 8;
 }
 
-void
+void ppu::
 oam_step()
 {
 	oamentry *oam = (oamentry *)oamram;
 	int sprite_used[40];
 
-//	for (int i = 0; i < 160; i++) {
-//		printf("%x ", oamram[i]);
-//	}
-//	printf("\n");
-
 	// do all the logic in the first cycle...
-	if (!oam_mode_counter && io_read(rLCDC) & LCDCF_OBJON) {
+	if (!oam_mode_counter && _io.reg[rLCDC] & LCDCF_OBJON) {
 		// fill the 10 sprite generators with the 10 leftmost sprites
 		uint8_t sprite_height = get_sprite_height();
 
@@ -289,8 +235,9 @@ oam_step()
 				}
 			}
 			if (oam_index >= 0) {
+//				printf("%d/%d ", oam[oam_index].x, oam[oam_index].y);
 				sprite_used[oam_index] = 1;
-				spritegen[sprites_visible].oam = oam[oam_index];
+				active_sprite_index[sprites_visible] = oam_index;
 				sprites_visible++;
 			}
 		} while (sprites_visible < 10 && oam_index >= 0);
@@ -299,12 +246,13 @@ oam_step()
 		cur_sprite = 0;
 	}
 
+	// we're done after 80 cycles at ~4 MHz
 	if (++oam_mode_counter == 80) {
 		bg_reset();
 	}
 }
 
-void
+void ppu::
 bg_reset()
 {
 	mode = mode_pixel;
@@ -316,16 +264,14 @@ bg_reset()
 	window = 0;
 }
 
-//static int fetch_is_sprite;
-
-static void
+void ppu::
 bg_pixel_push(uint8_t p)
 {
 	bg_pixel_queue[bg_pixel_queue_next++] = p;
 	assert(bg_pixel_queue_next <= sizeof(bg_pixel_queue));
 }
 
-static uint8_t
+uint8_t ppu::
 bg_pixel_get()
 {
 	if (!bg_pixel_queue_next) {
@@ -336,7 +282,7 @@ bg_pixel_get()
 	return p;
 }
 
-static void
+void ppu::
 oam_pixel_set(int i, uint8_t p)
 {
 #if 0 // TODO: this sometimes happens, needs to be debugged
@@ -351,7 +297,7 @@ oam_pixel_set(int i, uint8_t p)
 	}
 }
 
-static uint8_t
+uint8_t ppu::
 oam_pixel_get()
 {
 	uint8_t total = 0xff;
@@ -371,123 +317,137 @@ oam_pixel_get()
 }
 
 
-static void
+void ppu::
 bg_step()
 {
-	static uint8_t ybase;
-	static uint16_t bgptr;
-	static uint8_t data0;
+	oamentry *oam = (oamentry *)oamram;
 
 	// background @ 2 MHz
 	switch (bg_t) {
-		case 0: {
-			// decide whether we should do a sprite tile fetch here
-			while (cur_sprite != sprites_visible &&
-				   (((spritegen[cur_sprite].oam.x >> 3) - 2) == (pixel_x >> 3) || (spritegen[cur_sprite].oam.x >> 3) <= 1)) {
-				// sprite is due to be displayed soon, fetch its data
-				uint8_t i = ((current_y - spritegen[cur_sprite].oam.y) & (get_sprite_height() - 1));
-				if (spritegen[cur_sprite].oam.attr & 0x40) { // Y flip
-					i = 7 - i;
-				}
-				uint16_t address = 16 * spritegen[cur_sprite].oam.tile + i * 2;
-
-				for (int i = 0; i < 8; i++) {
-					int i2 = i;
-					if (!(spritegen[cur_sprite].oam.attr & 0x20)) { // X flip
-						i2 = 7 - i2;
-					}
-
-					int b0 = (vram[address] >> i2) & 1;
-					int b1 = (vram[address + 1] >> i2) & 1;
-					uint8_t p2 = b0 | (b1 << 1);
-					oam_pixel_set(i + (spritegen[cur_sprite].oam.x - pixel_x - 8), p2 ? paletted(io[spritegen[cur_sprite].oam.attr & 0x10 ? rOBP1 : rOBP0], p2) : 255);
-				}
-
-				spritegen[cur_sprite].data0 = vram[address];
-				spritegen[cur_sprite].data1 = vram[address + 1];
-				cur_sprite++;
-
-//				fetch_is_sprite = 1;
-//			} else {
-//				fetch_is_sprite = 0;
+		case 0: { // T0
+		case0:
+			if (cur_sprite != sprites_visible) {
+				cur_oam = &oam[active_sprite_index[cur_sprite]];
 			}
+			// decide whether we should do a sprite tile fetch here
+			if (cur_sprite != sprites_visible &&
+				   (((cur_oam->x >> 3) - 2) == (pixel_x >> 3) || (cur_oam->x >> 3) <= 1)) {
+				// sprite is due to be displayed soon, fetch its data
+				fetch_is_sprite = 1;
+			} else {
+				fetch_is_sprite = 0;
 
-			// decide whether we need to switch to window
-			if (io[rLCDC] & LCDCF_WINON && pixel_y >= io[rWY] && (pixel_x >> 3) == (io[rWX] >> 3) - 2) {
-				window = 1;
-				bg_index_ctr = 0;
-				// TODO: we don't do perfect horizontal positioning - we'll have to
-				// refrain from pushing out the 0-7 last pixels from the bg fetches
+				// decide whether we need to switch to window
+				if (_io.reg[rLCDC] & LCDCF_WINON && pixel_y >= _io.reg[rWY] && (pixel_x >> 3) == (_io.reg[rWX] >> 3) - 2) {
+					window = 1;
+					bg_index_ctr = 0;
+					// TODO: we don't do perfect horizontal positioning - we'll have to
+					// refrain from pushing out the 0-7 last pixels from the bg fetches
+				}
 			}
 
 			// cycle 0: generate tile map address and prepare reading index
 			uint8_t xbase;
+			uint8_t ybase;
 			uint8_t index_ram_select_mask;
-			if (window) {
-				xbase = bg_index_ctr;
-				ybase = current_y - io[rWY];
-				index_ram_select_mask = LCDCF_WIN9C00;
+			if (fetch_is_sprite) {
+				line_within_tile = current_y - cur_oam->y + 16;
+				if (cur_oam->attr & 0x40) { // Y flip
+					line_within_tile = get_sprite_height() - line_within_tile - 1;
+				}
 			} else {
-				xbase = ((io[rSCX] >> 3) + bg_index_ctr) & 31;
-				ybase = io[rSCY] + current_y;
-				index_ram_select_mask = LCDCF_BG9C00;
+				if (window) {
+					xbase = bg_index_ctr;
+					ybase = current_y - _io.reg[rWY];
+					index_ram_select_mask = LCDCF_WIN9C00;
+				} else {
+					xbase = ((_io.reg[rSCX] >> 3) + bg_index_ctr) & 31;
+					ybase = _io.reg[rSCY] + current_y;
+					index_ram_select_mask = LCDCF_BG9C00;
+				}
+				uint8_t ybase_hi = ybase >> 3;
+				line_within_tile = ybase & 7;
+				uint16_t charaddr = 0x1800 | (!!(_io.reg[rLCDC] & index_ram_select_mask) << 10) | (ybase_hi << 5) | xbase;
+				vram_set_address(charaddr);
 			}
-			uint8_t ybase_hi = ybase >> 3;
-			uint16_t charaddr = 0x1800 | (!!(io[rLCDC] & index_ram_select_mask) << 10) | (ybase_hi << 5) | xbase;
-			vram_set_address(charaddr);
+			bg_t = 1;
 			break;
 		}
 		case 1: {
-			// cycle 1: read index, generate tile data address and prepare reading tile data #0
-			uint8_t index = vram_get_data();
-			if (io[rLCDC] & LCDCF_BG8000) {
+			// T1: read index, generate tile data address and prepare reading tile data #0
+			uint8_t index;
+			if (fetch_is_sprite) {
+				index = cur_oam->tile;
+			} else {
+				index = vram_get_data();
+			}
+			if (fetch_is_sprite || (_io.reg[rLCDC] & LCDCF_BG8000)) {
 				bgptr = index * 16;
 			} else {
 				bgptr = 0x1000 + (int8_t)index * 16;
 			}
-			bgptr += (ybase & 7) * 2;
+			bgptr += line_within_tile * 2;
 			vram_set_address(bgptr);
+			bg_t = 2;
 			break;
 		}
 		case 2: {
-			// cycle 2: read tile data #0, prepare reading tile data #1
+			// T2: read tile data #0, prepare reading tile data #1
 			data0 = vram_get_data();
 			vram_set_address(bgptr + 1);
+			bg_t = 3;
+			break;
 		}
-		case 4: {
-			// cycle 3: read tile data #1, output pixels
+		case 3: {
+			// T3: read tile data #1, output pixels
 			// (VRAM is idle)
 			uint8_t data1 = vram_get_data();
-			int skip = bg_index_ctr ? 0 : io[rSCX] & 7;
+			bool flip = fetch_is_sprite ? !(cur_oam->attr & 0x20) : 0;
+			int skip = bg_index_ctr ? 0 : _io.reg[rSCX] & 7; // bg only
+			uint8_t palette = fetch_is_sprite ? _io.reg[cur_oam->attr & 0x10 ? rOBP1 : rOBP0] : _io.reg[rBGP];
 			for (int i = 7; i >= 0; i--) {
-				int b0 = (data0 >> i) & 1;
-				int b1 = (data1 >> i) & 1;
-				if (skip) {
-					skip--;
+				int i2 = flip ? (7 - i) : i;
+				bool b0 = (data0 >> i2) & 1;
+				bool b1 = (data1 >> i2) & 1;
+				uint8_t p = b0 | (b1 << 1);
+				uint8_t p2 = paletted(palette, p);
+				if (fetch_is_sprite) {
+					oam_pixel_set(i + (cur_oam->x - pixel_x - 8), p ? p2 : 255);
 				} else {
-					bg_pixel_push(paletted(io[rBGP], b0 | b1 << 1));
+					if (skip) {
+						skip--;
+					} else {
+						bg_pixel_push(p2);
+					}
 				}
 			}
-
-			bg_index_ctr++;
+			if (fetch_is_sprite) {
+				cur_sprite++;
+				// VRAM is idle in T3, so if we have fetched a sprite,
+				// we can continue with T0 immediately
+				goto case0;
+			} else {
+				bg_index_ctr++;
+				// VRAM is idle in T3, but background fetches have to take
+				// 4 cycles, otherwise 8 MHz pixel output cannot keep up
+				bg_t = 0;
+			}
 			break;
 		}
 	}
-
-	bg_t = (bg_t + 1 & 3);
 }
 
-static void
+void ppu::
 pixel_step()
 {
 	if (bg_pixel_queue_next >= 8) {
 		uint8_t p = bg_pixel_get();
 		if (p != 0xff) {
-			int line_full = !ppu_output_pixel(p);
+			int line_full = !output_pixel(p);
 			if (line_full) {
 				// end this mode
 				bg_pixel_queue_next = 0;
-				ppu_new_line();
+				new_line();
 				mode = mode_hblank;
 				vram_locked = 0;
 				oamram_locked = 0;
@@ -497,10 +457,10 @@ pixel_step()
 }
 
 // PPU steps are executed the CPU clock rate, i.e. at ~4 MHz
-void
-ppu_step()
+void ppu::
+step()
 {
-	if ((io[rLCDC] & LCDCF_ON)) {
+	if ((_io.reg[rLCDC] & LCDCF_ON)) {
 		if (screen_off) {
 			screen_off = 0;
 			vram_locked = 0;
@@ -521,22 +481,22 @@ ppu_step()
 
 	// V-Blank interrupt
 	if (current_y == 144 && current_x == 0) {
-		io[rIF] |= 1;
+		_io.reg[rIF] |= 1;
 	}
 	// LY == LYC interrupt
-	if (io_read(rSTAT) & 0x40 && io_read(rLYC) == current_y && current_x == 0) {
-		io[rIF] |= 2;
+	if (_io.reg[rSTAT] & 0x40 && _io.reg[rLYC] == current_y && current_x == 0) {
+		_io.reg[rIF] |= 2;
 	}
 	if (mode != old_mode) {
-		if (io_read(rSTAT) & 0x20 && mode == 2) {
+		if (_io.reg[rSTAT] & 0x20 && mode == 2) {
 			// Mode 2 interrupt
-			io[rIF] |= 2;
-		} else if (io_read(rSTAT) & 0x10 && mode == 1) {
+			_io.reg[rIF] |= 2;
+		} else if (_io.reg[rSTAT] & 0x10 && mode == 1) {
 			// Mode 1 interrupt
-			io[rIF] |= 2;
-		} else if (io_read(rSTAT) & 0x08 && mode == 0) {
+			_io.reg[rIF] |= 2;
+		} else if (_io.reg[rSTAT] & 0x08 && mode == 0) {
 			// Mode 0 interrupt
-			io[rIF] |= 2;
+			_io.reg[rIF] |= 2;
 		}
 	}
 
@@ -564,7 +524,7 @@ ppu_step()
 //		printf("\n");
 		if (++current_y == PPU_NUM_LINES) {
 			current_y = 0;
-			ppu_dirty = 1;
+			dirty = true;
 //			printf("\n");
 		}
 		if (current_y <= PPU_LAST_VISIBLE_LINE) {

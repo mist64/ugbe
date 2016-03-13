@@ -18,3 +18,12 @@ profile
 *.ipa
 *.swp
 *~.nib
+
+.gdb_history
+*~
+*.rej
+*.orig
+*.BAK
+*.bak
+._*
+*.o

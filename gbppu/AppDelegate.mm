@@ -7,12 +7,10 @@
 //
 
 #import "AppDelegate.h"
-#import "memory.h"
-#import "ppu.h"
-#import "cpu.h"
-#import "buttons.h"
+#import "gb.h"
 #import <QuartzCore/QuartzCore.h>
 
+gb *gb;
 
 @interface View : NSView
 
@@ -33,7 +31,7 @@ static CVReturn renderCallback(CVDisplayLinkRef displayLink,
 
 static size_t _getBytesCallback(void *info, void *buffer, off_t position, size_t count) {
     static const uint8_t colors[4] = { 255, 170, 85, 0 };
-    uint8_t *target = buffer;
+    uint8_t *target = (uint8_t *)buffer;
     uint8_t *source = ((uint8_t *)info) + position;
     uint8_t *sourceEnd = source + count;
     while (source < sourceEnd) {
@@ -50,17 +48,15 @@ static void _releaseInfo(void *info) {
 @implementation View
 
 - (CGImageRef)createGameBoyScreenCGImageRef {
-    CGDataProviderDirectCallbacks callbacks = {
-        .version = 0,
-        .getBytePointer = NULL,
-        .releaseBytePointer = NULL,
-        .getBytesAtPosition = _getBytesCallback,
-        .releaseInfo = _releaseInfo,
-    };
-    
-    size_t pictureSize = sizeof(picture);
-    uint8_t *pictureCopy = malloc(pictureSize);
-    memcpy(pictureCopy, picture, pictureSize);
+	CGDataProviderDirectCallbacks callbacks;
+	callbacks.version = 0;
+	callbacks.getBytePointer = NULL;
+	callbacks.releaseBytePointer = NULL;
+	callbacks.getBytesAtPosition = _getBytesCallback;
+	callbacks.releaseInfo = _releaseInfo;
+
+	size_t pictureSize;
+    uint8_t *pictureCopy = gb->copy_ppu_picture(pictureSize);
     
     CGDataProviderRef provider = CGDataProviderCreateDirect(pictureCopy, pictureSize, &callbacks);
     CGColorSpaceRef grayspace = CGColorSpaceCreateDeviceGray();
@@ -152,13 +148,13 @@ static uint8_t keys;
 - (void)keyDown:(NSEvent *)event
 {
 	keys |= [self keyMaskFromEvent:event];
-	buttons_set(keys);
+	gb->set_buttons(keys);
 }
 
 - (void)keyUp:(NSEvent *)event
 {
 	keys &= ~[self keyMaskFromEvent:event];
-	buttons_set(keys);
+	gb->set_buttons(keys);
 }
 
 @end
@@ -186,31 +182,26 @@ static uint8_t keys;
     
 
 	dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-		mem_init();
-		cpu_init();
-		ppu_init();
+		gb = new class gb();
 
         NSTimeInterval timePerFrame = 1.0 / (1024.0 * 1024.0 / 114.0 / 154.0);
         
         self.nextFrameTime = [NSDate timeIntervalSinceReferenceDate] + timePerFrame;
         
 		for (;;) {
-#if 1
-			int ret = cpu_step();
+			int ret = gb->step();
 			if (ret) {
 				exit(ret);
 			}
-#else
-			ppu_step();
-#endif
-			if (ppu_dirty) {
-				ppu_dirty = false;
+
+			if (gb->is_ppu_dirty()) {
+				gb->clear_ppu_dirty();
                 [view updateLayerContents];
 #if ! BUILD_USER_Lisa
                 // wait until the next 60 hz tick
                 NSTimeInterval interval = [NSDate timeIntervalSinceReferenceDate];
                 if (interval < self.nextFrameTime) {
-                    [NSThread sleepForTimeInterval:self.nextFrameTime - interval];
+                    // [NSThread sleepForTimeInterval:self.nextFrameTime - interval];
                 } else if (interval - 20 * timePerFrame > self.nextFrameTime) {
                     self.nextFrameTime = interval;
                 }

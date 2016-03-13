@@ -6,10 +6,10 @@
 //  Copyright © 2016 Lisa Brodner. All rights reserved.
 //
 
-#include "cpu.h"
-
 #include <stdio.h>
 #include <assert.h>
+
+#include "cpu.h"
 #include "memory.h"
 #include "io.h"
 
@@ -27,77 +27,33 @@
 // http://www.z80.info/z80code.htm
 // http://z80-heaven.wikidot.com/instructions-set
 
-
-uint16_t pc = 0;
-uint16_t sp = 0;
-
-int interrupts_enabled = 0;
-
 #pragma mark - Registers
 
-// registers, can be used as 16 bit registers in the following combinations:
-// a,f,
-// b,c,
-// d,e,
-// h,l
-
-// f - flags register in detail
-// 7	6	5	4	3	2	1	0
-// Z	N	H	C	0	0	0	0
-// Z - Zero Flag
-// N - Subtract Flag
-// H - Half Carry Flag - did a carry from 3 to 4 bit happen
-// C - Carry Flag
-// 0 - Not used, always zero
-
-#pragma pack(1)
-union reg16_t {
-	uint16_t full;
-	struct {
-        union {
-            uint8_t full;
-            struct {
-				unsigned int bit3_0 : 4;
-                unsigned int bit4 : 1;
-				unsigned int bit5 : 1;
-				unsigned int bit6 : 1;
-				unsigned int bit7 : 1;
-            };
-        } low;
-		uint8_t high;
-	};
-};
-
-union reg16_t reg16_af;
-union reg16_t reg16_bc;
-union reg16_t reg16_de;
-union reg16_t reg16_hl;
-
 #define af reg16_af.full
-#define a reg16_af.high
-#define f reg16_af.low.full
+#define a reg16_af.bytes.high
+#define f reg16_af.bytes.low.low.full
 
-#define zf reg16_af.low.bit7
-#define nf reg16_af.low.bit6
-#define hf reg16_af.low.bit5
-#define cf reg16_af.low.bit4
+#define zf reg16_af.bytes.low.bits.bit7
+#define nf reg16_af.bytes.low.bits.bit6
+#define hf reg16_af.bytes.low.bits.bit5
+#define cf reg16_af.bytes.low.bits.bit4
 
 #define bc reg16_bc.full
-#define b reg16_bc.high
-#define c reg16_bc.low.full
+#define b reg16_bc.bytes.high
+#define c reg16_bc.bytes.low.full
 
 #define de reg16_de.full
-#define d reg16_de.high
-#define e reg16_de.low.full
+#define d reg16_de.bytes.high
+#define e reg16_de.bytes.low.full
 
 #define hl reg16_hl.full
-#define h reg16_hl.high
-#define l reg16_hl.low.full
+#define h reg16_hl.bytes.high
+#define l reg16_hl.bytes.low.full
 
 
 #pragma mark - Helper
 
-uint8_t
+static uint8_t
 calc_carry(uint8_t bit, uint16_t da, uint16_t db, uint8_t substraction)
 {
 	uint32_t bb = 1 << bit;
@@ -113,7 +69,7 @@ calc_carry(uint8_t bit, uint16_t da, uint16_t db, uint8_t substraction)
 	return result;
 }
 
-void
+void cpu::
 set_hf_nf(uint8_t bit, uint16_t da, uint16_t db, uint8_t neg) // set the half carry flag
 {
 	nf = neg;
@@ -121,7 +77,7 @@ set_hf_nf(uint8_t bit, uint16_t da, uint16_t db, uint8_t neg) // set the half ca
 	// the neg flag is set every time this is a substraction, so this is used as the substraction flag
 }
 
-void
+void cpu::
 set_cf(uint8_t bit, uint16_t da, uint16_t db, uint8_t substraction)
 {
 	// todo: check addsp, ldhlsp (relative data)
@@ -131,15 +87,15 @@ set_cf(uint8_t bit, uint16_t da, uint16_t db, uint8_t substraction)
 
 #pragma mark
 
-static uint8_t
+uint8_t cpu::
 fetch8()
 {
-	uint8_t d8 = mem_read(pc++);
+	uint8_t d8 = _memory.read(pc++);
 	return d8;
 
 }
 
-static uint16_t
+uint16_t cpu::
 fetch16()
 {
 	uint8_t d16l = fetch8();
@@ -148,7 +104,7 @@ fetch16()
 	return d16;
 }
 
-static void
+void cpu::
 ldhlsp(uint8_t d8) //  LD HL,SP+r8; 2; 12; 0 0 H C // LDHL SP,r8
 {
 	uint16_t d16 = (uint16_t)(int8_t)d8;
@@ -158,27 +114,27 @@ ldhlsp(uint8_t d8) //  LD HL,SP+r8; 2; 12; 0 0 H C // LDHL SP,r8
 	set_cf(8, sp, d16, 0);
 }
 
-static void
+void cpu::
 push8(uint8_t d8)
 {
-	mem_write(--sp, d8);
+	_memory.write(--sp, d8);
 }
 
-static void
+void cpu::
 push16(uint16_t d16)
 {
 	push8(d16 >> 8);
 	push8(d16 & 0xff);
 }
 
-static uint8_t
+uint8_t cpu::
 pop8()
 {
-	uint8_t d8 = mem_read(sp++);
+	uint8_t d8 = _memory.read(sp++);
 	return d8;
 }
 
-static uint16_t
+uint16_t cpu::
 pop16()
 {
 	uint8_t d16l = pop8();
@@ -190,7 +146,7 @@ pop16()
 
 #pragma mark
 
-static void
+void cpu::
 inc8(uint8_t *r8) // INC \w 1; 4; Z 0 H -
 {
 	uint8_t old_r8 = *r8;
@@ -199,7 +155,7 @@ inc8(uint8_t *r8) // INC \w 1; 4; Z 0 H -
 	set_hf_nf(4, old_r8, 1, 0);
 }
 
-static void
+void cpu::
 dec8(uint8_t *r8) // DEC \w 1; 4; Z 1 H -
 {
 	uint8_t old_r8 = *r8;
@@ -208,7 +164,7 @@ dec8(uint8_t *r8) // DEC \w 1; 4; Z 1 H -
 	set_hf_nf(4, old_r8, 1, 1);
 }
 
-static void
+void cpu::
 comparea8(uint8_t d8, int store) // X \w; 1; 4; Z 1 H C
 {
 	zf = (a == d8);
@@ -220,21 +176,21 @@ comparea8(uint8_t d8, int store) // X \w; 1; 4; Z 1 H C
 	}
 }
 
-static void
+void cpu::
 cpa8(uint8_t d8) // CP \w; 1; 4; Z 1 H C
 {
 	int store = 0;
 	comparea8(d8, store);
 }
 
-static void
+void cpu::
 suba8(uint8_t d8) // SUB \w; 1; 4; Z 1 H C
 {
 	int store = 1;
 	comparea8(d8, store);
 }
 
-static void
+void cpu::
 sbca8(uint8_t d8) // SBC A,\w; 1; 4; Z 1 H C
 {
 	suba8(cf);
@@ -249,7 +205,7 @@ sbca8(uint8_t d8) // SBC A,\w; 1; 4; Z 1 H C
 	}
 }
 
-static void
+void cpu::
 adda8(uint8_t d8) // ADD \w; 1; 8; Z 0 H C
 {
 	set_hf_nf(4, a, d8, 0);
@@ -258,7 +214,7 @@ adda8(uint8_t d8) // ADD \w; 1; 8; Z 0 H C
 	zf = !a;
 }
 
-static void
+void cpu::
 adca8(uint8_t d8) // ADC A,\w; 1; 4; Z 0 H C
 {
 	adda8(cf);
@@ -273,7 +229,7 @@ adca8(uint8_t d8) // ADC A,\w; 1; 4; Z 0 H C
 	}
 }
 
-static void
+void cpu::
 addhl(uint16_t d16) // ADD HL,\w\w; 1; 8; - 0 H C
 {
 	set_hf_nf(12, hl, d16, 0);
@@ -281,7 +237,7 @@ addhl(uint16_t d16) // ADD HL,\w\w; 1; 8; - 0 H C
 	hl = hl + d16;
 }
 
-static void
+void cpu::
 addsp(uint8_t d8) // ADD SP,r8; 2; 16; 0 0 H C
 {
 	uint16_t d16 = (uint16_t)(int8_t)d8;
@@ -294,7 +250,7 @@ addsp(uint8_t d8) // ADD SP,r8; 2; 16; 0 0 H C
 
 #pragma mark - Jumping
 
-static void
+void cpu::
 jrcc(int condition) // jump relative condition code
 {
 	int8_t r8 = fetch8();
@@ -303,7 +259,7 @@ jrcc(int condition) // jump relative condition code
 	}
 }
 
-static void
+void cpu::
 jpcc(int condition) // jump condition code
 {
 	int16_t d16 = fetch16();
@@ -312,14 +268,14 @@ jpcc(int condition) // jump condition code
 	}
 }
 
-static void
+void cpu::
 rst8(uint8_t d8)
 {
 	push16(pc);
 	pc = d8;
 }
 
-static void
+void cpu::
 retcc(int condition)
 {
 	if (condition) {
@@ -327,7 +283,7 @@ retcc(int condition)
 	}
 }
 
-static void
+void cpu::
 callcc(int condition)
 {
 	uint16_t a16 = fetch16();
@@ -340,7 +296,7 @@ callcc(int condition)
 
 #pragma mark - Bitwise Boolean Operations
 
-static void
+void cpu::
 anda(uint8_t d8) // AND \w; 1; 4; Z 0 1 0
 {
 	a = a & d8;
@@ -350,7 +306,7 @@ anda(uint8_t d8) // AND \w; 1; 4; Z 0 1 0
 	cf = 0;
 }
 
-static void
+void cpu::
 ora(uint8_t d8) // OR \w; 1; 4; Z 0 0 0
 {
 	a = a | d8;
@@ -360,7 +316,7 @@ ora(uint8_t d8) // OR \w; 1; 4; Z 0 0 0
 	cf = 0;
 }
 
-static void
+void cpu::
 xora(uint8_t d8) // XOR \w; 1; 4; Z 0 0 0
 {
 	a = a ^ d8;
@@ -373,7 +329,7 @@ xora(uint8_t d8) // XOR \w; 1; 4; Z 0 0 0
 
 #pragma mark - Shifting
 
-static void
+void cpu::
 rl8(uint8_t *r8) // RL \w; 2; 8; Z 0 0 C
 {
 	uint8_t old_cf = cf;
@@ -384,7 +340,7 @@ rl8(uint8_t *r8) // RL \w; 2; 8; Z 0 0 C
 	hf = 0;
 }
 
-static void
+void cpu::
 rlc8(uint8_t *r8) // RLC \w; 2; 8; Z 0 0 C
 {
 	cf = *r8 >> 7;
@@ -394,7 +350,7 @@ rlc8(uint8_t *r8) // RLC \w; 2; 8; Z 0 0 C
 	hf = 0;
 }
 
-static void
+void cpu::
 rr8(uint8_t *r8) // RR \w; 2; 8; Z 0 0 C
 {
 	uint8_t old_cf = cf;
@@ -405,7 +361,7 @@ rr8(uint8_t *r8) // RR \w; 2; 8; Z 0 0 C
 	hf = 0;
 }
 
-static void
+void cpu::
 rrc8(uint8_t *r8) // RRC \w; 2; 8; Z 0 0 C
 {
 	cf = *r8 & 1;
@@ -415,7 +371,7 @@ rrc8(uint8_t *r8) // RRC \w; 2; 8; Z 0 0 C
 	hf = 0;
 }
 
-static void
+void cpu::
 sla8(uint8_t *r8) // SLA \w; 2; 8; Z 0 0 C
 {
 	cf = *r8 >> 7;
@@ -425,7 +381,7 @@ sla8(uint8_t *r8) // SLA \w; 2; 8; Z 0 0 C
 	hf = 0;
 }
 
-static void
+void cpu::
 sra8(uint8_t *r8) // SRA \w; 2; 8; Z 0 0 0
 {
 	uint8_t old_bit7 = *r8 & (1 << 7);
@@ -436,7 +392,7 @@ sra8(uint8_t *r8) // SRA \w; 2; 8; Z 0 0 0
 	hf = 0;
 }
 
-static void
+void cpu::
 srl8(uint8_t *r8) // SRL \w; 2; 8; Z 0 0 C
 {
 	cf = *r8 & 1;
@@ -449,7 +405,7 @@ srl8(uint8_t *r8) // SRL \w; 2; 8; Z 0 0 C
 
 #pragma mark - Changing Bits
 
-static void
+void cpu::
 swap8(uint8_t *r8) // SWAP \w; 2; 8; Z 0 0 0
 {
 	*r8 = (*r8 << 4) | (*r8 >> 4);
@@ -459,7 +415,7 @@ swap8(uint8_t *r8) // SWAP \w; 2; 8; Z 0 0 0
 	cf = 0;
 }
 
-static void
+void cpu::
 bit8(uint8_t d8, uint8_t bit) // BIT \d,\w; 2; 8; Z 0 1 -
 {
 	zf = !(d8 & (1 << bit));
@@ -467,37 +423,37 @@ bit8(uint8_t d8, uint8_t bit) // BIT \d,\w; 2; 8; Z 0 1 -
 	hf = 1;
 }
 
-static void
+void cpu::
 set8(uint8_t *r8, uint8_t bit) // SET \d,\w; 2; 8; ----
 {
 	*r8 |= 1 << bit;
 }
 
-static void
+void cpu::
 sethl(uint8_t bit)
 {
-	uint8_t d8 = mem_read(hl);
+	uint8_t d8 = _memory.read(hl);
 	set8(&d8, bit);
-	mem_write(hl, d8);
+	_memory.write(hl, d8);
 }
 
-static void
+void cpu::
 res8(uint8_t *r8, uint8_t bit) // RES \d,\w; 2; 8; ----
 {
 	*r8 &= ~(1 << bit);
 }
 
-static void
+void cpu::
 reshl(uint8_t bit)
 {
-	uint8_t d8 = mem_read(hl);
+	uint8_t d8 = _memory.read(hl);
 	res8(&d8, bit);
-	mem_write(hl, d8);
+	_memory.write(hl, d8);
 }
 
 #pragma mark
 
-static void
+void cpu::
 daa() // DAA; 1; 4; Z - 0 C // decimal adjust a - BCD
 {
 	printf("todo: implement daa\n");
@@ -511,14 +467,19 @@ daa() // DAA; 1; 4; Z - 0 C // decimal adjust a - BCD
 //	printf("         result daa - a=%02x cf=%01x hf=%01x nf=%01x\n", a, cf, hf, nf);
 }
 
-
 #pragma mark - Init
 
-void
-cpu_init()
+cpu::cpu(memory &memory, io &io)
+	: _memory           (memory)
+    , _io               (io)
+	, pc                (0)
+	, sp                (0)
+	, interrupts_enabled(0)
+	, counter           (0)
+	, halted            (0)
 {
 #if 0
-	mem_io_write(0x50, 1);
+	_memory.io_write(0x50, 1);
 	a = 1;
 	bc = 0x13;
 	de = 0xd8;
@@ -531,24 +492,17 @@ cpu_init()
 #endif
 }
 
-
 #pragma mark - Steps
-int counter = 0;
 
 #define NOT_YET_IMPLEMENTED()	do { \
 	printf("todo: pc=0x%04x, opcode=0x%02x\n", pc, opcode); \
 	return 1; \
 } while(0);
 
-
-#pragma mark - IRQ
-
-int halted = 0;
-
-int
-cpu_step()
+int cpu::
+step()
 {
-	uint8_t pending_irqs = irq_get_pending();
+	uint8_t pending_irqs = _io.irq_get_pending();
 	while ((interrupts_enabled || halted) && pending_irqs) {
 		interrupts_enabled = 0;
 		int i;
@@ -560,7 +514,7 @@ cpu_step()
 		if (halted) {
 			pc += 2; // DMG bug: skip instruction after HALT
 		} else {
-			irq_clear_pending(i);
+			_io.irq_clear_pending(i);
 		}
 		halted = 0;
 //		printf("RST 0x%02x\n", 0x40 + i * 8);
@@ -568,9 +522,10 @@ cpu_step()
 	}
 
 	uint8_t opcode = fetch8();
-//			if (++counter % 100 == 0) {
-			if (!mem_is_bootrom_enabled()) {
-//				printf("A=%02x BC=%04x DE=%04x HL=%04x SP=%04x PC=%04x (ZF=%d,NF=%d,HF=%d,CF=%d) LY=%02x - opcode 0x%02x\n", a, bc, de, hl, sp, pc-1, zf, nf, hf, cf, mem_read(0xff44), opcode);
+//	static long long counter;
+//			if (++counter > 1000 * 1000 * 10.5) {
+			if (!_memory.is_bootrom_enabled()) {
+//				printf("%llu: A=%02x BC=%04x DE=%04x HL=%04x SP=%04x PC=%04x (ZF=%d,NF=%d,HF=%d,CF=%d) LY=%02x - opcode 0x%02x\n", counter, a, bc, de, hl, sp, pc-1, zf, nf, hf, cf, _memory.read(0xff44), opcode);
 			}
 
 	switch (opcode) {
@@ -580,7 +535,7 @@ cpu_step()
 			bc = fetch16();
 			break;
 		case 0x02: // LD (BC),A; 1; 8; ----
-			mem_write(bc, a);
+			_memory.write(bc, a);
 			break;
 		case 0x03: // INC BC; 1; 8; ----
 			bc++;
@@ -600,15 +555,15 @@ cpu_step()
 			break;
 		case 0x08: { // LD (a16),SP; 3; 20; ----
 			uint16_t a16 = fetch16();
-			mem_write(a16, sp & 0xff);
-			mem_write(a16 + 1, sp >> 8);
+			_memory.write(a16, sp & 0xff);
+			_memory.write(a16 + 1, sp >> 8);
 			break;
 		}
 		case 0x09: // ADD HL,BC; 1; 8; - 0 H C
 			addhl(bc);
 			break;
 		case 0x0a: // LD A,(BC); 1; 8; ----
-			a = mem_read(bc);
+			a = _memory.read(bc);
 			break;
 		case 0x0b: // DEC BC; 1; 8; ----
 			bc--;
@@ -634,7 +589,7 @@ cpu_step()
 			de = fetch16();
 			break;
 		case 0x12: // LD (DE),A; 1; 8; ----
-			mem_write(de, a);
+			_memory.write(de, a);
 			break;
 		case 0x13: // INC DE; 1; 8; ----
 			de++;
@@ -664,7 +619,7 @@ cpu_step()
 			addhl(de);
 			break;
 		case 0x1a: // LD A,(DE); 1; 8; ----
-			a = mem_read(de);
+			a = _memory.read(de);
 			break;
 		case 0x1b: // DEC DE; 1; 8; ----
 			de--;
@@ -691,7 +646,7 @@ cpu_step()
 			hl = fetch16();
 			break;
 		case 0x22: // LD (HL+),A; 1; 8; ---- // LD (HLI),A or LDI (HL),A // target, source
-			mem_write(hl++, a);
+			_memory.write(hl++, a);
 			break;
 		case 0x23: // INC HL; 1; 8; ----
 			hl++;
@@ -715,7 +670,7 @@ cpu_step()
 			addhl(hl);
 			break;
 		case 0x2a: // LD A,(HL+); 1; 8; ----
-			a = mem_read(hl++);
+			a = _memory.read(hl++);
 			break;
 		case 0x2b: // DEC HL; 1; 8; ----
 			hl--;
@@ -741,25 +696,25 @@ cpu_step()
 			sp = fetch16();
 			break;
 		case 0x32: // LD (HL-),A; 1; 8; ---- // LD (HLD),A or LDD (HL),A // target, source
-			mem_write(hl--, a);
+			_memory.write(hl--, a);
 			break;
 		case 0x33: // INC SP; 1; 8; ----
 			sp++;
 			break;
 		case 0x34: { // INC (HL); 1; 12; Z 0 H -
-			uint8_t d8 = mem_read(hl);
+			uint8_t d8 = _memory.read(hl);
 			inc8(&d8);
-			mem_write(hl, d8);
+			_memory.write(hl, d8);
 			break;
 		}
 		case 0x35: { // DEC (HL); 1; 12; Z 1 H -
-			uint8_t d8 = mem_read(hl);
+			uint8_t d8 = _memory.read(hl);
 			dec8(&d8);
-			mem_write(hl, d8);
+			_memory.write(hl, d8);
 			break;
 		}
 		case 0x36: // LD (HL),d8; 2; 12; ----
-			mem_write(hl, fetch8());
+			_memory.write(hl, fetch8());
 			break;
 		case 0x37: // SCF; 1; 4; - 0 0 1
 			nf = 0;
@@ -773,7 +728,7 @@ cpu_step()
 			addhl(sp);
 			break;
 		case 0x3a: // LD A,(HL-); 1; 8; ----
-			a = mem_read(hl--);
+			a = _memory.read(hl--);
 			break;
 		case 0x3b: // DEC SP; 1; 8; ----
 			sp--;
@@ -811,7 +766,7 @@ cpu_step()
 			b = l;
 			break;
 		case 0x46: // LD B,(HL); 1; 8; ----
-			b = mem_read(hl);
+			b = _memory.read(hl);
 			break;
 		case 0x47: // LD B,A; 1; 4; ----
 			b = a;
@@ -835,7 +790,7 @@ cpu_step()
 			c = l;
 			break;
 		case 0x4e: // LD C,(HL); 1; 8; ----
-			c = mem_read(hl);
+			c = _memory.read(hl);
 			break;
 		case 0x4f: // LD C,A; 1; 4; ----
 			c = a;
@@ -859,7 +814,7 @@ cpu_step()
 			d = l;
 			break;
 		case 0x56: // LD D,(HL); 1; 8; ----
-			d = mem_read(hl);
+			d = _memory.read(hl);
 			break;
 		case 0x57: // LD D,A; 1; 4; ----
 			d = a;
@@ -883,7 +838,7 @@ cpu_step()
 			e = l;
 			break;
 		case 0x5e: // LD E,(HL); 1; 8; ----
-			e = mem_read(hl);
+			e = _memory.read(hl);
 			break;
 		case 0x5f: // LD E,A; 1; 4; ----
 			e = a;
@@ -907,7 +862,7 @@ cpu_step()
 			h = l;
 			break;
 		case 0x66: // LD H,(HL); 1; 8; ----
-			h = mem_read(hl);
+			h = _memory.read(hl);
 			break;
 		case 0x67: // LD H,A; 1; 4; ----
 			h = a;
@@ -931,35 +886,35 @@ cpu_step()
 			l = l;
 			break;
 		case 0x6e: // LD L,(HL); 1; 8; ----
-			l = mem_read(hl);
+			l = _memory.read(hl);
 			break;
 		case 0x6f: // LD L,A; 1; 4; ----
 			l = a;
 			break;
 		case 0x70: // LD (HL),B; 1; 8; ----
-			mem_write(hl, b);
+			_memory.write(hl, b);
 			break;
 		case 0x71: // LD (HL),C; 1; 8; ----
-			mem_write(hl, c);
+			_memory.write(hl, c);
 			break;
 		case 0x72: // LD (HL),D; 1; 8; ----
-			mem_write(hl, d);
+			_memory.write(hl, d);
 			break;
 		case 0x73: // LD (HL),E; 1; 8; ----
-			mem_write(hl, e);
+			_memory.write(hl, e);
 			break;
 		case 0x74: // LD (HL),H; 1; 8; ----
-			mem_write(hl, h);
+			_memory.write(hl, h);
 			break;
 		case 0x75: // LD (HL),L; 1; 8; ----
-			mem_write(hl, l);
+			_memory.write(hl, l);
 			break;
 		case 0x76: // HALT; 1; 4; ----
 			halted = 1;
 			pc--;
 			break;
 		case 0x77: // LD (HL),A; 1; 8; ----
-			mem_write(hl, a);
+			_memory.write(hl, a);
 			break;
 		case 0x78: // LD A,B; 1; 4; ----
 			a = b;
@@ -980,7 +935,7 @@ cpu_step()
 			a = l;
 			break;
 		case 0x7e: // LD A,(HL); 1; 8; ----
-			a = mem_read(hl);
+			a = _memory.read(hl);
 			break;
 		case 0x7f: // LD A,A; 1; 4; ----
 			a = a;
@@ -1004,7 +959,7 @@ cpu_step()
 			adda8(l);
 			break;
 		case 0x86: // ADD A,(HL); 1; 8; Z 0 H C
-			adda8(mem_read(hl));
+			adda8(_memory.read(hl));
 			break;
 		case 0x87: // ADD A,A; 1; 4; Z 0 H C
 			adda8(a);
@@ -1028,7 +983,7 @@ cpu_step()
 			adca8(l);
 			break;
 		case 0x8e: // ADC A,(HL); 1; 8; Z 0 H C
-			adca8(mem_read(hl));
+			adca8(_memory.read(hl));
 			break;
 		case 0x8f: // ADC A,A; 1; 4; Z 0 H C
 			adca8(a);
@@ -1052,7 +1007,7 @@ cpu_step()
 			suba8(l);
 			break;
 		case 0x96: // SUB (HL); 1; 8; Z 1 H C
-			suba8(mem_read(hl));
+			suba8(_memory.read(hl));
 			break;
 		case 0x97: // SUB A; 1; 4; Z 1 H C
 			suba8(a);
@@ -1076,7 +1031,7 @@ cpu_step()
 			sbca8(l);
 			break;
 		case 0x9e: // SBC A,(HL); 1; 8; Z 1 H C
-			sbca8(mem_read(hl));
+			sbca8(_memory.read(hl));
 			break;
 		case 0x9f: // SBC A,A; 1; 4; Z 1 H C
 			sbca8(a);
@@ -1100,7 +1055,7 @@ cpu_step()
 			anda(l);
 			break;
 		case 0xa6: // AND (HL); 1; 8; Z 0 1 0
-			anda(mem_read(hl));
+			anda(_memory.read(hl));
 			break;
 		case 0xa7: // AND A; 1; 4; Z 0 1 0
 			anda(a);
@@ -1124,7 +1079,7 @@ cpu_step()
 			xora(l);
 			break;
 		case 0xae: // XOR (HL); 1; 8; Z 0 0 0
-			xora(mem_read(hl));
+			xora(_memory.read(hl));
 			break;
 		case 0xaf: // XOR A; 1; 4; Z 0 0 0
 			xora(a);
@@ -1148,7 +1103,7 @@ cpu_step()
 			ora(l);
 			break;
 		case 0xb6: // OR (HL); 1; 8; Z 0 0 0
-			ora(mem_read(hl));
+			ora(_memory.read(hl));
 			break;
 		case 0xb7: // OR A; 1; 4; Z 0 0 0
 			ora(a);
@@ -1172,7 +1127,7 @@ cpu_step()
 			cpa8(l);
 			break;
 		case 0xbe: // CP (HL); 1; 8; Z 1 H C
-			cpa8(mem_read(hl));
+			cpa8(_memory.read(hl));
 			break;
 		case 0xbf: // CP A; 1; 4; Z 1 H C
 			cpa8(a);
@@ -1236,9 +1191,9 @@ cpu_step()
 					rlc8(&l);
 					break;
 				case 0x06: { // RLC (HL); 2; 16; Z 0 0 C
-					uint8_t d8 = mem_read(hl);
+					uint8_t d8 = _memory.read(hl);
 					rlc8(&d8);
-					mem_write(hl, d8);
+					_memory.write(hl, d8);
 					break;
 				}
 				case 0x07: // RLC A; 2; 8; Z 0 0 C
@@ -1263,9 +1218,9 @@ cpu_step()
 					rrc8(&l);
 					break;
 				case 0x0e: { // RRC (HL); 2; 16; Z 0 0 C
-					uint8_t d8 = mem_read(hl);
+					uint8_t d8 = _memory.read(hl);
 					rrc8(&d8);
-					mem_write(hl, d8);
+					_memory.write(hl, d8);
 					break;
 				}
 				case 0x0f: // RRC A; 2; 8; Z 0 0 C
@@ -1290,9 +1245,9 @@ cpu_step()
 					rl8(&l);
 					break;
 				case 0x16: { // RL (HL); 2; 16; Z 0 0 C
-					uint8_t d8 = mem_read(hl);
+					uint8_t d8 = _memory.read(hl);
 					rl8(&d8);
-					mem_write(hl, d8);
+					_memory.write(hl, d8);
 					break;
 				}
 				case 0x17: // RL A; 2; 8; Z 0 0 C
@@ -1317,9 +1272,9 @@ cpu_step()
 					rr8(&l);
 					break;
 				case 0x1e: { // RR (HL); 2; 16; Z 0 0 C
-					uint8_t d8 = mem_read(hl);
+					uint8_t d8 = _memory.read(hl);
 					rr8(&d8);
-					mem_write(hl, d8);
+					_memory.write(hl, d8);
 					break;
 				}
 				case 0x1f: // RR A; 2; 8; Z 0 0 C
@@ -1344,9 +1299,9 @@ cpu_step()
 					sla8(&l);
 					break;
 				case 0x26: { // SLA (HL); 2; 16; Z 0 0 C
-					uint8_t d8 = mem_read(hl);
+					uint8_t d8 = _memory.read(hl);
 					sla8(&d8);
-					mem_write(hl, d8);
+					_memory.write(hl, d8);
 					break;
 				}
 				case 0x27: // SLA A; 2; 8; Z 0 0 C
@@ -1371,9 +1326,9 @@ cpu_step()
 					sra8(&l);
 					break;
 				case 0x2e: { // SRA (HL); 2; 16; Z 0 0 0
-					uint8_t d8 = mem_read(hl);
+					uint8_t d8 = _memory.read(hl);
 					sra8(&d8);
-					mem_write(hl, d8);
+					_memory.write(hl, d8);
 					break;
 				}
 				case 0x2f: // SRA A; 2; 8; Z 0 0 0
@@ -1398,9 +1353,9 @@ cpu_step()
 					swap8(&l);
 					break;
 				case 0x36: { // SWAP (HL); 2; 16; Z 0 0 0
-					uint8_t d8 = mem_read(hl);
+					uint8_t d8 = _memory.read(hl);
 					swap8(&d8);
-					mem_write(hl, d8);
+					_memory.write(hl, d8);
 					break;
 				}
 				case 0x37: // SWAP A; 2; 8; Z 0 0 0
@@ -1425,9 +1380,9 @@ cpu_step()
 					srl8(&l);
 					break;
 				case 0x3e: { // SRL (HL); 2; 16; Z 0 0 C
-					uint8_t d8 = mem_read(hl);
+					uint8_t d8 = _memory.read(hl);
 					srl8(&d8);
-					mem_write(hl, d8);
+					_memory.write(hl, d8);
 					break;
 				}
 				case 0x3f: // SRL A; 2; 8; Z 0 0 C
@@ -1452,7 +1407,7 @@ cpu_step()
 					bit8(l, 0);
 					break;
 				case 0x46: // BIT 0,(HL); 2; 16; Z 0 1 -
-					bit8(mem_read(hl), 0);
+					bit8(_memory.read(hl), 0);
 					break;
 				case 0x47: // BIT 0,A; 2; 8; Z 0 1 -
 					bit8(a, 0);
@@ -1476,7 +1431,7 @@ cpu_step()
 					bit8(l, 1);
 					break;
 				case 0x4e: // BIT 1,(HL); 2; 16; Z 0 1 -
-					bit8(mem_read(hl), 1);
+					bit8(_memory.read(hl), 1);
 					break;
 				case 0x4f: // BIT 1,A; 2; 8; Z 0 1 -
 					bit8(a, 1);
@@ -1500,7 +1455,7 @@ cpu_step()
 					bit8(l, 2);
 					break;
 				case 0x56: // BIT 2,(HL); 2; 16; Z 0 1 -
-					bit8(mem_read(hl), 2);
+					bit8(_memory.read(hl), 2);
 					break;
 				case 0x57: // BIT 2,A; 2; 8; Z 0 1 -
 					bit8(a, 2);
@@ -1524,7 +1479,7 @@ cpu_step()
 					bit8(l, 3);
 					break;
 				case 0x5e: // BIT 3,(HL); 2; 16; Z 0 1 -
-					bit8(mem_read(hl), 3);
+					bit8(_memory.read(hl), 3);
 					break;
 				case 0x5f: // BIT 3,A; 2; 8; Z 0 1 -
 					bit8(a, 3);
@@ -1548,7 +1503,7 @@ cpu_step()
 					bit8(l, 4);
 					break;
 				case 0x66: // BIT 4,(HL); 2; 16; Z 0 1 -
-					bit8(mem_read(hl), 4);
+					bit8(_memory.read(hl), 4);
 					break;
 				case 0x67: // BIT 4,A; 2; 8; Z 0 1 -
 					bit8(a, 4);
@@ -1572,7 +1527,7 @@ cpu_step()
 					bit8(l, 5);
 					break;
 				case 0x6e: // BIT 5,(HL); 2; 16; Z 0 1 -
-					bit8(mem_read(hl), 5);
+					bit8(_memory.read(hl), 5);
 					break;
 				case 0x6f: // BIT 5,A; 2; 8; Z 0 1 -
 					bit8(a, 5);
@@ -1596,7 +1551,7 @@ cpu_step()
 					bit8(l, 6);
 					break;
 				case 0x76: // BIT 6,(HL); 2; 16; Z 0 1 -
-					bit8(mem_read(hl), 6);
+					bit8(_memory.read(hl), 6);
 					break;
 				case 0x77: // BIT 6,A; 2; 8; Z 0 1 -
 					bit8(a, 6);
@@ -1620,7 +1575,7 @@ cpu_step()
 					bit8(l, 7);
 					break;
 				case 0x7e: // BIT 7,(HL); 2; 16; Z 0 1 -
-					bit8(mem_read(hl), 7);
+					bit8(_memory.read(hl), 7);
 					break;
 				case 0x7f: // BIT 7,A; 2; 8; Z 0 1 -
 					bit8(a, 7);
@@ -2080,14 +2035,14 @@ cpu_step()
 			rst8(0x18);
 			break;
 		case 0xe0: { // LDH (a8),A; 2; 12; ---- // LD ($FF00+a8),A
-			mem_write(0xff00 + fetch8(), a);
+			_memory.write(0xff00 + fetch8(), a);
 			break;
 		}
 		case 0xe1: // POP HL; 1; 12; ----
 			hl = pop16();
 			break;
 		case 0xe2: // LD (C),A; 1; 8; ---- // LD ($FF00+C),A // target, source
-			mem_write(0xff00 + c, a);
+			_memory.write(0xff00 + c, a);
 			break;
 		case 0xe3: // crash
 			printf("crash: 0x%02x\n", opcode);
@@ -2111,7 +2066,7 @@ cpu_step()
 			pc = hl;
 			break;
 		case 0xea: // LD (a16),A; 3; 16; ----
-			mem_write(fetch16(), a);
+			_memory.write(fetch16(), a);
 			break;
 		case 0xeb: // crash
 			printf("crash: 0x%02x\n", opcode);
@@ -2129,14 +2084,14 @@ cpu_step()
 			rst8(0x28);
 			break;
 		case 0xf0: // LDH A,(a8); 2; 12; ---- // LD A,($FF00+a8)
-			a = mem_read(0xff00 + fetch8());
+			a = _memory.read(0xff00 + fetch8());
 			break;
 		case 0xf1: // POP AF; 1; 12; Z N H C
 			af = pop16();
-			reg16_af.low.bit3_0 = 0;
+			reg16_af.bytes.low.bits.bit3_0 = 0;
 			break;
 		case 0xf2: // LD A,(C); 1; 8; ---- // LD A,($FF00+C)
-			a = mem_read(0xff00 + c);
+			a = _memory.read(0xff00 + c);
 			break;
 		case 0xf3: // DI; 1; 4; ----
 			interrupts_enabled = 0;
@@ -2160,7 +2115,7 @@ cpu_step()
 			sp = hl;
 			break;
 		case 0xfa: // LD A,(a16); 3; 16; ----
-			a = mem_read(fetch16());
+			a = _memory.read(fetch16());
 			break;
 		case 0xfb: // EI; 1; 4; ----
 			interrupts_enabled = 1;

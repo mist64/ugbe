@@ -7,8 +7,6 @@
 //
 
 #include <stdio.h>
-
-#include "io.h"
 #include "memory.h"
 #include "buttons.h"
 #include "serial.h"
@@ -16,9 +14,9 @@
 #include "sound.h"
 #include "ppu.h"
 
-uint8_t io[256];
+#include "io.h"
 
-static char *reg_name[] = {
+static const char *reg_name[] = {
 	"P1", "SB", "SC", 0, "DIV", "TIMA", "TMA", "TAC", 0, 0, 0, 0, 0, 0, 0, "IF",
  "NR10", "NR11", "NR12", "NR13", "NR14", 0, "NR21", "NR22", "NR23", "NR24",
 	"NR30", "NR31", "NR32", "NR33", "NR34", 0, "NR41", "NR42", "NR42_2", "NR43",
@@ -27,7 +25,7 @@ static char *reg_name[] = {
 	"BGP", "OBP0", "OBP1", "WY", "WX"
 };
 
-char *
+const char *
 name_for_io_reg(uint8_t a8)
 {
 	if (a8 == 0xff) {
@@ -39,84 +37,94 @@ name_for_io_reg(uint8_t a8)
 	}
 }
 
-uint8_t
+io::io(ppu &ppu, memory &memory, timer &timer, serial &serial, buttons &buttons, sound &sound)
+	: _ppu    (ppu)
+	, _memory (memory)
+	, _timer  (timer)
+	, _serial (serial)
+	, _buttons(buttons)
+	, _sound  (sound)
+{
+}
+
+uint8_t io::
 irq_read(uint8_t a8)
 {
 	// these behave like RAM
-	return io[a8];
+	return reg[a8];
 }
 
-void
+void io::
 irq_write(uint8_t a8, uint8_t d8)
 {
 	// these behave like RAM
-	io[a8] = d8;
+	reg[a8] = d8;
 }
 
-uint8_t
+uint8_t io::
 irq_get_pending()
 {
-	return io[rIF] & io[rIE];
+	return reg[rIF] & reg[rIE];
 }
 
-void
+void io::
 irq_clear_pending(uint8_t irq)
 {
-	io[rIF] &= ~(1 << irq);
+	reg[rIF] &= ~(1 << irq);
 }
 
 
-uint8_t
+uint8_t io::
 io_read(uint8_t a8)
 {
 	if (a8 == 0x00) {
-		return buttons_read();
+		return _buttons.read();
 	} else if (a8 == 0x01 || a8 == 0x02) {
-		return serial_read(a8);
+		return _serial.read(a8);
 	} else if (a8 >= 0x04 && a8 <= 0x07) {
-		return timer_read(a8);
+		return _timer.read(a8);
 	} else if (a8 == 0x0F || a8 == 0xFF) {
 		return irq_read(a8);
 	} else if (a8 >= 0x10 && a8 <= 0x26) {
-		return sound_read(a8);
+		return _sound.read(a8);
 	} else if (a8 >= 0x40 && a8 <= 0x4b) {
-		return ppu_io_read(a8);
+		return _ppu.io_read(a8);
 	} else {
 		// unassigned
 		return 0xff;
 	}
 }
 
-void
+void io::
 io_write(uint8_t a8, uint8_t d8)
 {
 	if (a8 == 0x00) {
-		buttons_write(a8, d8);
+		_buttons.write(a8, d8);
 	} else if (a8 == 0x01 || a8 == 0x02) {
-		serial_write(a8, d8);
+		_serial.write(a8, d8);
 	} else if (a8 >= 0x04 && a8 <= 0x07) {
-		timer_write(a8, d8);
+		_timer.write(a8, d8);
 	} else if (a8 == 0x0F || a8 == 0xFF) {
 		irq_write(a8, d8);
 	} else if (a8 >= 0x10 && a8 <= 0x26) {
-		sound_write(a8, d8);
+		_sound.write(a8, d8);
 	} else if (a8 >= 0x40 && a8 <= 0x4b) {
-		ppu_io_write(a8, d8);
+		_ppu.io_write(a8, d8);
 	} else if (a8 == 0x50) {
-		mem_io_write(a8, d8);
+		_memory.io_write(a8, d8);
 	} else {
 		// do nothing
 	}
 }
 
-void
+void io::
 io_step()
 {
-	timer_step();
-	ppu_step();
+	_timer.step();
+	_ppu.step();
 }
 
-void
+void io::
 io_step_4()
 {
 	io_step();
@@ -124,4 +132,3 @@ io_step_4()
 	io_step();
 	io_step();
 }
-
