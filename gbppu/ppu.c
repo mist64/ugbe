@@ -53,6 +53,7 @@ typedef enum {
 ppu_mode_t mode;
 ppu_mode_t old_mode;
 
+void bg_reset();
 
 uint8_t
 ppu_io_read(uint8_t a8)
@@ -297,11 +298,19 @@ oam_step()
 
 		cur_sprite = 0;
 	}
+
+	if (++oam_mode_counter == 80) {
+		bg_reset();
+	}
 }
 
 void
 bg_reset()
 {
+	mode = mode_pixel;
+	vram_locked = 1;
+	oamram_locked = 1;
+
 	bg_index_ctr = 0;
 	bg_t = 0;
 	window = 0;
@@ -330,7 +339,13 @@ bg_pixel_get()
 static void
 oam_pixel_set(int i, uint8_t p)
 {
+#if 0 // TODO: this sometimes happens, needs to be debugged
 	assert(i < sizeof(oam_pixel_queue));
+#else
+	if (!(i < sizeof(oam_pixel_queue))) {
+		return;
+	}
+#endif
 	if (oam_pixel_queue[i] == 0xff) {
 		oam_pixel_queue[i] = p;
 	}
@@ -462,6 +477,25 @@ bg_step()
 	bg_t = (bg_t + 1 & 3);
 }
 
+static void
+pixel_step()
+{
+	if (bg_pixel_queue_next >= 8) {
+		uint8_t p = bg_pixel_get();
+		if (p != 0xff) {
+			int line_full = !ppu_output_pixel(p);
+			if (line_full) {
+				// end this mode
+				bg_pixel_queue_next = 0;
+				ppu_new_line();
+				mode = mode_hblank;
+				vram_locked = 0;
+				oamram_locked = 0;
+			}
+		}
+	}
+}
+
 // PPU steps are executed the CPU clock rate, i.e. at ~4 MHz
 void
 ppu_step()
@@ -481,19 +515,27 @@ ppu_step()
 		return;
 	}
 
+	//
 	// IRQ
+	//
+
+	// V-Blank interrupt
 	if (current_y == 144 && current_x == 0) {
 		io[rIF] |= 1;
 	}
+	// LY == LYC interrupt
 	if (io_read(rSTAT) & 0x40 && io_read(rLYC) == current_y && current_x == 0) {
 		io[rIF] |= 2;
 	}
 	if (mode != old_mode) {
 		if (io_read(rSTAT) & 0x20 && mode == 2) {
+			// Mode 2 interrupt
 			io[rIF] |= 2;
 		} else if (io_read(rSTAT) & 0x10 && mode == 1) {
+			// Mode 1 interrupt
 			io[rIF] |= 2;
 		} else if (io_read(rSTAT) & 0x08 && mode == 0) {
+			// Mode 0 interrupt
 			io[rIF] |= 2;
 		}
 	}
@@ -501,19 +543,13 @@ ppu_step()
 	old_mode = mode;
 
 	if (current_y <= PPU_LAST_VISIBLE_LINE) {
-
 		if (mode == mode_oam) {
+			// oam search runs at 4 MHz
 			oam_step();
-			if (++oam_mode_counter == 80) {
-				mode = mode_pixel;
-				vram_locked = 1;
-				oamram_locked = 1;
-				bg_reset();
-			}
 		}
 
 		if (mode == mode_pixel) {
-			// the background unit's speed is vram-bound, so it runs at 1/2 speed = 2 MHz
+			// the background unit's speed is VRAM-bound, so it runs at 1/2 speed = 2 MHz
 			if (!(current_x & 1)) {
 				bg_step();
 			}
@@ -521,20 +557,7 @@ ppu_step()
 	}
 
 	// shift pixels to the LCD @ 4 MHz
-	if (bg_pixel_queue_next >= 8) {
-		uint8_t p = bg_pixel_get();
-		if (p != 0xff) {
-			int line_full = !ppu_output_pixel(p);
-			if (line_full) {
-				// end this mode
-				bg_pixel_queue_next = 0;
-				ppu_new_line();
-				mode = mode_hblank;
-				vram_locked = 0;
-				oamram_locked = 0;
-			}
-		}
-	}
+	pixel_step();
 
 	if (++current_x == PPU_CLOCKS_PER_LINE) {
 		current_x = 0;
