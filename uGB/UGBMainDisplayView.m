@@ -7,6 +7,7 @@
 
 #import "UGBMainDisplayView.h"
 #import "UGBRomDocument.h"
+#import "UGBMainWindowController.h"
 
 @implementation UGBMainDisplayView
 
@@ -39,6 +40,17 @@
 }
 
 - (void)keyDown:(NSEvent *)event {
+    switch (event.keyCode) {
+        case 49: // spacebar
+            [NSApp sendAction:@selector(spaceBarHit:) to:nil from:self];
+            break;
+        case 0x7c: // right arrow
+            [NSApp sendAction:@selector(arrowRightHit:) to:nil from:self];
+            break;
+        default:
+            ;
+            NSLog(@"keycode: %x", event.keyCode);
+    }
     ((UGBRomDocument *)(self.window.windowController.document)).keys |= [self keyMaskFromEvent:event];
 }
 

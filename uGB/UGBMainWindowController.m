@@ -6,8 +6,13 @@
 //
 
 #import "UGBMainWindowController.h"
+#import "UGBRomDocument.h"
 
 @implementation UGBMainWindowController
+
+- (UGBRomDocument *)romDocument {
+    return self.document;
+}
 
 - (IBAction)viewScaleItemAction:(NSMenuItem *)aMenuItem {
     CGFloat targetScale = aMenuItem.tag / 10.0;
@@ -22,6 +27,29 @@
     newFrame = [window frameRectForContentRect:newFrame];
     newFrame.origin.y = oldMaxY - CGRectGetHeight(newFrame);
     [window setFrame:newFrame display:YES animate:YES];
+}
+
+- (IBAction)spaceBarHit:(id)aSender {
+    self.romDocument.paused = !self.romDocument.isPaused;
+    [self synchronizeWindowTitleWithDocumentName];
+}
+
+- (IBAction)arrowRightHit:(id)aSender {
+    if (self.romDocument.isPaused) {
+        // single step on pause - should work because of use of semaphore
+        self.romDocument.paused = NO;
+        self.romDocument.paused = YES;
+    }
+    [self synchronizeWindowTitleWithDocumentName];
+}
+
+- (NSString *)windowTitleForDocumentDisplayName:(NSString *)displayName {
+    UGBRomDocument *document = self.romDocument;
+    if (document.paused) {
+        return [NSString stringWithFormat:@"%@ \u275A\u275A (%ld)", displayName, document.frameCount];
+    } else {
+        return displayName;
+    }
 }
 
 @end

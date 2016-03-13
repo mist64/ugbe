@@ -20,6 +20,7 @@ static CGImageRef CreateGameBoyScreenCGImageRefFromPicture(uint8_t *picture);
 @property (nonatomic) NSTimeInterval nextFrameTime;
 @property (nonatomic) BOOL shouldEnd;
 @property (nonatomic, strong) id mostRecentCGImageRef;
+@property (nonatomic) dispatch_semaphore_t pauseSemaphore;
 @end
 
 @implementation UGBRomDocument
@@ -41,7 +42,8 @@ static CGImageRef CreateGameBoyScreenCGImageRefFromPicture(uint8_t *picture);
 }
 
 - (void)startEmulation {
-
+    _pauseSemaphore = dispatch_semaphore_create(0);
+    
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         char *bootrom_filename = (char *)[[[NSBundle mainBundle] URLForResource:@"DMG_ROM" withExtension:@"bin"] fileSystemRepresentation];
         char *rom_filename = (char *)[[self fileURL] fileSystemRepresentation];
@@ -61,6 +63,7 @@ static CGImageRef CreateGameBoyScreenCGImageRefFromPicture(uint8_t *picture);
             }
             if (ppu_dirty) {
                 ppu_dirty = false;
+                self.frameCount += 1;
                 
                 ppu_copy_picture((uint8_t *)pictureCopy);
                 CGImageRef imageRef = CreateGameBoyScreenCGImageRefFromPicture((uint8_t *)picture);
@@ -77,9 +80,23 @@ static CGImageRef CreateGameBoyScreenCGImageRefFromPicture(uint8_t *picture);
                     self.nextFrameTime = interval;
                 }
                 self.nextFrameTime += timePerFrame;
+
+                if (self.isPaused) {
+                    dispatch_semaphore_wait(_pauseSemaphore, DISPATCH_TIME_FOREVER);
+                    self.nextFrameTime = [NSDate timeIntervalSinceReferenceDate] + timePerFrame;
+                }
             }
         }
     });
+}
+
+- (void)setPaused:(BOOL)paused {
+    if (_paused != paused) {
+        _paused = paused;
+        if (!_paused) {
+            dispatch_semaphore_signal(_pauseSemaphore);
+        }
+    }
 }
 
 - (void)setKeys:(uint8_t)keys {

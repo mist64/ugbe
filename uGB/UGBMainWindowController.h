@@ -8,5 +8,6 @@
 #import <Cocoa/Cocoa.h>
 
 @interface UGBMainWindowController : NSWindowController
-
+- (IBAction)spaceBarHit:(id)aSender;
+- (IBAction)arrowRightHit:(id)aSender;
 @end

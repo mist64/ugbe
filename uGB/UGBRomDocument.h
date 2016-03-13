@@ -13,5 +13,8 @@
 @property (nonatomic, strong) UGBMainDisplayViewController *mainDisplayViewController;
 @property (nonatomic) uint8_t keys;
 
+@property (nonatomic, getter=isPaused) BOOL paused;
+@property (nonatomic) NSInteger frameCount;
+
 @end
 
