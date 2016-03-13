@@ -1,5 +1,5 @@
 //
-//  Document.h
+//  UGBRomDocument.h
 //  uGB
 //
 //  Created by Dominik Wagner on 3/6/16.

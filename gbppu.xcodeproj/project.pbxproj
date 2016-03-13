@@ -11,15 +11,6 @@
 		CC512A671C7BA65100ECFACA /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = CC512A661C7BA65100ECFACA /* main.m */; };
 		CC512A691C7BA65100ECFACA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CC512A681C7BA65100ECFACA /* Assets.xcassets */; };
 		CC512A6C1C7BA65100ECFACA /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = CC512A6A1C7BA65100ECFACA /* MainMenu.xib */; };
-		F22BCA9F1C8EC950008E42D0 /* UGBMainDisplayView.m in Sources */ = {isa = PBXBuildFile; fileRef = F22BCA9E1C8EC950008E42D0 /* UGBMainDisplayView.m */; };
-		F231B3BB1C8EB7F50082A3AA /* DMG_ROM.bin in Resources */ = {isa = PBXBuildFile; fileRef = F231B3BA1C8EB7F50082A3AA /* DMG_ROM.bin */; };
-		F29093341C8D659C00FFF73E /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = F29093331C8D659C00FFF73E /* AppDelegate.m */; };
-		F29093371C8D659C00FFF73E /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = F29093361C8D659C00FFF73E /* main.m */; };
-		F290933A1C8D659C00FFF73E /* UGBMainDisplayViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = F29093391C8D659C00FFF73E /* UGBMainDisplayViewController.m */; };
-		F290933D1C8D659C00FFF73E /* UGBRomDocument.m in Sources */ = {isa = PBXBuildFile; fileRef = F290933C1C8D659C00FFF73E /* UGBRomDocument.m */; };
-		F290933F1C8D659C00FFF73E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F290933E1C8D659C00FFF73E /* Assets.xcassets */; };
-		F29093421C8D659C00FFF73E /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = F29093401C8D659C00FFF73E /* Main.storyboard */; };
-		F2EDB0F41C950B0300F92DD8 /* UGBMainWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = F2EDB0F31C950B0300F92DD8 /* UGBMainWindowController.m */; };
 		CC6486F91C803EE200637024 /* cpu.cc in Sources */ = {isa = PBXBuildFile; fileRef = CC6486F81C803EE200637024 /* cpu.cc */; };
 		CC6486FC1C8068C000637024 /* ppu.cc in Sources */ = {isa = PBXBuildFile; fileRef = CC6486FA1C8068C000637024 /* ppu.cc */; };
 		CC6487001C82F63400637024 /* memory.cc in Sources */ = {isa = PBXBuildFile; fileRef = CC6486FE1C82F63400637024 /* memory.cc */; };
@@ -29,6 +20,24 @@
 		CCAB237E1C8CF7A30019B444 /* serial.cc in Sources */ = {isa = PBXBuildFile; fileRef = CCAB237C1C8CF7A30019B444 /* serial.cc */; };
 		CCAB23801C8CF98D0019B444 /* io.cc in Sources */ = {isa = PBXBuildFile; fileRef = CCAB237F1C8CF98D0019B444 /* io.cc */; };
 		D002FC441C952070006722DE /* gb.cc in Sources */ = {isa = PBXBuildFile; fileRef = D002FC421C952070006722DE /* gb.cc */; };
+		F22BCA9F1C8EC950008E42D0 /* UGBMainDisplayView.m in Sources */ = {isa = PBXBuildFile; fileRef = F22BCA9E1C8EC950008E42D0 /* UGBMainDisplayView.m */; };
+		F231B3BB1C8EB7F50082A3AA /* DMG_ROM.bin in Resources */ = {isa = PBXBuildFile; fileRef = F231B3BA1C8EB7F50082A3AA /* DMG_ROM.bin */; };
+		F29093341C8D659C00FFF73E /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = F29093331C8D659C00FFF73E /* AppDelegate.m */; };
+		F29093371C8D659C00FFF73E /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = F29093361C8D659C00FFF73E /* main.m */; };
+		F290933A1C8D659C00FFF73E /* UGBMainDisplayViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = F29093391C8D659C00FFF73E /* UGBMainDisplayViewController.m */; };
+		F290933D1C8D659C00FFF73E /* UGBRomDocument.mm in Sources */ = {isa = PBXBuildFile; fileRef = F290933C1C8D659C00FFF73E /* UGBRomDocument.mm */; };
+		F290933F1C8D659C00FFF73E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F290933E1C8D659C00FFF73E /* Assets.xcassets */; };
+		F29093421C8D659C00FFF73E /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = F29093401C8D659C00FFF73E /* Main.storyboard */; };
+		F2EDB0F41C950B0300F92DD8 /* UGBMainWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = F2EDB0F31C950B0300F92DD8 /* UGBMainWindowController.m */; };
+		F2EDB0F51C957DAF00F92DD8 /* gb.cc in Sources */ = {isa = PBXBuildFile; fileRef = D002FC421C952070006722DE /* gb.cc */; };
+		F2EDB0F61C957DAF00F92DD8 /* cpu.cc in Sources */ = {isa = PBXBuildFile; fileRef = CC6486F81C803EE200637024 /* cpu.cc */; };
+		F2EDB0F71C957DAF00F92DD8 /* memory.cc in Sources */ = {isa = PBXBuildFile; fileRef = CC6486FE1C82F63400637024 /* memory.cc */; };
+		F2EDB0F81C957DAF00F92DD8 /* sound.cc in Sources */ = {isa = PBXBuildFile; fileRef = CCAB23721C8CF63F0019B444 /* sound.cc */; };
+		F2EDB0F91C957DAF00F92DD8 /* timer.cc in Sources */ = {isa = PBXBuildFile; fileRef = CCAB23751C8CF6470019B444 /* timer.cc */; };
+		F2EDB0FA1C957DAF00F92DD8 /* ppu.cc in Sources */ = {isa = PBXBuildFile; fileRef = CC6486FA1C8068C000637024 /* ppu.cc */; };
+		F2EDB0FB1C957DAF00F92DD8 /* io.cc in Sources */ = {isa = PBXBuildFile; fileRef = CCAB237F1C8CF98D0019B444 /* io.cc */; };
+		F2EDB0FC1C957DAF00F92DD8 /* buttons.cc in Sources */ = {isa = PBXBuildFile; fileRef = CCAB23791C8CF78A0019B444 /* buttons.cc */; };
+		F2EDB0FD1C957DAF00F92DD8 /* serial.cc in Sources */ = {isa = PBXBuildFile; fileRef = CCAB237C1C8CF7A30019B444 /* serial.cc */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -54,6 +63,9 @@
 		CCAB237A1C8CF78A0019B444 /* buttons.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = buttons.h; sourceTree = "<group>"; };
 		CCAB237C1C8CF7A30019B444 /* serial.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; path = serial.cc; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
 		CCAB237D1C8CF7A30019B444 /* serial.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = serial.h; sourceTree = "<group>"; };
+		CCAB237F1C8CF98D0019B444 /* io.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; path = io.cc; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
+		D002FC421C952070006722DE /* gb.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = gb.cc; sourceTree = "<group>"; };
+		D002FC431C952070006722DE /* gb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gb.h; sourceTree = "<group>"; };
 		F22BCA9D1C8EC950008E42D0 /* UGBMainDisplayView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UGBMainDisplayView.h; sourceTree = "<group>"; };
 		F22BCA9E1C8EC950008E42D0 /* UGBMainDisplayView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = UGBMainDisplayView.m; sourceTree = "<group>"; };
 		F231B3BA1C8EB7F50082A3AA /* DMG_ROM.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = DMG_ROM.bin; path = gbppu/DMG_ROM.bin; sourceTree = SOURCE_ROOT; };
@@ -64,15 +76,12 @@
 		F29093381C8D659C00FFF73E /* UGBMainDisplayViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = UGBMainDisplayViewController.h; sourceTree = "<group>"; };
 		F29093391C8D659C00FFF73E /* UGBMainDisplayViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = UGBMainDisplayViewController.m; sourceTree = "<group>"; };
 		F290933B1C8D659C00FFF73E /* UGBRomDocument.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = UGBRomDocument.h; sourceTree = "<group>"; };
-		F290933C1C8D659C00FFF73E /* UGBRomDocument.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = UGBRomDocument.m; sourceTree = "<group>"; };
+		F290933C1C8D659C00FFF73E /* UGBRomDocument.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = UGBRomDocument.mm; sourceTree = "<group>"; };
 		F290933E1C8D659C00FFF73E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F29093411C8D659C00FFF73E /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		F29093431C8D659C00FFF73E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		F2EDB0F21C950B0300F92DD8 /* UGBMainWindowController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UGBMainWindowController.h; sourceTree = "<group>"; };
 		F2EDB0F31C950B0300F92DD8 /* UGBMainWindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = UGBMainWindowController.m; sourceTree = "<group>"; };
-		CCAB237F1C8CF98D0019B444 /* io.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; lineEnding = 0; path = io.cc; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.c; };
-		D002FC421C952070006722DE /* gb.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = gb.cc; sourceTree = "<group>"; };
-		D002FC431C952070006722DE /* gb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = gb.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -170,7 +179,7 @@
 				F2EDB0F21C950B0300F92DD8 /* UGBMainWindowController.h */,
 				F2EDB0F31C950B0300F92DD8 /* UGBMainWindowController.m */,
 				F290933B1C8D659C00FFF73E /* UGBRomDocument.h */,
-				F290933C1C8D659C00FFF73E /* UGBRomDocument.m */,
+				F290933C1C8D659C00FFF73E /* UGBRomDocument.mm */,
 				F290933E1C8D659C00FFF73E /* Assets.xcassets */,
 				F29093401C8D659C00FFF73E /* Main.storyboard */,
 				F29093431C8D659C00FFF73E /* Info.plist */,
@@ -307,20 +316,21 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F2EDB0F71C957DAF00F92DD8 /* memory.cc in Sources */,
 				F22BCA9F1C8EC950008E42D0 /* UGBMainDisplayView.m in Sources */,
-				F290933D1C8D659C00FFF73E /* UGBRomDocument.m in Sources */,
-				F231B3BF1C8EB8260082A3AA /* timer.c in Sources */,
+				F2EDB0F51C957DAF00F92DD8 /* gb.cc in Sources */,
+				F2EDB0F61C957DAF00F92DD8 /* cpu.cc in Sources */,
+				F290933D1C8D659C00FFF73E /* UGBRomDocument.mm in Sources */,
+				F2EDB0F81C957DAF00F92DD8 /* sound.cc in Sources */,
 				F290933A1C8D659C00FFF73E /* UGBMainDisplayViewController.m in Sources */,
-				F231B3C01C8EB8260082A3AA /* ppu.c in Sources */,
-				F231B3BC1C8EB8260082A3AA /* cpu.c in Sources */,
-				F231B3C11C8EB8260082A3AA /* io.c in Sources */,
+				F2EDB0FC1C957DAF00F92DD8 /* buttons.cc in Sources */,
 				F2EDB0F41C950B0300F92DD8 /* UGBMainWindowController.m in Sources */,
+				F2EDB0FB1C957DAF00F92DD8 /* io.cc in Sources */,
 				F29093371C8D659C00FFF73E /* main.m in Sources */,
-				F231B3BE1C8EB8260082A3AA /* sound.c in Sources */,
-				F231B3C21C8EB8260082A3AA /* buttons.c in Sources */,
-				F231B3C31C8EB8260082A3AA /* serial.c in Sources */,
-				F231B3BD1C8EB8260082A3AA /* memory.c in Sources */,
 				F29093341C8D659C00FFF73E /* AppDelegate.m in Sources */,
+				F2EDB0F91C957DAF00F92DD8 /* timer.cc in Sources */,
+				F2EDB0FD1C957DAF00F92DD8 /* serial.cc in Sources */,
+				F2EDB0FA1C957DAF00F92DD8 /* ppu.cc in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -468,7 +478,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ANALYZER_NONNULL = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				GCC_C_LANGUAGE_STANDARD = c11;
+				GCC_C_LANGUAGE_STANDARD = "compiler-default";
 				INFOPLIST_FILE = uGB/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				OTHER_CFLAGS = "-Wno-gnu-statement-expression";
@@ -483,7 +493,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ANALYZER_NONNULL = YES;
 				COMBINE_HIDPI_IMAGES = YES;
-				GCC_C_LANGUAGE_STANDARD = c11;
+				GCC_C_LANGUAGE_STANDARD = "compiler-default";
 				INFOPLIST_FILE = uGB/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
 				OTHER_CFLAGS = "-Wno-gnu-statement-expression";
