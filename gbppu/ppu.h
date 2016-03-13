@@ -78,19 +78,16 @@ private:
 
 	bool fetch_is_sprite;
 
-#pragma pack(1)
+#pragma pack(push, 1)
 	typedef struct {
 		uint8_t y;
 		uint8_t x;
 		uint8_t tile;
 		uint8_t attr;
 	} oamentry;
+#pragma pack(pop)
 
-	struct {
-		oamentry oam;
-		uint8_t data0;
-		uint8_t data1;
-	} spritegen[10];
+	uint8_t active_sprite_index[10];
 
 	void new_screen();
 	int output_pixel(uint8_t p);

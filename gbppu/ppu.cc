@@ -233,9 +233,9 @@ oam_step()
 				}
 			}
 			if (oam_index >= 0) {
+//				printf("%d/%d ", oam[oam_index].x, oam[oam_index].y);
 				sprite_used[oam_index] = 1;
-				spritegen[sprites_visible].oam = oam[oam_index];
-//				printf("%d/%d ", spritegen[sprites_visible].oam.x, spritegen[sprites_visible].oam.y);
+				active_sprite_index[sprites_visible] = oam_index;
 				sprites_visible++;
 			}
 		} while (sprites_visible < 10 && oam_index >= 0);
@@ -244,6 +244,7 @@ oam_step()
 		cur_sprite = 0;
 	}
 
+	// we're done after 80 cycles at ~4 MHz
 	if (++oam_mode_counter == 80) {
 		bg_reset();
 	}
@@ -317,12 +318,14 @@ oam_pixel_get()
 void ppu::
 bg_step()
 {
+	oamentry *oam = (oamentry *)oamram;
+
 	// background @ 2 MHz
 	switch (bg_t) {
 		case 0: {
 			// decide whether we should do a sprite tile fetch here
 			if (cur_sprite != sprites_visible &&
-				   (((spritegen[cur_sprite].oam.x >> 3) - 2) == (pixel_x >> 3) || (spritegen[cur_sprite].oam.x >> 3) <= 1)) {
+				   (((oam[active_sprite_index[cur_sprite]].x >> 3) - 2) == (pixel_x >> 3) || (oam[active_sprite_index[cur_sprite]].x >> 3) <= 1)) {
 				// sprite is due to be displayed soon, fetch its data
 				fetch_is_sprite = 1;
 			} else {
@@ -342,8 +345,8 @@ bg_step()
 			uint8_t ybase;
 			uint8_t index_ram_select_mask;
 			if (fetch_is_sprite) {
-				line_within_tile = current_y - spritegen[cur_sprite].oam.y + 16;
-				if (spritegen[cur_sprite].oam.attr & 0x40) { // Y flip
+				line_within_tile = current_y - oam[active_sprite_index[cur_sprite]].y + 16;
+				if (oam[active_sprite_index[cur_sprite]].attr & 0x40) { // Y flip
 					line_within_tile = get_sprite_height() - line_within_tile - 1;
 				}
 //				goto case1;
@@ -369,7 +372,7 @@ bg_step()
 //		case1:
 			uint8_t index;
 			if (fetch_is_sprite) {
-				index = spritegen[cur_sprite].oam.tile;
+				index = oam[active_sprite_index[cur_sprite]].tile;
 			} else {
 				index = vram_get_data();
 			}
@@ -391,16 +394,17 @@ bg_step()
 			// cycle 3: read tile data #1, output pixels
 			// (VRAM is idle)
 			uint8_t data1 = vram_get_data();
-			bool flip = fetch_is_sprite ? !(spritegen[cur_sprite].oam.attr & 0x20) : 0;
+			bool flip = fetch_is_sprite ? !(oam[active_sprite_index[cur_sprite]].attr & 0x20) : 0;
 			int skip = bg_index_ctr ? 0 : _io.reg[rSCX] & 7; // bg only
-			uint8_t palette = fetch_is_sprite ? _io.reg[spritegen[cur_sprite].oam.attr & 0x10 ? rOBP1 : rOBP0] : _io.reg[rBGP];
+			uint8_t palette = fetch_is_sprite ? _io.reg[oam[active_sprite_index[cur_sprite]].attr & 0x10 ? rOBP1 : rOBP0] : _io.reg[rBGP];
 			for (int i = 7; i >= 0; i--) {
 				int i2 = flip ? (7 - i) : i;
 				bool b0 = (data0 >> i2) & 1;
 				bool b1 = (data1 >> i2) & 1;
-				uint8_t p2 = paletted(palette, b0 | (b1 << 1));
+				uint8_t p = b0 | (b1 << 1);
+				uint8_t p2 = paletted(palette, p);
 				if (fetch_is_sprite) {
-					oam_pixel_set(i + (spritegen[cur_sprite].oam.x - pixel_x - 8), p2 ? p2 : 255);
+					oam_pixel_set(i + (oam[active_sprite_index[cur_sprite]].x - pixel_x - 8), p ? p2 : 255);
 				} else {
 					if (skip) {
 						skip--;
