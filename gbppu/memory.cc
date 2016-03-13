@@ -11,7 +11,7 @@
 #include "io.h"
 #include "ppu.h"
 
-extern ppu ppu;
+extern ppu *ppu;
 
 uint8_t *bootrom;
 uint8_t *rom;
@@ -513,7 +513,7 @@ mem_read(uint16_t a16)
 			return rom[a16];
 		}
 	} else if (a16 >= 0x8000 && a16 < 0xa000) {
-		return ppu.ppu_vram_read(a16 - 0x8000);
+		return ppu->ppu_vram_read(a16 - 0x8000);
 	} else if (a16 >= 0xa000 && a16 < 0xc000) {
 		// TODO: RAM banking
 		if (a16 - 0xa000 < extramsize) {
@@ -525,7 +525,7 @@ mem_read(uint16_t a16)
 	} else if (a16 >= 0xc000 && a16 < 0xe000) {
 		return ram[a16 - 0xc000];
 	} else if (a16 >= 0xfe00 && a16 < 0xfea0) {
-		return ppu.ppu_oamram_read(a16 - 0xfe00);
+		return ppu->ppu_oamram_read(a16 - 0xfe00);
 	} else if (a16 >= 0xfea0 && a16 < 0xff00) {
 		// unassigned
 		return 0xff;
@@ -566,7 +566,7 @@ mem_write_internal(uint16_t a16, uint8_t d8)
 			printf("warning: unsupported MBC write!\n");
 		}
 	} else if (a16 >= 0x8000 && a16 < 0xa000) {
-		ppu.ppu_vram_write(a16 - 0x8000, d8);
+		ppu->ppu_vram_write(a16 - 0x8000, d8);
 	} else if (a16 >= 0xa000 && a16 < 0xc000) {
 		if (a16 - 0xa000 < extramsize) {
 			extram[a16 - 0xa000] = d8;
@@ -576,7 +576,7 @@ mem_write_internal(uint16_t a16, uint8_t d8)
 	} else if (a16 >= 0xc000 && a16 < 0xe000) {
 		ram[a16 - 0xc000] = d8;
 	} else if (a16 >= 0xfe00 && a16 < 0xfea0) {
-		ppu.ppu_oamram_write(a16 - 0xfe00, d8);
+		ppu->ppu_oamram_write(a16 - 0xfe00, d8);
 	} else if (a16 >= 0xfea0 && a16 < 0xff00) {
 		// unassigned
 	} else if ((a16 >= 0xff00 && a16 < 0xff80) || a16 == 0xffff) {

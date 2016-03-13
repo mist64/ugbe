@@ -13,7 +13,7 @@
 
 class ppu {
 public:
-	void ppu_init();
+	ppu();
 	void ppu_step();
 
 	uint8_t ppu_io_read(uint8_t a8);

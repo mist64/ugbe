@@ -16,7 +16,7 @@
 #include "sound.h"
 #include "ppu.h"
 
-extern ppu ppu;
+extern ppu *ppu;
 
 uint8_t io[256];
 
@@ -82,7 +82,7 @@ io_read(uint8_t a8)
 	} else if (a8 >= 0x10 && a8 <= 0x26) {
 		return sound_read(a8);
 	} else if (a8 >= 0x40 && a8 <= 0x4b) {
-		return ppu.ppu_io_read(a8);
+		return ppu->ppu_io_read(a8);
 	} else {
 		// unassigned
 		return 0xff;
@@ -103,7 +103,7 @@ io_write(uint8_t a8, uint8_t d8)
 	} else if (a8 >= 0x10 && a8 <= 0x26) {
 		sound_write(a8, d8);
 	} else if (a8 >= 0x40 && a8 <= 0x4b) {
-		ppu.ppu_io_write(a8, d8);
+		ppu->ppu_io_write(a8, d8);
 	} else if (a8 == 0x50) {
 		mem_io_write(a8, d8);
 	} else {
@@ -115,7 +115,7 @@ void
 io_step()
 {
 	timer_step();
-	ppu.ppu_step();
+	ppu->ppu_step();
 }
 
 void

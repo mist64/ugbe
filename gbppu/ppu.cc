@@ -125,8 +125,7 @@ ppu::new_screen()
 	memset(oam_pixel_queue, 0xff, sizeof(oam_pixel_queue));
 }
 
-void
-ppu::ppu_init()
+ppu::ppu()
 {
 	vram = (uint8_t *)calloc(0x2000, 1);
 	oamram = (uint8_t *)calloc(0xa0, 1);
