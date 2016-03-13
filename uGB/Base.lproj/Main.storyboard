@@ -374,6 +374,11 @@
                                                 </items>
                                             </menu>
                                         </menuItem>
+                                        <menuItem title="Turbo" keyEquivalent="t" id="5KT-7p-GPP">
+                                            <connections>
+                                                <action selector="toggleTurbo:" target="Ady-hI-5gd" id="pEG-JU-um4"/>
+                                            </connections>
+                                        </menuItem>
                                     </items>
                                 </menu>
                             </menuItem>

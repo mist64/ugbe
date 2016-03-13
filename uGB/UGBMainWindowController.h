@@ -10,4 +10,5 @@
 @interface UGBMainWindowController : NSWindowController
 - (IBAction)spaceBarHit:(id)aSender;
 - (IBAction)arrowRightHit:(id)aSender;
+- (IBAction)toggleTurbo:(id)sender;
 @end

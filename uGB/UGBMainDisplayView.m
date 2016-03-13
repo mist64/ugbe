@@ -15,21 +15,21 @@
 {
     switch ([event.characters characterAtIndex:0]) {
         case 0xF703: // right
-            return 1;
+            return UGBKeyCodeRight;
         case 0xF702: // left
-            return 2;
+            return UGBKeyCodeLeft;
         case 0xF700: // up
-            return 4;
+            return UGBKeyCodeUp;
         case 0xF701: // down
-            return 8;
+            return UGBKeyCodeDown;
         case 'a': // a
-            return 16;
+            return UGBKeyCodeA;
         case 's': // b
-            return 32;
+            return UGBKeyCodeB;
         case '\'': // select
-            return 64;
+            return UGBKeyCodeSelect;
         case '\r': // start
-            return 128;
+            return UGBKeyCodeStart;
         default:
             return 0;
     }
@@ -37,6 +37,10 @@
 
 - (BOOL)acceptsFirstResponder {
     return YES;
+}
+
+- (UGBRomDocument *)romDocument {
+    return (UGBRomDocument *)(self.window.windowController.document);
 }
 
 - (void)keyDown:(NSEvent *)event {
@@ -47,15 +51,22 @@
         case 0x7c: // right arrow
             [NSApp sendAction:@selector(arrowRightHit:) to:nil from:self];
             break;
+        case 0x11: // t for turbo
+            [NSApp sendAction:@selector(toggleTurbo:) to:nil from:self];
+            break;
         default:
             ;
-            NSLog(@"keycode: %x", event.keyCode);
+             NSLog(@"keycode: %x", event.keyCode);
     }
-    ((UGBRomDocument *)(self.window.windowController.document)).keys |= [self keyMaskFromEvent:event];
+    if (!self.romDocument.isPaused) {
+        self.romDocument.keys |= [self keyMaskFromEvent:event];
+    }
 }
 
 - (void)keyUp:(NSEvent *)event {
-    ((UGBRomDocument *)(self.window.windowController.document)).keys &= ~[self keyMaskFromEvent:event];
+    if (!self.romDocument.isPaused) {
+        self.romDocument.keys &= ~[self keyMaskFromEvent:event];
+    }
 }
 
 @end

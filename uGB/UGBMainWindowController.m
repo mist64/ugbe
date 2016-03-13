@@ -29,12 +29,12 @@
     [window setFrame:newFrame display:YES animate:YES];
 }
 
-- (IBAction)spaceBarHit:(id)aSender {
+- (IBAction)spaceBarHit:(id)sender {
     self.romDocument.paused = !self.romDocument.isPaused;
     [self synchronizeWindowTitleWithDocumentName];
 }
 
-- (IBAction)arrowRightHit:(id)aSender {
+- (IBAction)arrowRightHit:(id)sender {
     if (self.romDocument.isPaused) {
         // single step on pause - should work because of use of semaphore
         self.romDocument.paused = NO;
@@ -43,8 +43,25 @@
     [self synchronizeWindowTitleWithDocumentName];
 }
 
+- (IBAction)toggleTurbo:(id)sender {
+    self.romDocument.turbo = !self.romDocument.turbo;
+    [self synchronizeWindowTitleWithDocumentName];
+}
+
+- (BOOL)validateMenuItem:(NSMenuItem *)menuItem {
+    if (menuItem.action == @selector(toggleTurbo:)) {
+        menuItem.state = self.romDocument.turbo ? NSOnState : NSOffState;
+        return YES;
+    }
+    return [super validateMenuItem:menuItem];
+}
+
 - (NSString *)windowTitleForDocumentDisplayName:(NSString *)displayName {
     UGBRomDocument *document = self.romDocument;
+    if (document.turbo) {
+        displayName = [displayName stringByAppendingString:@" ▶︎▶︎"];
+    }
+    
     if (document.paused) {
         return [NSString stringWithFormat:@"%@ \u275A\u275A (%ld)", displayName, document.frameCount];
     } else {

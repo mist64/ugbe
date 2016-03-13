@@ -74,15 +74,18 @@ static CGImageRef CreateGameBoyScreenCGImageRefFromPicture(uint8_t *pictureCopy,
                 self.mainDisplayViewController.view.layer.contents = self.mostRecentCGImageRef;
                 [CATransaction commit];
                 
-                // wait until the next 60 hz tick
-                NSTimeInterval interval = [NSDate timeIntervalSinceReferenceDate];
-                if (interval < self.nextFrameTime) {
-                    [NSThread sleepForTimeInterval:self.nextFrameTime - interval];
-                } else if (interval - 20 * timePerFrame > self.nextFrameTime) {
-                    self.nextFrameTime = interval;
+                if (!self.turbo) {
+                    // wait until the next 60 hz tick
+                    NSTimeInterval interval = [NSDate timeIntervalSinceReferenceDate];
+                    if (interval < self.nextFrameTime) {
+                        [NSThread sleepForTimeInterval:self.nextFrameTime - interval];
+                    } else if (interval - 20 * timePerFrame > self.nextFrameTime) {
+                        self.nextFrameTime = interval;
+                    }
+                    self.nextFrameTime += timePerFrame;
+                } else {
+                    self.nextFrameTime = [NSDate timeIntervalSinceReferenceDate] + timePerFrame;
                 }
-                self.nextFrameTime += timePerFrame;
-
                 if (self.isPaused) {
                     dispatch_semaphore_wait(_pauseSemaphore, DISPATCH_TIME_FOREVER);
                     self.nextFrameTime = [NSDate timeIntervalSinceReferenceDate] + timePerFrame;
