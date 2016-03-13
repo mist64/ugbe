@@ -18,7 +18,7 @@
 
 uint8_t io[256];
 
-static char *reg_name[] = {
+static const char *reg_name[] = {
 	"P1", "SB", "SC", 0, "DIV", "TIMA", "TMA", "TAC", 0, 0, 0, 0, 0, 0, 0, "IF",
  "NR10", "NR11", "NR12", "NR13", "NR14", 0, "NR21", "NR22", "NR23", "NR24",
 	"NR30", "NR31", "NR32", "NR33", "NR34", 0, "NR41", "NR42", "NR42_2", "NR43",
@@ -27,7 +27,7 @@ static char *reg_name[] = {
 	"BGP", "OBP0", "OBP1", "WY", "WX"
 };
 
-char *
+const char *
 name_for_io_reg(uint8_t a8)
 {
 	if (a8 == 0xff) {

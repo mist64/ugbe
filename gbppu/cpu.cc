@@ -62,10 +62,10 @@ union reg16_t {
 				unsigned int bit5 : 1;
 				unsigned int bit6 : 1;
 				unsigned int bit7 : 1;
-            };
+            } bits;
         } low;
 		uint8_t high;
-	};
+	} bytes;
 };
 
 union reg16_t reg16_af;
@@ -74,25 +74,25 @@ union reg16_t reg16_de;
 union reg16_t reg16_hl;
 
 #define af reg16_af.full
-#define a reg16_af.high
-#define f reg16_af.low.full
+#define a reg16_af.bytes.high
+#define f reg16_af.bytes.low.low.full
 
-#define zf reg16_af.low.bit7
-#define nf reg16_af.low.bit6
-#define hf reg16_af.low.bit5
-#define cf reg16_af.low.bit4
+#define zf reg16_af.bytes.low.bits.bit7
+#define nf reg16_af.bytes.low.bits.bit6
+#define hf reg16_af.bytes.low.bits.bit5
+#define cf reg16_af.bytes.low.bits.bit4
 
 #define bc reg16_bc.full
-#define b reg16_bc.high
-#define c reg16_bc.low.full
+#define b reg16_bc.bytes.high
+#define c reg16_bc.bytes.low.full
 
 #define de reg16_de.full
-#define d reg16_de.high
-#define e reg16_de.low.full
+#define d reg16_de.bytes.high
+#define e reg16_de.bytes.low.full
 
 #define hl reg16_hl.full
-#define h reg16_hl.high
-#define l reg16_hl.low.full
+#define h reg16_hl.bytes.high
+#define l reg16_hl.bytes.low.full
 
 
 #pragma mark - Helper
@@ -568,9 +568,10 @@ cpu_step()
 	}
 
 	uint8_t opcode = fetch8();
-//			if (++counter % 100 == 0) {
+//	static long long counter;
+//			if (++counter > 1000 * 1000 * 10.5) {
 			if (!mem_is_bootrom_enabled()) {
-//				printf("A=%02x BC=%04x DE=%04x HL=%04x SP=%04x PC=%04x (ZF=%d,NF=%d,HF=%d,CF=%d) LY=%02x - opcode 0x%02x\n", a, bc, de, hl, sp, pc-1, zf, nf, hf, cf, mem_read(0xff44), opcode);
+//				printf("%llu: A=%02x BC=%04x DE=%04x HL=%04x SP=%04x PC=%04x (ZF=%d,NF=%d,HF=%d,CF=%d) LY=%02x - opcode 0x%02x\n", counter, a, bc, de, hl, sp, pc-1, zf, nf, hf, cf, mem_read(0xff44), opcode);
 			}
 
 	switch (opcode) {
@@ -2133,7 +2134,7 @@ cpu_step()
 			break;
 		case 0xf1: // POP AF; 1; 12; Z N H C
 			af = pop16();
-			reg16_af.low.bit3_0 = 0;
+			reg16_af.bytes.low.bits.bit3_0 = 0;
 			break;
 		case 0xf2: // LD A,(C); 1; 8; ---- // LD A,($FF00+C)
 			a = mem_read(0xff00 + c);

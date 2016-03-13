@@ -9,6 +9,7 @@
 #ifndef timer_h
 #define timer_h
 
+#include <stdint.h>
 #include <stdio.h>
 
 uint8_t timer_read(uint8_t a8);

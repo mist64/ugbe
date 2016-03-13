@@ -33,7 +33,7 @@ static CVReturn renderCallback(CVDisplayLinkRef displayLink,
 
 static size_t _getBytesCallback(void *info, void *buffer, off_t position, size_t count) {
     static const uint8_t colors[4] = { 255, 170, 85, 0 };
-    uint8_t *target = buffer;
+    uint8_t *target = (uint8_t *)buffer;
     uint8_t *source = ((uint8_t *)info) + position;
     uint8_t *sourceEnd = source + count;
     while (source < sourceEnd) {
@@ -50,16 +50,15 @@ static void _releaseInfo(void *info) {
 @implementation View
 
 - (CGImageRef)createGameBoyScreenCGImageRef {
-    CGDataProviderDirectCallbacks callbacks = {
-        .version = 0,
-        .getBytePointer = NULL,
-        .releaseBytePointer = NULL,
-        .getBytesAtPosition = _getBytesCallback,
-        .releaseInfo = _releaseInfo,
-    };
-    
+	CGDataProviderDirectCallbacks callbacks;
+	callbacks.version = 0;
+	callbacks.getBytePointer = NULL;
+	callbacks.releaseBytePointer = NULL;
+	callbacks.getBytesAtPosition = _getBytesCallback;
+	callbacks.releaseInfo = _releaseInfo;
+
     size_t pictureSize = sizeof(picture);
-    uint8_t *pictureCopy = malloc(pictureSize);
+    uint8_t *pictureCopy = (uint8_t *)malloc(pictureSize);
     memcpy(pictureCopy, picture, pictureSize);
     
     CGDataProviderRef provider = CGDataProviderCreateDirect(pictureCopy, pictureSize, &callbacks);
@@ -210,7 +209,7 @@ static uint8_t keys;
                 // wait until the next 60 hz tick
                 NSTimeInterval interval = [NSDate timeIntervalSinceReferenceDate];
                 if (interval < self.nextFrameTime) {
-                    [NSThread sleepForTimeInterval:self.nextFrameTime - interval];
+//                    [NSThread sleepForTimeInterval:self.nextFrameTime - interval];
                 } else if (interval - 20 * timePerFrame > self.nextFrameTime) {
                     self.nextFrameTime = interval;
                 }

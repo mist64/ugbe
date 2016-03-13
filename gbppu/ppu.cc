@@ -162,8 +162,8 @@ new_screen()
 void
 ppu_init()
 {
-	vram = calloc(0x2000, 1);
-	oamram = calloc(0xa0, 1);
+	vram = (uint8_t *)calloc(0x2000, 1);
+	oamram = (uint8_t *)calloc(0xa0, 1);
 
 	old_mode = mode_hblank;
 

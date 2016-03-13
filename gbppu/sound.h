@@ -9,6 +9,7 @@
 #ifndef sound_h
 #define sound_h
 
+#include <stdint.h>
 #include <stdio.h>
 
 uint8_t sound_read(uint8_t a8);

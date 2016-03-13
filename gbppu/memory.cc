@@ -44,7 +44,7 @@ int bootrom_enabled;
 static void mem_write_internal(uint16_t a16, uint8_t d8);
 
 static void
-read_rom(char *filename)
+read_rom(const char *filename)
 {
 	uint8_t header[0x100];
 	FILE *file = fopen(filename, "r");
@@ -234,7 +234,7 @@ read_rom(char *filename)
 	}
 
 	fseek(file, 0L, SEEK_SET);
-	rom = calloc(romsize, 1);
+	rom = (uint8_t *)calloc(romsize, 1);
 	fread(rom, romsize, 1, file);
 	fclose(file);
 
@@ -244,8 +244,8 @@ read_rom(char *filename)
 void
 mem_init()
 {
-	char *bootrom_filename;
-	char *cartridge_filename;
+	const char *bootrom_filename;
+	const char *cartridge_filename;
 
 #if BUILD_USER_Lisa
 	bootrom_filename = "/Users/lisa/Projects/game_boy/gbcpu/gbppu/DMG_ROM.bin";
@@ -277,7 +277,7 @@ mem_init()
 #else
 //	cartridge_filename = "/Users/mist/Documents/git/gbcpu/gbppu/tetris.gb";
 //	cartridge_filename = "/Users/mist/Documents/git/gb-timing/gb-scy.gb";
-//	cartridge_filename = "/Users/mist/Documents/git/gb-timing/gb-timing.gb";
+	cartridge_filename = "/Users/mist/Documents/git/gb-timing/gb-timing.gb";
 //	cartridge_filename = "/Users/mist/Documents/git/gb-platformer/gb-platformer.gb";
 
 //	cartridge_filename = "/Users/mist/Downloads/cpu_instrs/individual/01-special.gb";            // x Failed #6 - DAA
@@ -384,7 +384,10 @@ mem_init()
 //	cartridge_filename = "/Users/mist/tmp/gb/World Bowling (U).gb";
 //	cartridge_filename = "/Users/mist/tmp/gb/Yakyuuman (J).gb";
 
-//	cartridge_filename = "/Users/mist/Downloads/pocket/pocket.gb";
+	cartridge_filename = "/Users/mist/Downloads/pocket/pocket.gb";
+//	cartridge_filename = "/Users/mist/Downloads/oh/oh.gb";
+//	cartridge_filename = "/Users/mist/Downloads/gejmboj/gejmboj.gb";
+//	cartridge_filename = "/Users/mist/Downloads/SP-20Y/20y.gb";
 
 //	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/add_sp_e_timing.gb";
 //	cartridge_filename = "/Users/mist/tmp/mooneye-gb/tests/build/acceptance/bits/mem_oam.gb"; // OK
@@ -451,15 +454,15 @@ mem_init()
 
 	read_rom(cartridge_filename);
 
-	bootrom = calloc(0x100, 1);
+	bootrom = (uint8_t *)calloc(0x100, 1);
 	FILE *file = fopen(bootrom_filename, "r");
 	fread(bootrom, 0x100, 1, file);
 	fclose(file);
 
-	ram = calloc(0x2000, 1);
-	hiram = calloc(0x7f, 1);
+	ram = (uint8_t *)calloc(0x2000, 1);
+	hiram = (uint8_t *)calloc(0x7f, 1);
 
-	extram = calloc(extramsize, 1);
+	extram = (uint8_t *)calloc(extramsize, 1);
 
 	bootrom_enabled = 1;
 

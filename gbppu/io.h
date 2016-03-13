@@ -9,6 +9,8 @@
 #ifndef io_h
 #define io_h
 
+#include <stdint.h>
+
 #define rP1 0x00
 #define rLCDC 0x40
 #define rSTAT 0x41
@@ -52,7 +54,7 @@
 #define rNR42_2 0x22
 #define rNR43 0x23
 
-char *name_for_io_reg(uint8_t a8);
+const char *name_for_io_reg(uint8_t a8);
 
 extern uint8_t io[256];
 

@@ -9,6 +9,7 @@
 #ifndef buttons_h
 #define buttons_h
 
+#include <stdint.h>
 #include <stdio.h>
 
 uint8_t buttons_read();
