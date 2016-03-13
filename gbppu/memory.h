@@ -50,16 +50,19 @@ private:
 	int banking_mode;
 	int bootrom_enabled;
 
-	void read_rom(const char *filename);
 	void write_internal(uint16_t a16, uint8_t d8);
 
 protected:
 	friend class gb;
-	memory(ppu &ppu, io &io);
+	memory(ppu &ppu, io &io, const char *bootrom_filename, const char *cartridge_filename);
 
 public:
 	void init();
-	uint8_t read(uint16_t a16);
+
+    void read_bootrom(const char *filename);
+    void read_rom(const char *filename);
+    
+    uint8_t read(uint16_t a16);
 	void write(uint16_t a16, uint8_t d8);
 
 	void io_write(uint8_t a8, uint8_t d8);

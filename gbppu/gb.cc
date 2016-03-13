@@ -11,10 +11,10 @@
 
 #include "gb.h"
 
-gb::gb()
+gb::gb(const char *bootrom_filename, const char *cartridge_filename)
 	: _ppu    (_memory, _io)
 	, _cpu    (_memory, _io)
-	, _memory (_ppu, _io)
+	, _memory (_ppu, _io, bootrom_filename, cartridge_filename)
 	, _io     (_ppu, _memory, _timer, _serial, _buttons, _sound)
 	, _timer  (_io)
 	, _serial (_io)

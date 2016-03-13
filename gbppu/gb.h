@@ -30,7 +30,7 @@ private:
 	serial  _serial;
 
 public:
-	gb();
+	gb(const char *bootrom_filename, const char *cartridge_filename);
 
 public:
     int step();
