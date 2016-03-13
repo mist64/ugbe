@@ -88,6 +88,7 @@ private:
 #pragma pack(pop)
 
 	uint8_t active_sprite_index[10];
+	oamentry *cur_oam;
 
 	void new_screen();
 	int output_pixel(uint8_t p);
