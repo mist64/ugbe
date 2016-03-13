@@ -56,10 +56,28 @@
 
 const char *name_for_io_reg(uint8_t a8);
 
+class gb;
+class memory;
+class buttons;
+class serial;
+class timer;
+class sound;
+class ppu;
+
 class io {
+	friend gb;
 private:
 	uint8_t irq_read(uint8_t a8);
 	void irq_write(uint8_t a8, uint8_t d8);
+
+protected:
+	ppu *ppu;
+	timer *timer;
+	memory *memory;
+	sound *sound;
+	buttons *buttons;
+	serial *serial;
+
 
 public:
 	uint8_t io_read(uint8_t a8);

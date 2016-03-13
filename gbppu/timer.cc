@@ -9,8 +9,6 @@
 #include "timer.h"
 #include "io.h"
 
-extern io *io;
-
 void
 timer::timer_reset()
 {
@@ -20,6 +18,8 @@ timer::timer_reset()
 void
 timer::timer_step()
 {
+ printf("%s:%d %p\n", __FILE__, __LINE__, this);
+ printf("%s:%d %p\n", __FILE__, __LINE__, io);
 	if (!(io->reg[rTAC] & 4)) {
 		return;
 	}

@@ -10,8 +10,14 @@
 #define memory_h
 
 #include <stdio.h>
+#include <stdint.h>
+
+class gb;
+class io;
+class ppu;
 
 class memory {
+	friend gb;
 private:
 	uint8_t *bootrom;
 	uint8_t *rom;
@@ -44,6 +50,10 @@ private:
 
 	void read_rom(const char *filename);
 	void mem_write_internal(uint16_t a16, uint8_t d8);
+
+protected:
+	ppu *ppu;
+	io *io;
 
 public:
 	memory();

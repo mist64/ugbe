@@ -12,7 +12,14 @@
 #include <stdint.h>
 #include <stdio.h>
 
+class gb;
+class io;
+
 class sound {
+	friend gb;
+protected:
+	io *io;
+
 public:
 	uint8_t sound_read(uint8_t a8);
 	void sound_write(uint8_t a8, uint8_t d8);

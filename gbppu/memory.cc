@@ -11,9 +11,6 @@
 #include "io.h"
 #include "ppu.h"
 
-extern ppu *ppu;
-extern io *io;
-
 void
 memory::read_rom(const char *filename)
 {

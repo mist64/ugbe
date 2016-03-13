@@ -7,8 +7,6 @@
 //
 
 #include <stdio.h>
-
-#include "io.h"
 #include "memory.h"
 #include "buttons.h"
 #include "serial.h"
@@ -16,10 +14,7 @@
 #include "sound.h"
 #include "ppu.h"
 
-extern ppu *ppu;
-extern timer *timer;
-extern memory *memory;
-extern sound *sound;
+#include "io.h"
 
 static const char *reg_name[] = {
 	"P1", "SB", "SC", 0, "DIV", "TIMA", "TMA", "TAC", 0, 0, 0, 0, 0, 0, 0, "IF",
@@ -73,9 +68,9 @@ uint8_t
 io::io_read(uint8_t a8)
 {
 	if (a8 == 0x00) {
-		return buttons_read();
+		return buttons->buttons_read();
 	} else if (a8 == 0x01 || a8 == 0x02) {
-		return serial_read(a8);
+		return serial->serial_read(a8);
 	} else if (a8 >= 0x04 && a8 <= 0x07) {
 		return timer->timer_read(a8);
 	} else if (a8 == 0x0F || a8 == 0xFF) {
@@ -94,9 +89,9 @@ void
 io::io_write(uint8_t a8, uint8_t d8)
 {
 	if (a8 == 0x00) {
-		buttons_write(a8, d8);
+		buttons->buttons_write(a8, d8);
 	} else if (a8 == 0x01 || a8 == 0x02) {
-		serial_write(a8, d8);
+		serial->serial_write(a8, d8);
 	} else if (a8 >= 0x04 && a8 <= 0x07) {
 		timer->timer_write(a8, d8);
 	} else if (a8 == 0x0F || a8 == 0xFF) {

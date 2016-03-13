@@ -10,11 +10,6 @@
 
 #include <stdio.h>
 #include <assert.h>
-#include "memory.h"
-#include "io.h"
-
-extern memory *memory;
-extern io *io;
 
 // see references:
 

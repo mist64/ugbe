@@ -11,8 +11,13 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include "memory.h"
+#include "io.h"
+
+class gb;
 
 class cpu {
+	friend gb;
 private:
 	uint16_t pc = 0;
 	uint16_t sp = 0;
@@ -101,6 +106,10 @@ private:
 	void res8(uint8_t *r8, uint8_t bit);
 	void reshl(uint8_t bit);
 	void daa();
+
+protected:
+	memory *memory;
+	io *io;
 
 public:
 	cpu();

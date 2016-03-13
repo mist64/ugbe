@@ -14,14 +14,60 @@
 #import "sound.h"
 #import "io.h"
 #import "buttons.h"
+#import "serial.h"
 #import <QuartzCore/QuartzCore.h>
 
-ppu *ppu;
-cpu *cpu;
-memory *memory;
-timer *timer;
-sound *sound;
-io *io;
+class gb {
+public:
+	ppu *ppu;
+	cpu *cpu;
+	memory *memory;
+	timer *timer;
+	sound *sound;
+	io *io;
+	buttons *buttons;
+	serial *serial;
+
+	gb();
+};
+
+gb::gb()
+{
+	memory = new class memory();
+	cpu = new class cpu();
+	ppu = new class ppu();
+	timer = new class timer();
+	sound = new class sound();
+	io = new class io();
+	buttons = new class buttons();
+	serial = new class serial();
+
+	buttons->io = io;
+
+	cpu->memory = memory;
+	cpu->io = io;
+
+	io->ppu = ppu;
+	io->timer = timer;
+	io->memory = memory;
+	io->sound = sound;
+	io->buttons = buttons;
+	io->serial = serial;
+
+	memory->ppu = ppu;
+	memory->io = io;
+
+	ppu->memory = memory;
+	ppu->io = io;
+
+	serial->io = io;
+	sound->io = io;
+	timer->io = io;
+ printf("%s:%d %p\n", __FILE__, __LINE__, timer);
+ printf("%s:%d %p\n", __FILE__, __LINE__, timer->io);
+}
+
+gb *gb;
 
 @interface View : NSView
 
@@ -66,9 +112,9 @@ static void _releaseInfo(void *info) {
 	callbacks.getBytesAtPosition = _getBytesCallback;
 	callbacks.releaseInfo = _releaseInfo;
 
-    size_t pictureSize = sizeof(ppu->picture);
+    size_t pictureSize = sizeof(gb->ppu->picture);
     uint8_t *pictureCopy = (uint8_t *)malloc(pictureSize);
-    memcpy(pictureCopy, ppu->picture, pictureSize);
+    memcpy(pictureCopy, gb->ppu->picture, pictureSize);
     
     CGDataProviderRef provider = CGDataProviderCreateDirect(pictureCopy, pictureSize, &callbacks);
     CGColorSpaceRef grayspace = CGColorSpaceCreateDeviceGray();
@@ -160,13 +206,13 @@ static uint8_t keys;
 - (void)keyDown:(NSEvent *)event
 {
 	keys |= [self keyMaskFromEvent:event];
-	buttons_set(keys);
+	gb->buttons->buttons_set(keys);
 }
 
 - (void)keyUp:(NSEvent *)event
 {
 	keys &= ~[self keyMaskFromEvent:event];
-	buttons_set(keys);
+	gb->buttons->buttons_set(keys);
 }
 
 @end
@@ -194,12 +240,7 @@ static uint8_t keys;
     
 
 	dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-		memory = new class memory();
-		cpu = new class cpu();
-		ppu = new class ppu();
-		timer = new class timer();
-		sound = new class sound();
-		io = new class io();
+		gb = new class gb();
 
         NSTimeInterval timePerFrame = 1.0 / (1024.0 * 1024.0 / 114.0 / 154.0);
         
@@ -207,15 +248,15 @@ static uint8_t keys;
         
 		for (;;) {
 #if 1
-			int ret = cpu->cpu_step();
+			int ret = gb->cpu->cpu_step();
 			if (ret) {
 				exit(ret);
 			}
 #else
-			ppu->ppu_step();
+			gb->ppu->ppu_step();
 #endif
-			if (ppu->ppu_dirty) {
-				ppu->ppu_dirty = false;
+			if (gb->ppu->ppu_dirty) {
+				gb->ppu->ppu_dirty = false;
                 [view updateLayerContents];
 #if ! BUILD_USER_Lisa
                 // wait until the next 60 hz tick

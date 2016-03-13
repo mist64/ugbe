@@ -11,10 +11,24 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include "io.h"
 
-uint8_t buttons_read();
-void buttons_write(uint8_t a8, uint8_t d8);
+class gb;
 
-void buttons_set(uint8_t buttons);
+class buttons {
+	friend gb;
+private:
+	uint8_t buttons;
+
+protected:
+	io *io;
+
+public:
+	uint8_t buttons_read();
+	void buttons_write(uint8_t a8, uint8_t d8);
+
+	void buttons_set(uint8_t buttons);
+};
+
 
 #endif /* buttons_h */

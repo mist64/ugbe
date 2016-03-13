@@ -11,7 +11,12 @@
 
 #include <stdio.h>
 
+class gb;
+class memory;
+class io;
+
 class ppu {
+	friend gb;
 public:
 	ppu();
 	void ppu_step();
@@ -26,6 +31,10 @@ public:
 
 	uint8_t picture[144][160];
 	int ppu_dirty;
+
+protected:
+	memory *memory;
+	io *io;
 
 private:
 	uint8_t *vram;

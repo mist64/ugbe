@@ -9,8 +9,6 @@
 #include "sound.h"
 #include "io.h"
 
-extern io *io;
-
 uint8_t
 sound::sound_read(uint8_t a8)
 {

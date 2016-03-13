@@ -11,7 +11,17 @@
 
 #include <stdio.h>
 
-uint8_t serial_read(uint8_t a8);
-void serial_write(uint8_t a8, uint8_t d8);
+class gb;
+class io;
+
+class serial {
+	friend gb;
+protected:
+	io *io;
+
+public:
+	uint8_t serial_read(uint8_t a8);
+	void serial_write(uint8_t a8, uint8_t d8);
+};
 
 #endif /* serial_h */

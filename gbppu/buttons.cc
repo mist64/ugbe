@@ -7,14 +7,9 @@
 //
 
 #include "buttons.h"
-#include "io.h"
-
-extern io *io;
-
-static uint8_t buttons;
 
 uint8_t
-buttons_read()
+buttons::buttons_read()
 {
 	uint8_t d8 = io->reg[rP1] | 0xcf;
 	if (io->reg[rP1] & 0x20) {
@@ -27,13 +22,13 @@ buttons_read()
 }
 
 void
-buttons_write(uint8_t a8, uint8_t d8)
+buttons::buttons_write(uint8_t a8, uint8_t d8)
 {
 	io->reg[a8] = d8;
 }
 
 void
-buttons_set(uint8_t k)
+buttons::buttons_set(uint8_t k)
 {
 	buttons = k;
 }

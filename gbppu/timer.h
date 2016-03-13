@@ -12,11 +12,18 @@
 #include <stdint.h>
 #include <stdio.h>
 
+class gb;
+class io;
+
 class timer {
+	friend gb;
 private:
 	int timer_counter;
 
 	void timer_reset();
+
+protected:
+	io *io;
 
 public:
 	uint8_t timer_read(uint8_t a8);
