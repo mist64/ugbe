@@ -47,7 +47,7 @@ io_read(uint8_t a8)
 		case rSTAT: /* 0x41 */
 			return (_io.reg[a8] & 0xFC) | mode;
 		case rLY:   /* 0x44 */
-			return current_y;
+			return line;
 	}
 	assert(0);
 }
@@ -135,11 +135,10 @@ new_screen()
 	vram_locked = 0;
 	oamram_locked = 1;
 
-	current_x = 0;
-	current_y = 0;
+	clock = 0;
+	line = 0;
 
 	pixel_x = 0;
-	pixel_y = 0;
 
 	bg_pixel_queue_next = 0;
 	memset(oam_pixel_queue, 0xff, sizeof(oam_pixel_queue));
@@ -162,9 +161,6 @@ void ppu::
 new_line()
 {
 	pixel_x = 0;
-	if (++pixel_y == 144) {
-		pixel_y = 0;
-	}
 }
 
 uint8_t ppu::
@@ -220,7 +216,7 @@ oam_step()
 			oam_index = -1;
 			for (int i = 0; i < 40; i++) {
 				uint8_t spry = oam[i].y - 16;
-				if (!sprite_used[i] && oam[i].x && current_y >= spry && current_y < spry + sprite_height && oam[i].x < minx) {
+				if (!sprite_used[i] && oam[i].x && line >= spry && line < spry + sprite_height && oam[i].x < minx) {
 					minx = oam[i].x;
 					oam_index = i;
 				}
@@ -334,7 +330,7 @@ bg_step()
 				fetch_is_sprite = 0;
 
 				// decide whether we need to switch to window
-				if (_io.reg[rLCDC] & LCDCF_WINON && pixel_y >= _io.reg[rWY] && (pixel_x >> 3) == (_io.reg[rWX] >> 3) - 2) {
+				if (_io.reg[rLCDC] & LCDCF_WINON && line >= _io.reg[rWY] && (pixel_x >> 3) == (_io.reg[rWX] >> 3) - 2) {
 					window = 1;
 					bg_index_ctr = 0;
 					// TODO: we don't do perfect horizontal positioning - we'll have to
@@ -347,7 +343,7 @@ bg_step()
 			uint8_t ybase;
 			uint8_t index_ram_select_mask;
 			if (fetch_is_sprite) {
-				line_within_tile = current_y - cur_oam->y + 16;
+				line_within_tile = line - cur_oam->y + 16;
 				if (cur_oam->attr & 0x40) { // Y flip
 					line_within_tile = get_sprite_height() - line_within_tile - 1;
 				}
@@ -357,11 +353,11 @@ bg_step()
 			} else {
 				if (window) {
 					xbase = bg_index_ctr;
-					ybase = current_y - _io.reg[rWY];
+					ybase = line - _io.reg[rWY];
 					index_ram_select_mask = LCDCF_WIN9C00;
 				} else {
 					xbase = ((_io.reg[rSCX] >> 3) + bg_index_ctr) & 31;
-					ybase = _io.reg[rSCY] + current_y;
+					ybase = _io.reg[rSCY] + line;
 					index_ram_select_mask = LCDCF_BG9C00;
 				}
 				uint8_t ybase_hi = ybase >> 3;
@@ -450,7 +446,7 @@ pixel_step()
 		}
 	}
 	if (sprites) {
-		printf("%03d/%03d BG  ", pixel_x, pixel_y);
+		printf("%03d/%03d BG  ", pixel_x, line);
 		for (int i = 0; i < bg_pixel_queue_next; i++) {
 			printf("%c", bg_pixel_queue[i] + '0');
 		}
@@ -477,7 +473,7 @@ pixel_step()
 				if (p2 != 0xff) {
 					p = p2;
 				}
-				picture[pixel_y][pixel_x] = p;
+				picture[line][pixel_x] = p;
 				pixel_x++;
 			}
 		}
@@ -511,11 +507,11 @@ step()
 	//
 
 	// V-Blank interrupt
-	if (current_y == 144 && current_x == 0) {
+	if (line == 144 && clock == 0) {
 		_io.reg[rIF] |= 1;
 	}
 	// LY == LYC interrupt
-	if (_io.reg[rSTAT] & 0x40 && _io.reg[rLYC] == current_y && current_x == 0) {
+	if (_io.reg[rSTAT] & 0x40 && _io.reg[rLYC] == line && clock == 0) {
 		_io.reg[rIF] |= 2;
 	}
 	if (mode != old_mode) {
@@ -533,7 +529,7 @@ step()
 
 	old_mode = mode;
 
-	if (current_y <= PPU_LAST_VISIBLE_LINE) {
+	if (line <= PPU_LAST_VISIBLE_LINE) {
 		if (mode == mode_oam) {
 			// oam search runs at 4 MHz
 			oam_step();
@@ -541,7 +537,7 @@ step()
 
 		if (mode == mode_pixel) {
 			// the background unit's speed is VRAM-bound, so it runs at 1/2 speed = 2 MHz
-			if (!(current_x & 1)) {
+			if (!(clock & 1)) {
 				bg_step();
 			}
 		}
@@ -550,15 +546,13 @@ step()
 	// shift pixels to the LCD @ 4 MHz
 	pixel_step();
 
-	if (++current_x == PPU_CLOCKS_PER_LINE) {
-		current_x = 0;
-//		printf("\n");
-		if (++current_y == PPU_NUM_LINES) {
-			current_y = 0;
+	if (++clock == PPU_CLOCKS_PER_LINE) {
+		clock = 0;
+		if (++line == PPU_NUM_LINES) {
+			line = 0;
 			dirty = true;
-//			printf("\n");
 		}
-		if (current_y <= PPU_LAST_VISIBLE_LINE) {
+		if (line <= PPU_LAST_VISIBLE_LINE) {
 			mode = mode_oam;
 			oam_mode_counter = 0;
 			vram_locked = 0;

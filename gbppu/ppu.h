@@ -42,8 +42,7 @@ private:
 	uint8_t *vram;
 	uint8_t *oamram;
 
-	int current_x;
-	int current_y;
+	int clock;
 	int oam_mode_counter;
 	int bg_t; // internal BG fetch state (0-3)
 	int bg_index_ctr; // offset of the current index within the line
@@ -57,7 +56,8 @@ private:
 	int vram_locked;
 	int oamram_locked;
 
-	int pixel_x, pixel_y;
+	int pixel_x;
+	int line;
 
 	typedef enum {
 		mode_hblank = 0,
