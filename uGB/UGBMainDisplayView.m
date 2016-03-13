@@ -1,9 +1,8 @@
 //
 //  UGBMainDisplayView.m
-//  gbppu
+//  uGB
 //
 //  Created by Dominik Wagner on 3/8/16.
-//  Copyright © 2016 Michael Steil. All rights reserved.
 //
 
 #import "UGBMainDisplayView.h"
