@@ -357,7 +357,7 @@ memory::memory(ppu &ppu, io &io)
 //	cartridge_filename = "/Users/mist/tmp/gb/World Bowling (U).gb";
 //	cartridge_filename = "/Users/mist/tmp/gb/Yakyuuman (J).gb";
 
-	cartridge_filename = "/Users/mist/Downloads/pocket/pocket.gb";
+//	cartridge_filename = "/Users/mist/Downloads/pocket/pocket.gb";
 //	cartridge_filename = "/Users/mist/Downloads/oh/oh.gb";
 //	cartridge_filename = "/Users/mist/Downloads/gejmboj/gejmboj.gb";
 //	cartridge_filename = "/Users/mist/Downloads/SP-20Y/20y.gb";

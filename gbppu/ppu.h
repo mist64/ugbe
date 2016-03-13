@@ -72,9 +72,11 @@ private:
 	uint8_t sprites_visible;
 	uint8_t cur_sprite;
 
-	uint8_t ybase;
+	uint8_t line_within_tile;
 	uint16_t bgptr;
 	uint8_t data0;
+
+	bool fetch_is_sprite;
 
 #pragma pack(1)
 	typedef struct {

@@ -210,11 +210,6 @@ oam_step()
 	oamentry *oam = (oamentry *)oamram;
 	int sprite_used[40];
 
-//	for (int i = 0; i < 160; i++) {
-//		printf("%x ", oamram[i]);
-//	}
-//	printf("\n");
-
 	// do all the logic in the first cycle...
 	if (!oam_mode_counter && _io.reg[rLCDC] & LCDCF_OBJON) {
 		// fill the 10 sprite generators with the 10 leftmost sprites
@@ -240,6 +235,7 @@ oam_step()
 			if (oam_index >= 0) {
 				sprite_used[oam_index] = 1;
 				spritegen[sprites_visible].oam = oam[oam_index];
+//				printf("%d/%d ", spritegen[sprites_visible].oam.x, spritegen[sprites_visible].oam.y);
 				sprites_visible++;
 			}
 		} while (sprites_visible < 10 && oam_index >= 0);
@@ -325,70 +321,64 @@ bg_step()
 	switch (bg_t) {
 		case 0: {
 			// decide whether we should do a sprite tile fetch here
-			while (cur_sprite != sprites_visible &&
+			if (cur_sprite != sprites_visible &&
 				   (((spritegen[cur_sprite].oam.x >> 3) - 2) == (pixel_x >> 3) || (spritegen[cur_sprite].oam.x >> 3) <= 1)) {
 				// sprite is due to be displayed soon, fetch its data
-				uint8_t i = ((current_y - spritegen[cur_sprite].oam.y) & (get_sprite_height() - 1));
-				if (spritegen[cur_sprite].oam.attr & 0x40) { // Y flip
-					i = 7 - i;
+				fetch_is_sprite = 1;
+			} else {
+				fetch_is_sprite = 0;
+
+				// decide whether we need to switch to window
+				if (_io.reg[rLCDC] & LCDCF_WINON && pixel_y >= _io.reg[rWY] && (pixel_x >> 3) == (_io.reg[rWX] >> 3) - 2) {
+					window = 1;
+					bg_index_ctr = 0;
+					// TODO: we don't do perfect horizontal positioning - we'll have to
+					// refrain from pushing out the 0-7 last pixels from the bg fetches
 				}
-				uint16_t address = 16 * spritegen[cur_sprite].oam.tile + i * 2;
-
-				for (int i = 0; i < 8; i++) {
-					int i2 = i;
-					if (!(spritegen[cur_sprite].oam.attr & 0x20)) { // X flip
-						i2 = 7 - i2;
-					}
-
-					int b0 = (vram[address] >> i2) & 1;
-					int b1 = (vram[address + 1] >> i2) & 1;
-					uint8_t p2 = b0 | (b1 << 1);
-					oam_pixel_set(i + (spritegen[cur_sprite].oam.x - pixel_x - 8), p2 ? paletted(_io.reg[spritegen[cur_sprite].oam.attr & 0x10 ? rOBP1 : rOBP0], p2) : 255);
-				}
-
-				spritegen[cur_sprite].data0 = vram[address];
-				spritegen[cur_sprite].data1 = vram[address + 1];
-				cur_sprite++;
-
-//				fetch_is_sprite = 1;
-//			} else {
-//				fetch_is_sprite = 0;
-			}
-
-			// decide whether we need to switch to window
-			if (_io.reg[rLCDC] & LCDCF_WINON && pixel_y >= _io.reg[rWY] && (pixel_x >> 3) == (_io.reg[rWX] >> 3) - 2) {
-				window = 1;
-				bg_index_ctr = 0;
-				// TODO: we don't do perfect horizontal positioning - we'll have to
-				// refrain from pushing out the 0-7 last pixels from the bg fetches
 			}
 
 			// cycle 0: generate tile map address and prepare reading index
 			uint8_t xbase;
+			uint8_t ybase;
 			uint8_t index_ram_select_mask;
-			if (window) {
-				xbase = bg_index_ctr;
-				ybase = current_y - _io.reg[rWY];
-				index_ram_select_mask = LCDCF_WIN9C00;
+			if (fetch_is_sprite) {
+				line_within_tile = current_y - spritegen[cur_sprite].oam.y + 16;
+				if (spritegen[cur_sprite].oam.attr & 0x40) { // Y flip
+					line_within_tile = get_sprite_height() - line_within_tile - 1;
+				}
+//				goto case1;
 			} else {
-				xbase = ((_io.reg[rSCX] >> 3) + bg_index_ctr) & 31;
-				ybase = _io.reg[rSCY] + current_y;
-				index_ram_select_mask = LCDCF_BG9C00;
+				if (window) {
+					xbase = bg_index_ctr;
+					ybase = current_y - _io.reg[rWY];
+					index_ram_select_mask = LCDCF_WIN9C00;
+				} else {
+					xbase = ((_io.reg[rSCX] >> 3) + bg_index_ctr) & 31;
+					ybase = _io.reg[rSCY] + current_y;
+					index_ram_select_mask = LCDCF_BG9C00;
+				}
+				uint8_t ybase_hi = ybase >> 3;
+				line_within_tile = ybase & 7;
+				uint16_t charaddr = 0x1800 | (!!(_io.reg[rLCDC] & index_ram_select_mask) << 10) | (ybase_hi << 5) | xbase;
+				vram_set_address(charaddr);
 			}
-			uint8_t ybase_hi = ybase >> 3;
-			uint16_t charaddr = 0x1800 | (!!(_io.reg[rLCDC] & index_ram_select_mask) << 10) | (ybase_hi << 5) | xbase;
-			vram_set_address(charaddr);
 			break;
 		}
 		case 1: {
 			// cycle 1: read index, generate tile data address and prepare reading tile data #0
-			uint8_t index = vram_get_data();
-			if (_io.reg[rLCDC] & LCDCF_BG8000) {
+//		case1:
+			uint8_t index;
+			if (fetch_is_sprite) {
+				index = spritegen[cur_sprite].oam.tile;
+			} else {
+				index = vram_get_data();
+			}
+			if (fetch_is_sprite || (_io.reg[rLCDC] & LCDCF_BG8000)) {
 				bgptr = index * 16;
 			} else {
 				bgptr = 0x1000 + (int8_t)index * 16;
 			}
-			bgptr += (ybase & 7) * 2;
+			bgptr += line_within_tile * 2;
 			vram_set_address(bgptr);
 			break;
 		}
@@ -401,18 +391,29 @@ bg_step()
 			// cycle 3: read tile data #1, output pixels
 			// (VRAM is idle)
 			uint8_t data1 = vram_get_data();
-			int skip = bg_index_ctr ? 0 : _io.reg[rSCX] & 7;
+			bool flip = fetch_is_sprite ? !(spritegen[cur_sprite].oam.attr & 0x20) : 0;
+			int skip = bg_index_ctr ? 0 : _io.reg[rSCX] & 7; // bg only
+			uint8_t palette = fetch_is_sprite ? _io.reg[spritegen[cur_sprite].oam.attr & 0x10 ? rOBP1 : rOBP0] : _io.reg[rBGP];
 			for (int i = 7; i >= 0; i--) {
-				int b0 = (data0 >> i) & 1;
-				int b1 = (data1 >> i) & 1;
-				if (skip) {
-					skip--;
+				int i2 = flip ? (7 - i) : i;
+				bool b0 = (data0 >> i2) & 1;
+				bool b1 = (data1 >> i2) & 1;
+				uint8_t p2 = paletted(palette, b0 | (b1 << 1));
+				if (fetch_is_sprite) {
+					oam_pixel_set(i + (spritegen[cur_sprite].oam.x - pixel_x - 8), p2 ? p2 : 255);
 				} else {
-					bg_pixel_push(paletted(_io.reg[rBGP], b0 | b1 << 1));
+					if (skip) {
+						skip--;
+					} else {
+						bg_pixel_push(p2);
+					}
 				}
 			}
-
-			bg_index_ctr++;
+			if (fetch_is_sprite) {
+				cur_sprite++;
+			} else {
+				bg_index_ctr++;
+			}
 			break;
 		}
 	}
