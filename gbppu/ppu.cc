@@ -15,8 +15,8 @@
 #include <string.h>
 
 #define PPU_NUM_LINES 154
+#define PPU_NUM_VISIBLE_LINES 144
 #define PPU_CLOCKS_PER_LINE (114*4)
-#define PPU_LAST_VISIBLE_LINE 143
 
 #define LCDCF_ON      (1 << 7) /* LCD Control Operation */
 #define LCDCF_WIN9C00 (1 << 6) /* Window Tile Map Display Select */
@@ -128,7 +128,7 @@ oamram_write(uint8_t a8, uint8_t d8)
 #pragma mark - Init
 
 void ppu::
-new_screen()
+screen_reset()
 {
 	clock = 0;
 	line = 0;
@@ -148,9 +148,10 @@ ppu(memory &memory, io &io)
 	vram = (uint8_t *)calloc(0x2000, 1);
 	oamram = (uint8_t *)calloc(0xa0, 1);
 
+	clock_even = false;
 	old_mode = mode_hblank;
 
-	new_screen();
+	screen_reset();
 }
 
 void ppu::
@@ -240,7 +241,7 @@ oam_step()
 
 	// we're done after 80 cycles at ~4 MHz
 	if (++oam_mode_counter == 80) {
-		bg_reset();
+		pixel_reset();
 	}
 }
 
@@ -306,7 +307,7 @@ sprite_pixel_get()
 #pragma mark - Background
 
 void ppu::
-bg_reset()
+pixel_reset()
 {
 	mode = mode_pixel;
 	vram_locked = 1;
@@ -318,7 +319,7 @@ bg_reset()
 }
 
 void ppu::
-bg_step()
+pixel_step()
 {
 	oamentry *oam = (oamentry *)oamram;
 
@@ -444,7 +445,7 @@ bg_step()
 #pragma mark - Mixer
 
 void ppu::
-pixel_step()
+lcdout_step()
 {
 #if 0
 	bool sprites = false;
@@ -473,9 +474,7 @@ pixel_step()
 				// end this mode
 				bg_pixel_queue_next = 0;
 				new_line();
-				mode = mode_hblank;
-				vram_locked = 0;
-				oamram_locked = 0;
+				hblank_reset();
 			} else {
 				uint8_t p2 = sprite_pixel_get();
 				if (p2 != 0xff) {
@@ -489,21 +488,70 @@ pixel_step()
 }
 
 
+#pragma mark - H-Blank
+
+
+void ppu::
+hblank_reset()
+{
+	mode = mode_hblank;
+	vram_locked = 0;
+	oamram_locked = 0;
+}
+
+void ppu::
+hblank_step()
+{
+	if (clock == PPU_CLOCKS_PER_LINE) {
+		clock = 0;
+		if (++line == PPU_NUM_VISIBLE_LINES) {
+			vblank_reset();
+		} else {
+			oam_reset();
+		}
+	}
+}
+
+
+#pragma mark - V-Blank
+
+void ppu::
+vblank_reset()
+{
+	mode = mode_vblank;
+	vram_locked = 0;
+	oamram_locked = 0;
+}
+
+void ppu::
+vblank_step()
+{
+	if (clock == PPU_CLOCKS_PER_LINE) {
+		clock = 0;
+		if (++line == PPU_NUM_LINES) {
+			line = 0;
+			oam_reset();
+			dirty = true;
+		}
+	}
+}
+
 #pragma mark - Main Logic
 
 // PPU steps are executed the CPU clock rate, i.e. at ~4 MHz
 void ppu::
 step()
 {
+	clock_even = !clock_even;
+
 	if ((_io.reg[rLCDC] & LCDCF_ON)) {
 		if (screen_off) {
 			screen_off = 0;
-			new_screen();
+			screen_reset();
 		}
 	} else {
-		vram_locked = 0;
-		oamram_locked = 0;
 		screen_off = 1;
+		vblank_reset();
 	}
 
 	if (screen_off) {
@@ -537,33 +585,28 @@ step()
 
 	old_mode = mode;
 
-	if (line <= PPU_LAST_VISIBLE_LINE) {
-		if (mode == mode_oam) {
+	clock++;
+
+	switch (mode) {
+		case mode_oam:
 			// oam search runs at 4 MHz
 			oam_step();
-		}
-
-		if (mode == mode_pixel) {
+			break;
+		case mode_pixel:
 			// the background unit's speed is VRAM-bound, so it runs at 1/2 speed = 2 MHz
-			if (!(clock & 1)) {
-				bg_step();
+			if (clock_even) {
+				pixel_step();
 			}
-		}
+			break;
+		case mode_hblank:
+			hblank_step();
+			break;
+		case mode_vblank:
+			vblank_step();
+			break;
 	}
 
 	// shift pixels to the LCD @ 4 MHz
-	pixel_step();
+	lcdout_step();
 
-	if (++clock == PPU_CLOCKS_PER_LINE) {
-		clock = 0;
-		if (++line == PPU_NUM_LINES) {
-			line = 0;
-			dirty = true;
-		}
-		if (line <= PPU_LAST_VISIBLE_LINE) {
-			oam_reset();
-		} else {
-			mode = mode_vblank;
-		}
-	}
 }

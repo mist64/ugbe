@@ -42,6 +42,7 @@ private:
 	uint8_t *vram;
 	uint8_t *oamram;
 
+	bool clock_even;
 	int clock;
 	int oam_mode_counter;
 	int bg_t; // internal BG fetch state (0-3)
@@ -90,7 +91,7 @@ private:
 	uint8_t active_sprite_index[10];
 	oamentry *cur_oam;
 
-	void new_screen();
+	void screen_reset();
 	int output_pixel(uint8_t p);
 	void new_line();
 	uint8_t paletted(uint8_t pal, uint8_t p);
@@ -100,13 +101,19 @@ private:
 	uint8_t get_sprite_height();
 	void oam_reset();
 	void oam_step();
-	void bg_reset();
 	void bg_pixel_push(uint8_t p);
 	uint8_t bg_pixel_get();
 	void sprite_pixel_set(int i, uint8_t p);
 	uint8_t sprite_pixel_get();
-	void bg_step();
+
+	void hblank_reset();
+	void hblank_step();
+	void vblank_reset();
+	void vblank_step();
+
+	void pixel_reset();
 	void pixel_step();
+	void lcdout_step();
 };
 
 #endif /* ppu_h */
