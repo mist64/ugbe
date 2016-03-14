@@ -280,10 +280,10 @@ read(uint16_t a16)
 			if (banking_mode) {
 				bank &= 0x1f;
 			}
-			if ((rom_bank & 0x1f) == 0) {
-				rom_bank++;
+			if ((bank & 0x1f) == 0) {
+				bank++;
 			}
-			uint32_t address = a16 - 0x4000 + rom_bank * 0x4000;
+			uint32_t address = a16 - 0x4000 + bank * 0x4000;
 			if (address > romsize) {
 				return 0xff;
 			} else {
@@ -330,7 +330,7 @@ write_internal(uint16_t a16, uint8_t d8)
 					ram_enabled = (d8 & 0xf) == 0xa;
 					break;
 				case 1:  /* 0x2000 - 0x3FFF: ROM bank (lo) */
-					rom_bank = (rom_bank & 0xe0 ) | (d8 & 0x1f);
+					rom_bank = (rom_bank & 0xe0) | (d8 & 0x1f);
 					break;
 				case 2: /* 0x4000 - 0x5FFF: RAM bank or ROM bank (hi) */
 					if (!banking_mode) {
@@ -339,7 +339,7 @@ write_internal(uint16_t a16, uint8_t d8)
 						ram_bank = d8 & 3;
 					}
 					break;
-				case 3:
+				case 3: /* 0x6000 - 0x7FFF: ROM/RAM Mode Select */
 					banking_mode = d8 & 1;
 					break;
 			}
