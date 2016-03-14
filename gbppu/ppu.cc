@@ -127,6 +127,18 @@ oamram_write(uint8_t a8, uint8_t d8)
 
 #pragma mark - Init
 
+ppu::
+ppu(memory &memory, io &io)
+	: _memory(memory)
+	, _io    (io)
+{
+	vram = (uint8_t *)calloc(0x2000, 1);
+	oamram = (uint8_t *)calloc(0xa0, 1);
+
+	clock_even = false;
+	screen_off = true;
+}
+
 void ppu::
 screen_reset()
 {
@@ -137,33 +149,9 @@ screen_reset()
 	bg_pixel_queue_next = 0;
 	memset(sprite_pixel_queue, 0xff, sizeof(sprite_pixel_queue));
 
+	old_mode = mode_vblank;
+
 	oam_reset();
-}
-
-ppu::
-ppu(memory &memory, io &io)
-	: _memory(memory)
-	, _io    (io)
-{
-	vram = (uint8_t *)calloc(0x2000, 1);
-	oamram = (uint8_t *)calloc(0xa0, 1);
-
-	clock_even = false;
-	old_mode = mode_hblank;
-
-	screen_reset();
-}
-
-void ppu::
-new_line()
-{
-	pixel_x = 0;
-}
-
-uint8_t ppu::
-paletted(uint8_t pal, uint8_t p)
-{
-	return (pal >> (p * 2)) & 3;
 }
 
 
@@ -172,17 +160,125 @@ paletted(uint8_t pal, uint8_t p)
 void ppu::
 vram_set_address(uint16_t addr)
 {
+	assert(vram_locked);
 	vram_address = addr;
 }
 
 uint8_t ppu::
 vram_get_data()
 {
+	assert(vram_locked);
 	return vram[vram_address];
 }
 
 
-#pragma mark - Sprites
+#pragma mark - Pixel Pipelines
+
+void ppu::
+bg_pixel_push(uint8_t p)
+{
+	bg_pixel_queue[bg_pixel_queue_next++] = p;
+	assert(bg_pixel_queue_next <= sizeof(bg_pixel_queue));
+}
+
+uint8_t ppu::
+bg_pixel_get()
+{
+	if (!bg_pixel_queue_next) {
+		return 0xff;
+	}
+	uint8_t p = bg_pixel_queue[0];
+	memmove(bg_pixel_queue, bg_pixel_queue + 1, --bg_pixel_queue_next);
+	return p;
+}
+
+void ppu::
+sprite_pixel_set(int i, uint8_t p)
+{
+#if 0 // TODO: this sometimes happens, needs to be debugged
+	assert(i > 0 && i < sizeof(sprite_pixel_queue));
+#else
+	if (!(i > 0 && i < sizeof(sprite_pixel_queue))) {
+		//		printf("%s:%d %d\n", __FILE__, __LINE__, i);
+		return;
+	}
+#endif
+	if (sprite_pixel_queue[i] == 0xff) {
+		sprite_pixel_queue[i] = p;
+	}
+}
+
+uint8_t ppu::
+sprite_pixel_get()
+{
+#if 0
+	uint8_t total = 0xff;
+	for (int i = 0; i < sizeof(sprite_pixel_queue); i++) {
+		total &= sprite_pixel_queue[i];
+	}
+	if (total != 0xff) {
+		printf("sprite_pixel_queue: ");
+		for (int i = 0; i < sizeof(sprite_pixel_queue); i++) {
+			printf("%02x ", sprite_pixel_queue[i]);
+		}
+		printf("\n");
+	}
+#endif
+	uint8_t p = sprite_pixel_queue[0];
+	memmove(sprite_pixel_queue, sprite_pixel_queue + 1, sizeof(sprite_pixel_queue) - 1);
+	return p;
+}
+
+
+#pragma mark - Mode 0: H-Blank
+
+void ppu::
+hblank_reset()
+{
+	mode = mode_hblank;
+	vram_locked = false;
+	oamram_locked = false;
+}
+
+void ppu::
+hblank_step()
+{
+	if (clock == PPU_CLOCKS_PER_LINE) {
+		clock = 0;
+		if (++line == PPU_NUM_VISIBLE_LINES) {
+			vblank_reset();
+		} else {
+			oam_reset();
+		}
+	}
+}
+
+
+#pragma mark - Mode 1: V-Blank
+
+void ppu::
+vblank_reset()
+{
+	mode = mode_vblank;
+	vram_locked = false;
+	oamram_locked = false;
+}
+
+void ppu::
+vblank_step()
+{
+	if (clock == PPU_CLOCKS_PER_LINE) {
+		clock = 0;
+		if (++line == PPU_NUM_LINES) {
+			line = 0;
+			oam_reset();
+			dirty = true;
+		}
+	}
+}
+
+
+#pragma mark - Mode 2: OAM Search
 
 uint8_t ppu::
 get_sprite_height()
@@ -207,7 +303,7 @@ oam_step()
 
 	// do all the logic in the first cycle...
 	if (!oam_mode_counter && _io.reg[rLCDC] & LCDCF_OBJON) {
-		// fill the 10 sprite generators with the 10 leftmost sprites
+		// find the 10 leftmost sprites
 		uint8_t sprite_height = get_sprite_height();
 
 		for (int i = 0; i < 40; i++) {
@@ -246,65 +342,7 @@ oam_step()
 }
 
 
-#pragma mark - Pixel Pipelines
-
-void ppu::
-bg_pixel_push(uint8_t p)
-{
-	bg_pixel_queue[bg_pixel_queue_next++] = p;
-	assert(bg_pixel_queue_next <= sizeof(bg_pixel_queue));
-}
-
-uint8_t ppu::
-bg_pixel_get()
-{
-	if (!bg_pixel_queue_next) {
-		return 0xff;
-	}
-	uint8_t p = bg_pixel_queue[0];
-	memmove(bg_pixel_queue, bg_pixel_queue + 1, --bg_pixel_queue_next);
-	return p;
-}
-
-void ppu::
-sprite_pixel_set(int i, uint8_t p)
-{
-#if 0 // TODO: this sometimes happens, needs to be debugged
-	assert(i > 0 && i < sizeof(sprite_pixel_queue));
-#else
-	if (!(i > 0 && i < sizeof(sprite_pixel_queue))) {
-//		printf("%s:%d %d\n", __FILE__, __LINE__, i);
-		return;
-	}
-#endif
-	if (sprite_pixel_queue[i] == 0xff) {
-		sprite_pixel_queue[i] = p;
-	}
-}
-
-uint8_t ppu::
-sprite_pixel_get()
-{
-#if 0
-	uint8_t total = 0xff;
-	for (int i = 0; i < sizeof(sprite_pixel_queue); i++) {
-		total &= sprite_pixel_queue[i];
-	}
-	if (total != 0xff) {
-		printf("sprite_pixel_queue: ");
-		for (int i = 0; i < sizeof(sprite_pixel_queue); i++) {
-			printf("%02x ", sprite_pixel_queue[i]);
-		}
-		printf("\n");
-	}
-#endif
-	uint8_t p = sprite_pixel_queue[0];
-	memmove(sprite_pixel_queue, sprite_pixel_queue + 1, sizeof(sprite_pixel_queue) - 1);
-	return p;
-}
-
-
-#pragma mark - Background
+#pragma mark - Mode 3: Pixel Transfer
 
 void ppu::
 pixel_reset()
@@ -419,7 +457,7 @@ pixel_step()
 				bool b0 = (data0 >> i2) & 1;
 				bool b1 = (data1 >> i2) & 1;
 				uint8_t p = b0 | (b1 << 1);
-				uint8_t p2 = paletted(palette, p);
+				uint8_t p2 = (palette >> (p << 1)) & 3;
 				if (fetch_is_sprite) {
 					sprite_pixel_set(i + (cur_oam->x - pixel_x - 8), p ? p2 : 255);
 				} else {
@@ -446,11 +484,8 @@ pixel_step()
 	}
 }
 
-
-#pragma mark - Mixer
-
 void ppu::
-lcdout_step()
+mixer_step()
 {
 #if 0
 	bool sprites = false;
@@ -478,7 +513,7 @@ lcdout_step()
 			if (pixel_x >= 160) {
 				// end this mode
 				bg_pixel_queue_next = 0;
-				new_line();
+				pixel_x = 0;
 				hblank_reset();
 			} else {
 				uint8_t p2 = sprite_pixel_get();
@@ -488,54 +523,6 @@ lcdout_step()
 				picture[line][pixel_x] = p;
 				pixel_x++;
 			}
-		}
-	}
-}
-
-
-#pragma mark - H-Blank
-
-void ppu::
-hblank_reset()
-{
-	mode = mode_hblank;
-	vram_locked = false;
-	oamram_locked = false;
-}
-
-void ppu::
-hblank_step()
-{
-	if (clock == PPU_CLOCKS_PER_LINE) {
-		clock = 0;
-		if (++line == PPU_NUM_VISIBLE_LINES) {
-			vblank_reset();
-		} else {
-			oam_reset();
-		}
-	}
-}
-
-
-#pragma mark - V-Blank
-
-void ppu::
-vblank_reset()
-{
-	mode = mode_vblank;
-	vram_locked = false;
-	oamram_locked = false;
-}
-
-void ppu::
-vblank_step()
-{
-	if (clock == PPU_CLOCKS_PER_LINE) {
-		clock = 0;
-		if (++line == PPU_NUM_LINES) {
-			line = 0;
-			oam_reset();
-			dirty = true;
 		}
 	}
 }
@@ -601,7 +588,7 @@ step()
 			break;
 		case mode_pixel:
 			pixel_step();
-			lcdout_step();
+			mixer_step();
 			break;
 		case mode_hblank:
 			hblank_step();

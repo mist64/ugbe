@@ -94,7 +94,6 @@ private:
 	void screen_reset();
 	int output_pixel(uint8_t p);
 	void new_line();
-	uint8_t paletted(uint8_t pal, uint8_t p);
 	void vram_set_address(uint16_t addr);
 	uint8_t vram_get_data();
 	uint8_t oam_get_pixel(uint8_t x);
@@ -115,7 +114,7 @@ private:
 
 	void pixel_reset();
 	void pixel_step();
-	void lcdout_step();
+	void mixer_step();
 };
 
 #endif /* ppu_h */
