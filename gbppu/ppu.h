@@ -53,9 +53,9 @@ private:
 	uint8_t bg_pixel_queue_next;
 	uint8_t sprite_pixel_queue[24];
 
-	int screen_off;
-	int vram_locked;
-	int oamram_locked;
+	bool screen_off;
+	bool vram_locked;
+	bool oamram_locked;
 
 	int pixel_x;
 	int line;
@@ -110,6 +110,8 @@ private:
 	void hblank_step();
 	void vblank_reset();
 	void vblank_step();
+
+	void irq_step();
 
 	void pixel_reset();
 	void pixel_step();

@@ -195,8 +195,8 @@ oam_reset()
 {
 	mode = mode_oam;
 	oam_mode_counter = 0;
-	vram_locked = 0;
-	oamram_locked = 1;
+	vram_locked = false;
+	oamram_locked = true;
 }
 
 void ppu::
@@ -310,8 +310,8 @@ void ppu::
 pixel_reset()
 {
 	mode = mode_pixel;
-	vram_locked = 1;
-	oamram_locked = 1;
+	vram_locked = true;
+	oamram_locked = true;
 
 	bg_index_ctr = 0;
 	bg_t = 0;
@@ -321,6 +321,11 @@ pixel_reset()
 void ppu::
 pixel_step()
 {
+	// the pixel transfer mode is VRAM-bound, so it runs at 1/2 speed = 2 MHz
+	if (!clock_even) {
+		return;
+	}
+
 	oamentry *oam = (oamentry *)oamram;
 
 	// background @ 2 MHz
@@ -490,13 +495,12 @@ lcdout_step()
 
 #pragma mark - H-Blank
 
-
 void ppu::
 hblank_reset()
 {
 	mode = mode_hblank;
-	vram_locked = 0;
-	oamram_locked = 0;
+	vram_locked = false;
+	oamram_locked = false;
 }
 
 void ppu::
@@ -519,8 +523,8 @@ void ppu::
 vblank_reset()
 {
 	mode = mode_vblank;
-	vram_locked = 0;
-	oamram_locked = 0;
+	vram_locked = false;
+	oamram_locked = false;
 }
 
 void ppu::
@@ -536,6 +540,36 @@ vblank_step()
 	}
 }
 
+
+#pragma mark - IRQ
+
+void ppu::
+irq_step()
+{
+	// V-Blank interrupt
+	if (line == 144 && clock == 0) {
+		_io.reg[rIF] |= 1;
+	}
+	// LY == LYC interrupt
+	if (_io.reg[rSTAT] & 0x40 && _io.reg[rLYC] == line && clock == 0) {
+		_io.reg[rIF] |= 2;
+	}
+	if (mode != old_mode) {
+		if (_io.reg[rSTAT] & 0x20 && mode == mode_oam) {
+			// Mode 2 interrupt
+			_io.reg[rIF] |= 2;
+		} else if (_io.reg[rSTAT] & 0x10 && mode == mode_vblank) {
+			// Mode 1 interrupt
+			_io.reg[rIF] |= 2;
+		} else if (_io.reg[rSTAT] & 0x08 && mode == mode_hblank) {
+			// Mode 0 interrupt
+			_io.reg[rIF] |= 2;
+		}
+	}
+	old_mode = mode;
+}
+
+
 #pragma mark - Main Logic
 
 // PPU steps are executed the CPU clock rate, i.e. at ~4 MHz
@@ -546,57 +580,28 @@ step()
 
 	if ((_io.reg[rLCDC] & LCDCF_ON)) {
 		if (screen_off) {
-			screen_off = 0;
+			screen_off = false;
 			screen_reset();
 		}
 	} else {
-		screen_off = 1;
-		vblank_reset();
-	}
-
-	if (screen_off) {
+		if (!screen_off) {
+			screen_off = true;
+			vblank_reset();
+		}
 		return;
 	}
 
-	//
-	// IRQ
-	//
-
-	// V-Blank interrupt
-	if (line == 144 && clock == 0) {
-		_io.reg[rIF] |= 1;
-	}
-	// LY == LYC interrupt
-	if (_io.reg[rSTAT] & 0x40 && _io.reg[rLYC] == line && clock == 0) {
-		_io.reg[rIF] |= 2;
-	}
-	if (mode != old_mode) {
-		if (_io.reg[rSTAT] & 0x20 && mode == 2) {
-			// Mode 2 interrupt
-			_io.reg[rIF] |= 2;
-		} else if (_io.reg[rSTAT] & 0x10 && mode == 1) {
-			// Mode 1 interrupt
-			_io.reg[rIF] |= 2;
-		} else if (_io.reg[rSTAT] & 0x08 && mode == 0) {
-			// Mode 0 interrupt
-			_io.reg[rIF] |= 2;
-		}
-	}
-
-	old_mode = mode;
+	irq_step();
 
 	clock++;
 
 	switch (mode) {
 		case mode_oam:
-			// oam search runs at 4 MHz
 			oam_step();
 			break;
 		case mode_pixel:
-			// the background unit's speed is VRAM-bound, so it runs at 1/2 speed = 2 MHz
-			if (clock_even) {
-				pixel_step();
-			}
+			pixel_step();
+			lcdout_step();
 			break;
 		case mode_hblank:
 			hblank_step();
@@ -605,8 +610,4 @@ step()
 			vblank_step();
 			break;
 	}
-
-	// shift pixels to the LCD @ 4 MHz
-	lcdout_step();
-
 }
