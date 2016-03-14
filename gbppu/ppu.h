@@ -50,7 +50,7 @@ private:
 
 	uint8_t bg_pixel_queue[16];
 	uint8_t bg_pixel_queue_next;
-	uint8_t oam_pixel_queue[24];
+	uint8_t sprite_pixel_queue[24];
 
 	int screen_off;
 	int vram_locked;
@@ -98,12 +98,13 @@ private:
 	uint8_t vram_get_data();
 	uint8_t oam_get_pixel(uint8_t x);
 	uint8_t get_sprite_height();
+	void oam_reset();
 	void oam_step();
 	void bg_reset();
 	void bg_pixel_push(uint8_t p);
 	uint8_t bg_pixel_get();
-	void oam_pixel_set(int i, uint8_t p);
-	uint8_t oam_pixel_get();
+	void sprite_pixel_set(int i, uint8_t p);
+	uint8_t sprite_pixel_get();
 	void bg_step();
 	void pixel_step();
 };

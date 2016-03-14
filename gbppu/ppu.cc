@@ -130,18 +130,14 @@ oamram_write(uint8_t a8, uint8_t d8)
 void ppu::
 new_screen()
 {
-	mode = mode_oam;
-	oam_mode_counter = 0;
-	vram_locked = 0;
-	oamram_locked = 1;
-
 	clock = 0;
 	line = 0;
-
 	pixel_x = 0;
 
 	bg_pixel_queue_next = 0;
-	memset(oam_pixel_queue, 0xff, sizeof(oam_pixel_queue));
+	memset(sprite_pixel_queue, 0xff, sizeof(sprite_pixel_queue));
+
+	oam_reset();
 }
 
 ppu::
@@ -191,6 +187,15 @@ uint8_t ppu::
 get_sprite_height()
 {
 	return _io.reg[rLCDC] & LCDCF_OBJ16 ? 16 : 8;
+}
+
+void ppu::
+oam_reset()
+{
+	mode = mode_oam;
+	oam_mode_counter = 0;
+	vram_locked = 0;
+	oamram_locked = 1;
 }
 
 void ppu::
@@ -261,39 +266,39 @@ bg_pixel_get()
 }
 
 void ppu::
-oam_pixel_set(int i, uint8_t p)
+sprite_pixel_set(int i, uint8_t p)
 {
 #if 0 // TODO: this sometimes happens, needs to be debugged
-	assert(i > 0 && i < sizeof(oam_pixel_queue));
+	assert(i > 0 && i < sizeof(sprite_pixel_queue));
 #else
-	if (!(i > 0 && i < sizeof(oam_pixel_queue))) {
+	if (!(i > 0 && i < sizeof(sprite_pixel_queue))) {
 //		printf("%s:%d %d\n", __FILE__, __LINE__, i);
 		return;
 	}
 #endif
-	if (oam_pixel_queue[i] == 0xff) {
-		oam_pixel_queue[i] = p;
+	if (sprite_pixel_queue[i] == 0xff) {
+		sprite_pixel_queue[i] = p;
 	}
 }
 
 uint8_t ppu::
-oam_pixel_get()
+sprite_pixel_get()
 {
 #if 0
 	uint8_t total = 0xff;
-	for (int i = 0; i < sizeof(oam_pixel_queue); i++) {
-		total &= oam_pixel_queue[i];
+	for (int i = 0; i < sizeof(sprite_pixel_queue); i++) {
+		total &= sprite_pixel_queue[i];
 	}
 	if (total != 0xff) {
-		printf("oam_pixel_queue: ");
-		for (int i = 0; i < sizeof(oam_pixel_queue); i++) {
-			printf("%02x ", oam_pixel_queue[i]);
+		printf("sprite_pixel_queue: ");
+		for (int i = 0; i < sizeof(sprite_pixel_queue); i++) {
+			printf("%02x ", sprite_pixel_queue[i]);
 		}
 		printf("\n");
 	}
 #endif
-	uint8_t p = oam_pixel_queue[0];
-	memmove(oam_pixel_queue, oam_pixel_queue + 1, sizeof(oam_pixel_queue) - 1);
+	uint8_t p = sprite_pixel_queue[0];
+	memmove(sprite_pixel_queue, sprite_pixel_queue + 1, sizeof(sprite_pixel_queue) - 1);
 	return p;
 }
 
@@ -410,7 +415,7 @@ bg_step()
 				uint8_t p = b0 | (b1 << 1);
 				uint8_t p2 = paletted(palette, p);
 				if (fetch_is_sprite) {
-					oam_pixel_set(i + (cur_oam->x - pixel_x - 8), p ? p2 : 255);
+					sprite_pixel_set(i + (cur_oam->x - pixel_x - 8), p ? p2 : 255);
 				} else {
 					if (skip) {
 						skip--;
@@ -443,8 +448,8 @@ pixel_step()
 {
 #if 0
 	bool sprites = false;
-	for (int i = 0; i < sizeof(oam_pixel_queue); i++) {
-		if (oam_pixel_queue[i] != 0xff) {
+	for (int i = 0; i < sizeof(sprite_pixel_queue); i++) {
+		if (sprite_pixel_queue[i] != 0xff) {
 			sprites = true;
 		}
 	}
@@ -454,8 +459,8 @@ pixel_step()
 			printf("%c", bg_pixel_queue[i] + '0');
 		}
 		printf("\n        SPR ");
-		for (int i = 0; i < sizeof(oam_pixel_queue); i++) {
-			printf("%c", oam_pixel_queue[i] + '0');
+		for (int i = 0; i < sizeof(sprite_pixel_queue); i++) {
+			printf("%c", sprite_pixel_queue[i] + '0');
 		}
 		printf("\n");
 	}
@@ -472,7 +477,7 @@ pixel_step()
 				vram_locked = 0;
 				oamram_locked = 0;
 			} else {
-				uint8_t p2 = oam_pixel_get();
+				uint8_t p2 = sprite_pixel_get();
 				if (p2 != 0xff) {
 					p = p2;
 				}
@@ -493,11 +498,11 @@ step()
 	if ((_io.reg[rLCDC] & LCDCF_ON)) {
 		if (screen_off) {
 			screen_off = 0;
-			vram_locked = 0;
-			oamram_locked = 0;
 			new_screen();
 		}
 	} else {
+		vram_locked = 0;
+		oamram_locked = 0;
 		screen_off = 1;
 	}
 
@@ -556,10 +561,7 @@ step()
 			dirty = true;
 		}
 		if (line <= PPU_LAST_VISIBLE_LINE) {
-			mode = mode_oam;
-			oam_mode_counter = 0;
-			vram_locked = 0;
-			oamram_locked = 1;
+			oam_reset();
 		} else {
 			mode = mode_vblank;
 		}
