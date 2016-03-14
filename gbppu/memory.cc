@@ -384,7 +384,7 @@ io_write(uint8_t a8, uint8_t d8)
 	}
 }
 
-int memory::
+bool memory::
 is_bootrom_enabled()
 {
 	return bootrom_enabled;

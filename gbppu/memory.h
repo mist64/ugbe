@@ -67,7 +67,7 @@ public:
 
 	void io_write(uint8_t a8, uint8_t d8);
 
-	int is_bootrom_enabled();
+	bool is_bootrom_enabled();
 };
 
 #endif /* memory_h */

@@ -264,9 +264,10 @@ void ppu::
 oam_pixel_set(int i, uint8_t p)
 {
 #if 0 // TODO: this sometimes happens, needs to be debugged
-	assert(i < sizeof(oam_pixel_queue));
+	assert(i > 0 && i < sizeof(oam_pixel_queue));
 #else
-	if (!(i < sizeof(oam_pixel_queue))) {
+	if (!(i > 0 && i < sizeof(oam_pixel_queue))) {
+//		printf("%s:%d %d\n", __FILE__, __LINE__, i);
 		return;
 	}
 #endif
@@ -278,17 +279,19 @@ oam_pixel_set(int i, uint8_t p)
 uint8_t ppu::
 oam_pixel_get()
 {
+#if 0
 	uint8_t total = 0xff;
 	for (int i = 0; i < sizeof(oam_pixel_queue); i++) {
 		total &= oam_pixel_queue[i];
 	}
 	if (total != 0xff) {
-//		printf("oam_pixel_queue: ");
+		printf("oam_pixel_queue: ");
 		for (int i = 0; i < sizeof(oam_pixel_queue); i++) {
-//			printf("%02x ", oam_pixel_queue[i]);
+			printf("%02x ", oam_pixel_queue[i]);
 		}
-//		printf("\n");
+		printf("\n");
 	}
+#endif
 	uint8_t p = oam_pixel_queue[0];
 	memmove(oam_pixel_queue, oam_pixel_queue + 1, sizeof(oam_pixel_queue) - 1);
 	return p;
@@ -458,7 +461,7 @@ pixel_step()
 	}
 #endif
 
-	if (bg_pixel_queue_next >= 8) {
+	if (bg_pixel_queue_next > 8) {
 		uint8_t p = bg_pixel_get();
 		if (p != 0xff) {
 			if (pixel_x >= 160) {
