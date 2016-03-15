@@ -175,25 +175,24 @@ vram_get_data()
 #pragma mark - Pixel Pipelines
 
 void ppu::
-bg_pixel_push(uint8_t p)
+bg_pixel_push(pixel_t p)
 {
 	bg_pixel_queue[bg_pixel_queue_next++] = p;
 	assert(bg_pixel_queue_next <= sizeof(bg_pixel_queue));
 }
 
-uint8_t ppu::
+pixel_t ppu::
 bg_pixel_get()
 {
-	if (!bg_pixel_queue_next) {
-		return 0xff;
-	}
-	uint8_t p = bg_pixel_queue[0];
+	assert(bg_pixel_queue_next);
+
+	pixel_t p = bg_pixel_queue[0];
 	memmove(bg_pixel_queue, bg_pixel_queue + 1, --bg_pixel_queue_next);
 	return p;
 }
 
 void ppu::
-sprite_pixel_set(int i, uint8_t p)
+sprite_pixel_set(int i, pixel_t p)
 {
 #if 0 // TODO: this sometimes happens, needs to be debugged
 	assert(i > 0 && i < sizeof(sprite_pixel_queue));
@@ -203,12 +202,17 @@ sprite_pixel_set(int i, uint8_t p)
 		return;
 	}
 #endif
-	if (sprite_pixel_queue[i] == 0xff) {
+
+#if 0
+//	if (sprite_pixel_queue[i] == 0xff) {
 		sprite_pixel_queue[i] = p;
-	}
+//	}
+#else
+	bg_pixel_queue[i] = p;
+#endif
 }
 
-uint8_t ppu::
+pixel_t ppu::
 sprite_pixel_get()
 {
 #if 0
@@ -224,7 +228,7 @@ sprite_pixel_get()
 		printf("\n");
 	}
 #endif
-	uint8_t p = sprite_pixel_queue[0];
+	pixel_t p = sprite_pixel_queue[0];
 	memmove(sprite_pixel_queue, sprite_pixel_queue + 1, sizeof(sprite_pixel_queue) - 1);
 	return p;
 }
@@ -451,20 +455,18 @@ pixel_step()
 			uint8_t data1 = vram_get_data();
 			bool flip = fetch_is_sprite ? !(cur_oam->attr & 0x20) : 0;
 			int skip = bg_index_ctr ? 0 : _io.reg[rSCX] & 7; // bg only
-			uint8_t palette = fetch_is_sprite ? _io.reg[cur_oam->attr & 0x10 ? rOBP1 : rOBP0] : _io.reg[rBGP];
 			for (int i = 7; i >= 0; i--) {
 				int i2 = flip ? (7 - i) : i;
 				bool b0 = (data0 >> i2) & 1;
 				bool b1 = (data1 >> i2) & 1;
 				uint8_t p = b0 | (b1 << 1);
-				uint8_t p2 = (palette >> (p << 1)) & 3;
 				if (fetch_is_sprite) {
-					sprite_pixel_set(i + (cur_oam->x - pixel_x - 8), p ? p2 : 255);
+					sprite_pixel_set(i + (cur_oam->x - pixel_x - 8), { static_cast<unsigned char>(p), static_cast<unsigned char>(cur_oam->attr & 0x10 ? source_obj1 : source_obj0) });
 				} else {
 					if (skip) {
 						skip--;
 					} else {
-						bg_pixel_push(p2);
+						bg_pixel_push({ p, 0 });
 					}
 				}
 			}
@@ -508,21 +510,28 @@ mixer_step()
 #endif
 
 	if (bg_pixel_queue_next > 8) {
-		uint8_t p = bg_pixel_get();
-		if (p != 0xff) {
-			if (pixel_x >= 160) {
-				// end this mode
-				bg_pixel_queue_next = 0;
-				pixel_x = 0;
-				hblank_reset();
-			} else {
-				uint8_t p2 = sprite_pixel_get();
-				if (p2 != 0xff) {
-					p = p2;
-				}
-				picture[line][pixel_x] = p;
-				pixel_x++;
-			}
+		pixel_t pixel = bg_pixel_get();
+		uint8_t palette_reg;
+		switch (pixel.source) {
+			case source_bg:
+				palette_reg = rBGP;
+				break;
+			case source_obj0:
+				palette_reg = rOBP0;
+				break;
+			case source_obj1:
+				palette_reg = rOBP1;
+				break;
+			default:
+				assert(false);
+		}
+		if (pixel_x >= 160) {
+			// end this mode
+			bg_pixel_queue_next = 0;
+			pixel_x = 0;
+			hblank_reset();
+		} else {
+			picture[line][pixel_x++] = (_io.reg[palette_reg] >> (pixel.value << 1)) & 3;
 		}
 	}
 }

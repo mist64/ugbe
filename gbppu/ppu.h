@@ -14,6 +14,17 @@
 class memory;
 class io;
 
+enum {
+	source_bg,
+	source_obj0,
+	source_obj1,
+};
+
+typedef struct {
+	unsigned char value : 2;
+	unsigned char source : 2;
+} pixel_t;
+
 class ppu {
 private:
 	memory &_memory;
@@ -49,9 +60,9 @@ private:
 	int bg_index_ctr; // offset of the current index within the line
 	int window;
 
-	uint8_t bg_pixel_queue[16];
+	pixel_t bg_pixel_queue[16];
 	uint8_t bg_pixel_queue_next;
-	uint8_t sprite_pixel_queue[24];
+	pixel_t sprite_pixel_queue[24];
 
 	bool screen_off;
 	bool vram_locked;
@@ -100,10 +111,10 @@ private:
 	uint8_t get_sprite_height();
 	void oam_reset();
 	void oam_step();
-	void bg_pixel_push(uint8_t p);
-	uint8_t bg_pixel_get();
-	void sprite_pixel_set(int i, uint8_t p);
-	uint8_t sprite_pixel_get();
+	void bg_pixel_push(pixel_t p);
+	pixel_t bg_pixel_get();
+	void sprite_pixel_set(int i, pixel_t p);
+	pixel_t sprite_pixel_get();
 
 	void hblank_reset();
 	void hblank_step();
