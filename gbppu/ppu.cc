@@ -491,7 +491,7 @@ mixer_step()
 	}
 #endif
 
-	if (bg_pixel_queue_next > 8) {
+	if (bg_pixel_queue_next > 16) {
 		pixel_t pixel = bg_pixel_get();
 		uint8_t palette_reg;
 		switch (pixel.source) {
