@@ -147,7 +147,6 @@ screen_reset()
 	pixel_x = 0;
 
 	bg_pixel_queue_next = 0;
-	memset(sprite_pixel_queue, 0xff, sizeof(sprite_pixel_queue));
 
 	old_mode = mode_vblank;
 
@@ -175,8 +174,12 @@ vram_get_data()
 #pragma mark - Pixel Pipelines
 
 void ppu::
-bg_pixel_push(pixel_t p)
+bg_pixel_push(uint8_t value)
 {
+	pixel_t p;
+	p.value = value;
+	p.source = source_bg;
+
 	bg_pixel_queue[bg_pixel_queue_next++] = p;
 	assert(bg_pixel_queue_next <= sizeof(bg_pixel_queue));
 }
@@ -192,45 +195,24 @@ bg_pixel_get()
 }
 
 void ppu::
-sprite_pixel_set(int i, pixel_t p)
+sprite_pixel_set(int i, uint8_t value, uint8_t source, bool priority)
 {
-#if 0 // TODO: this sometimes happens, needs to be debugged
-	assert(i > 0 && i < sizeof(sprite_pixel_queue));
-#else
-	if (!(i > 0 && i < sizeof(sprite_pixel_queue))) {
-		//		printf("%s:%d %d\n", __FILE__, __LINE__, i);
+	pixel_t p;
+	p.value = value;
+	p.source = source;
+
+	// XXX
+	if (!(i >= 0 && i < sizeof(bg_pixel_queue))) {
+//		printf("%s:%d %i\n", __FILE__, __LINE__, i);
 		return;
 	}
-#endif
 
-#if 0
-//	if (sprite_pixel_queue[i] == 0xff) {
-		sprite_pixel_queue[i] = p;
-//	}
-#else
-	bg_pixel_queue[i] = p;
-#endif
-}
-
-pixel_t ppu::
-sprite_pixel_get()
-{
-#if 0
-	uint8_t total = 0xff;
-	for (int i = 0; i < sizeof(sprite_pixel_queue); i++) {
-		total &= sprite_pixel_queue[i];
+	assert(i >= 0 && i < sizeof(bg_pixel_queue));
+	if (p.value && // don't draw transparent sprite pixels
+		bg_pixel_queue[i].source == source_bg && // don't draw over other sprites
+		(!priority || !bg_pixel_queue[i].value)) { // don't draw if behind bg pixels
+		bg_pixel_queue[i] = p;
 	}
-	if (total != 0xff) {
-		printf("sprite_pixel_queue: ");
-		for (int i = 0; i < sizeof(sprite_pixel_queue); i++) {
-			printf("%02x ", sprite_pixel_queue[i]);
-		}
-		printf("\n");
-	}
-#endif
-	pixel_t p = sprite_pixel_queue[0];
-	memmove(sprite_pixel_queue, sprite_pixel_queue + 1, sizeof(sprite_pixel_queue) - 1);
-	return p;
 }
 
 
@@ -459,14 +441,14 @@ pixel_step()
 				int i2 = flip ? (7 - i) : i;
 				bool b0 = (data0 >> i2) & 1;
 				bool b1 = (data1 >> i2) & 1;
-				uint8_t p = b0 | (b1 << 1);
+				uint8_t value = b0 | (b1 << 1);
 				if (fetch_is_sprite) {
-					sprite_pixel_set(i + (cur_oam->x - pixel_x - 8), { static_cast<unsigned char>(p), static_cast<unsigned char>(cur_oam->attr & 0x10 ? source_obj1 : source_obj0) });
+					sprite_pixel_set(i + (cur_oam->x - pixel_x - 8), value, cur_oam->attr & 0x10 ? source_obj1 : source_obj0, cur_oam->attr & 0x80);
 				} else {
 					if (skip) {
 						skip--;
 					} else {
-						bg_pixel_push({ p, 0 });
+						bg_pixel_push(value);
 					}
 				}
 			}

@@ -60,9 +60,8 @@ private:
 	int bg_index_ctr; // offset of the current index within the line
 	int window;
 
-	pixel_t bg_pixel_queue[16];
+	pixel_t bg_pixel_queue[24];
 	uint8_t bg_pixel_queue_next;
-	pixel_t sprite_pixel_queue[24];
 
 	bool screen_off;
 	bool vram_locked;
@@ -111,9 +110,9 @@ private:
 	uint8_t get_sprite_height();
 	void oam_reset();
 	void oam_step();
-	void bg_pixel_push(pixel_t p);
+	void bg_pixel_push(uint8_t value);
 	pixel_t bg_pixel_get();
-	void sprite_pixel_set(int i, pixel_t p);
+	void sprite_pixel_set(int i, uint8_t value, uint8_t source, bool priority);
 	pixel_t sprite_pixel_get();
 
 	void hblank_reset();
