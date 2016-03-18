@@ -342,17 +342,21 @@ pixel_reset()
 	window = 0;
 }
 
+//static bool debug = 0;
+
 void ppu::
 pixel_step()
 {
 	// the pixel transfer mode is VRAM-bound, so it runs at 1/2 speed = 2 MHz
 	if (!clock_even) {
+//		if (debug) printf("%s:%d T- %d (%d) = %d\n", __FILE__, __LINE__, pixel_x, bg_pixel_queue_next, pixel_x + bg_pixel_queue_next);
 		return;
 	}
 
 	oamentry *oam = (oamentry *)oamram;
 
 	// background @ 2 MHz
+//	if (debug) printf("%s:%d T%d %d (%d) = %d\n", __FILE__, __LINE__, bg_t, pixel_x, bg_pixel_queue_next, pixel_x + bg_pixel_queue_next);
 	switch (bg_t) {
 		case 0: { // T0
 		case0:
@@ -360,10 +364,15 @@ pixel_step()
 				cur_oam = &oam[active_sprite_index[cur_sprite]];
 			}
 			// decide whether we should do a sprite tile fetch here
-			if (cur_sprite != sprites_visible &&
-				   (((cur_oam->x >> 3) - 2) == (pixel_x >> 3) || (cur_oam->x >> 3) <= 1)) {
+			int gpp = pixel_x + bg_pixel_queue_next;
+			if (cur_sprite != sprites_visible && (cur_oam->x - 8) >= gpp && (cur_oam->x - 8) < gpp+8) {
 				// sprite is due to be displayed soon, fetch its data instead of bg
 				fetch_is_sprite = 1;
+				fifo_offset = (cur_oam->x - 8) - gpp;
+//				if (fifo_offset < 0) {
+//					debug = 1;
+//					printf("%s:%d %d %d (%d) = %d -> %d\n", __FILE__, __LINE__, cur_oam->x, pixel_x, bg_pixel_queue_next, pixel_x + bg_pixel_queue_next, fifo_offset);
+//				}
 			} else {
 				fetch_is_sprite = 0;
 
@@ -443,7 +452,7 @@ pixel_step()
 				bool b1 = (data1 >> i2) & 1;
 				uint8_t value = b0 | (b1 << 1);
 				if (fetch_is_sprite) {
-					sprite_pixel_set(i + (cur_oam->x - pixel_x - 8), value, cur_oam->attr & 0x10 ? source_obj1 : source_obj0, cur_oam->attr & 0x80);
+					sprite_pixel_set(fifo_offset + i, value, cur_oam->attr & 0x10 ? source_obj1 : source_obj0, cur_oam->attr & 0x80);
 				} else {
 					if (skip) {
 						skip--;
@@ -490,8 +499,12 @@ mixer_step()
 		printf("\n");
 	}
 #endif
-
-	if (bg_pixel_queue_next > 16) {
+	if (pixel_x >= 160) {
+		// end this mode
+		bg_pixel_queue_next = 0;
+		pixel_x = 0;
+		hblank_reset();
+	} else if (bg_pixel_queue_next > 16) {
 		pixel_t pixel = bg_pixel_get();
 		uint8_t palette_reg;
 		switch (pixel.source) {
@@ -507,14 +520,7 @@ mixer_step()
 			default:
 				assert(false);
 		}
-		if (pixel_x >= 160) {
-			// end this mode
-			bg_pixel_queue_next = 0;
-			pixel_x = 0;
-			hblank_reset();
-		} else {
-			picture[line][pixel_x++] = (_io.reg[palette_reg] >> (pixel.value << 1)) & 3;
-		}
+		picture[line][pixel_x++] = (_io.reg[palette_reg] >> (pixel.value << 1)) & 3;
 	}
 }
 

@@ -88,6 +88,7 @@ private:
 	uint8_t data0;
 
 	bool fetch_is_sprite;
+	int fifo_offset;
 
 #pragma pack(push, 1)
 	typedef struct {

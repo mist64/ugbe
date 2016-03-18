@@ -216,10 +216,11 @@ static uint8_t keys;
 #else
         //	cartridge_filename = "/Users/mist/Documents/git/gbcpu/gbppu/tetris.gb";
         //	cartridge_filename = "/Users/mist/Documents/git/gb-timing/gb-scy.gb";
-        cartridge_filename = "/Users/mist/Documents/git/gb-timing/gb-timing.gb";
-        //	cartridge_filename = "/Users/mist/Documents/git/gb-platformer/gb-platformer.gb";
-        
-        //	cartridge_filename = "/Users/mist/Downloads/cpu_instrs/individual/01-special.gb";            // Passed
+//        cartridge_filename = "/Users/mist/Documents/git/gb-timing/gb-timing.gb";
+		cartridge_filename = "/Users/mist/Documents/git/gb-timing/gb-sprites.gb";
+//        	cartridge_filename = "/Users/mist/Documents/git/gb-platformer/gb-platformer.gb";
+
+        //	cartridge_filename = "/Users/mist/Downloads/cpu_instrs/individual/01-special.gb";            // x Failed #6 - DAA
         //	cartridge_filename = "/Users/mist/Downloads/cpu_instrs/individual/02-interrupts.gb";         // Passed
         //	cartridge_filename = "/Users/mist/Downloads/cpu_instrs/individual/03-op sp,hl.gb";           // Passed
         //	cartridge_filename = "/Users/mist/Downloads/cpu_instrs/individual/04-op r,imm.gb";           // Passed
@@ -323,7 +324,7 @@ static uint8_t keys;
         //	cartridge_filename = "/Users/mist/tmp/gb/World Bowling (U).gb";
         //	cartridge_filename = "/Users/mist/tmp/gb/Yakyuuman (J).gb";
         
-        //	cartridge_filename = "/Users/mist/Downloads/pocket/pocket.gb";
+        	cartridge_filename = "/Users/mist/Downloads/pocket/pocket.gb";
         //	cartridge_filename = "/Users/mist/Downloads/oh/oh.gb";
         //	cartridge_filename = "/Users/mist/Downloads/gejmboj/gejmboj.gb";
         //	cartridge_filename = "/Users/mist/Downloads/SP-20Y/20y.gb";
