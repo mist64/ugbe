@@ -342,6 +342,53 @@ pixel_reset()
 	window = 0;
 }
 
+void ppu::
+pixel_step()
+{
+#if 0
+	bool sprites = false;
+	for (int i = 0; i < sizeof(sprite_pixel_queue); i++) {
+		if (sprite_pixel_queue[i] != 0xff) {
+			sprites = true;
+		}
+	}
+	if (sprites) {
+		printf("%03d/%03d BG  ", pixel_x, line);
+		for (int i = 0; i < bg_pixel_queue_next; i++) {
+			printf("%c", bg_pixel_queue[i] + '0');
+		}
+		printf("\n        SPR ");
+		for (int i = 0; i < sizeof(sprite_pixel_queue); i++) {
+			printf("%c", sprite_pixel_queue[i] + '0');
+		}
+		printf("\n");
+	}
+#endif
+	if (pixel_x >= 160) {
+		// end this mode
+		bg_pixel_queue_next = 0;
+		pixel_x = 0;
+		hblank_reset();
+	} else if (bg_pixel_queue_next > 16) {
+		pixel_t pixel = bg_pixel_get();
+		uint8_t palette_reg;
+		switch (pixel.source) {
+			case source_bg:
+				palette_reg = rBGP;
+				break;
+			case source_obj0:
+				palette_reg = rOBP0;
+				break;
+			case source_obj1:
+				palette_reg = rOBP1;
+				break;
+			default:
+				assert(false);
+		}
+		picture[line][pixel_x++] = (_io.reg[palette_reg] >> (pixel.value << 1)) & 3;
+	}
+}
+
 //static bool debug = 0;
 
 void ppu::
@@ -474,53 +521,6 @@ fetch_step()
 			}
 			break;
 		}
-	}
-}
-
-void ppu::
-pixel_step()
-{
-#if 0
-	bool sprites = false;
-	for (int i = 0; i < sizeof(sprite_pixel_queue); i++) {
-		if (sprite_pixel_queue[i] != 0xff) {
-			sprites = true;
-		}
-	}
-	if (sprites) {
-		printf("%03d/%03d BG  ", pixel_x, line);
-		for (int i = 0; i < bg_pixel_queue_next; i++) {
-			printf("%c", bg_pixel_queue[i] + '0');
-		}
-		printf("\n        SPR ");
-		for (int i = 0; i < sizeof(sprite_pixel_queue); i++) {
-			printf("%c", sprite_pixel_queue[i] + '0');
-		}
-		printf("\n");
-	}
-#endif
-	if (pixel_x >= 160) {
-		// end this mode
-		bg_pixel_queue_next = 0;
-		pixel_x = 0;
-		hblank_reset();
-	} else if (bg_pixel_queue_next > 16) {
-		pixel_t pixel = bg_pixel_get();
-		uint8_t palette_reg;
-		switch (pixel.source) {
-			case source_bg:
-				palette_reg = rBGP;
-				break;
-			case source_obj0:
-				palette_reg = rOBP0;
-				break;
-			case source_obj1:
-				palette_reg = rOBP1;
-				break;
-			default:
-				assert(false);
-		}
-		picture[line][pixel_x++] = (_io.reg[palette_reg] >> (pixel.value << 1)) & 3;
 	}
 }
 
