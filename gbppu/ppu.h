@@ -125,7 +125,7 @@ private:
 
 	void pixel_reset();
 	void pixel_step();
-	void mixer_step();
+	void fetch_step();
 };
 
 #endif /* ppu_h */

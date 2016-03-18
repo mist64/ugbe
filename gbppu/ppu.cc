@@ -345,7 +345,7 @@ pixel_reset()
 //static bool debug = 0;
 
 void ppu::
-pixel_step()
+fetch_step()
 {
 	// the pixel transfer mode is VRAM-bound, so it runs at 1/2 speed = 2 MHz
 	if (!clock_even) {
@@ -478,7 +478,7 @@ pixel_step()
 }
 
 void ppu::
-mixer_step()
+pixel_step()
 {
 #if 0
 	bool sprites = false;
@@ -585,7 +585,7 @@ step()
 			break;
 		case mode_pixel:
 			pixel_step();
-			mixer_step();
+			fetch_step();
 			break;
 		case mode_hblank:
 			hblank_step();
