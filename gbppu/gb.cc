@@ -8,6 +8,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "gb.h"
 
@@ -21,12 +22,23 @@ gb::gb(const char *bootrom_filename, const char *cartridge_filename)
 	, _buttons(_io)
 	, _sound  (_io)
 {
+#if 1
+	FILE *file = fopen("/Users/mist/tmp/gb-sprites.dump", "r");
+	uint8_t *data = (uint8_t *)malloc(65536);
+	fread(data, 65536, 1, file);
+	fclose(file);
+
+	for (int addr = 0; addr < 65536; addr++) {
+		_memory.write_internal(addr, data[addr]);
+	}
+	_memory.write(0xFF40, 0xE3);
+#endif
 }
 
 int gb::
 step()
 {
-#if 0
+#if 1
 	_ppu.step();
 	return 0;
 #else

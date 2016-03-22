@@ -14,6 +14,9 @@
 #include "io.h"
 #include <string.h>
 
+//#define debug_printf(...)
+#define debug_printf printf
+
 #define PPU_NUM_LINES 154
 #define PPU_NUM_VISIBLE_LINES 144
 #define PPU_CLOCKS_PER_LINE (114*4)
@@ -26,6 +29,42 @@
 #define LCDCF_OBJ16   (1 << 2) /* OBJ Construction */
 #define LCDCF_OBJON   (1 << 1) /* OBJ Display */
 #define LCDCF_BGON    (1 << 0) /* BG Display */
+
+#pragma mark - Debug
+
+void ppu::
+debug_init()
+{
+	*debug_string_pixel = 0;
+	*debug_string_fetch = 0;
+}
+
+void ppu::
+debug_pixel(char *s)
+{
+	if (strlen(debug_string_pixel) < 160) {
+		strcat(debug_string_pixel, s);
+	}
+//	printf("%s", s);
+}
+
+void ppu::
+debug_fetch(char *s)
+{
+	if (strlen(debug_string_fetch) < 160) {
+		strcat(debug_string_fetch, s);
+	}
+//	printf("%s", s);
+}
+
+void ppu::
+debug_flush()
+{
+	printf("PIX_%s\n", debug_string_pixel);
+	printf("FET_%s\n", debug_string_fetch);
+	debug_init();
+}
+
 
 #pragma mark - I/O
 
@@ -144,9 +183,8 @@ screen_reset()
 {
 	clock = 0;
 	line = 0;
-	pixel_x = 0;
 
-	bg_pixel_queue_next = 0;
+	line_reset();
 
 	old_mode = mode_vblank;
 
@@ -159,14 +197,14 @@ screen_reset()
 void ppu::
 vram_set_address(uint16_t addr)
 {
-	assert(vram_locked);
+//	assert(vram_locked);
 	vram_address = addr;
 }
 
 uint8_t ppu::
 vram_get_data()
 {
-	assert(vram_locked);
+//	assert(vram_locked);
 	return vram[vram_address];
 }
 
@@ -174,14 +212,14 @@ vram_get_data()
 #pragma mark - Pixel Pipelines
 
 void ppu::
-bg_pixel_push(uint8_t value)
+bg_pixel_push(uint8_t value, uint8_t source)
 {
 	pixel_t p;
 	p.value = value;
-	p.source = source_bg;
+	p.source = source;
 
+	assert(bg_pixel_queue_next <= sizeof(bg_pixel_queue) / sizeof(*bg_pixel_queue));
 	bg_pixel_queue[bg_pixel_queue_next++] = p;
-	assert(bg_pixel_queue_next <= sizeof(bg_pixel_queue));
 }
 
 pixel_t ppu::
@@ -207,6 +245,7 @@ sprite_pixel_set(int i, uint8_t value, uint8_t source, bool priority)
 		return;
 	}
 
+//	printf("%d ", i);
 	assert(i >= 0 && i < sizeof(bg_pixel_queue));
 	if (p.value && // don't draw transparent sprite pixels
 		bg_pixel_queue[i].source == source_bg && // don't draw over other sprites
@@ -333,6 +372,7 @@ oam_step()
 void ppu::
 pixel_reset()
 {
+//	printf("\nR");
 	mode = mode_pixel;
 	vram_locked = true;
 	oamram_locked = true;
@@ -340,6 +380,20 @@ pixel_reset()
 	bg_index_ctr = 0;
 	bg_t = 0;
 	window = 0;
+
+	debug_init();
+}
+
+void ppu::
+line_reset()
+{
+	pixel_x = 0;
+	sprite_x = 8;
+	bg_pixel_queue_next = 0;
+	for (int i = _io.reg[rSCX] & 7; i < 8; i++) {
+		bg_pixel_push(0, source_invalid);
+	}
+	debug_flush();
 }
 
 void ppu::
@@ -364,12 +418,26 @@ pixel_step()
 		printf("\n");
 	}
 #endif
+
 	if (pixel_x >= 160) {
 		// end this mode
-		bg_pixel_queue_next = 0;
-		pixel_x = 0;
+		line_reset();
 		hblank_reset();
-	} else if (bg_pixel_queue_next > 16) {
+	} else if (cur_sprite != sprites_visible && ((oamentry *)oamram)[active_sprite_index[cur_sprite]].x == sprite_x) {
+		debug_pixel((char *)"s");
+		cur_oam = &((oamentry *)oamram)[active_sprite_index[cur_sprite]];
+		// we can't shift out pixels because a sprite starts at this position
+		cancel_fetch = true;
+//		printf("%s:%d\n", __FILE__, __LINE__);
+	} else if (!window && _io.reg[rLCDC] & LCDCF_WINON && line >= _io.reg[rWY] && pixel_x == _io.reg[rWX]) {
+		debug_pixel((char *)"w");
+		// switch to window
+		window = 1;
+		// flush pixel buffer
+		// TODO: this clears sprites!
+		bg_pixel_queue_next = 0;
+		bg_index_ctr = 0;
+	} else if (bg_pixel_queue_next > 8) {
 		pixel_t pixel = bg_pixel_get();
 		uint8_t palette_reg;
 		switch (pixel.source) {
@@ -382,10 +450,28 @@ pixel_step()
 			case source_obj1:
 				palette_reg = rOBP1;
 				break;
+			case source_invalid:
+				// blank pixel, do nothing
+				break;
 			default:
 				assert(false);
 		}
-		picture[line][pixel_x++] = (_io.reg[palette_reg] >> (pixel.value << 1)) & 3;
+		picture[line][pixel_x] = (_io.reg[palette_reg] >> (pixel.value << 1)) & 3;
+		if (pixel.source != source_invalid) {
+			pixel_x++;
+			sprite_x++;
+		}
+
+		if (pixel.source == source_invalid) {
+			debug_pixel((char *)"*");
+		} else {
+			char s[2];
+			s[0] = pixel.value + '0';
+			s[1] = 0;
+			debug_pixel((char *)s);
+		}
+	} else {
+		debug_pixel((char *)".");
 	}
 }
 
@@ -397,46 +483,26 @@ fetch_step()
 	// the pixel transfer mode is VRAM-bound, so it runs at 1/2 speed = 2 MHz
 	if (!clock_even) {
 //		if (debug) printf("%s:%d T- %d (%d) = %d\n", __FILE__, __LINE__, pixel_x, bg_pixel_queue_next, pixel_x + bg_pixel_queue_next);
+		debug_fetch((char *)"-");
 		return;
 	}
-
-	oamentry *oam = (oamentry *)oamram;
 
 	// background @ 2 MHz
 //	if (debug) printf("%s:%d T%d %d (%d) = %d\n", __FILE__, __LINE__, bg_t, pixel_x, bg_pixel_queue_next, pixel_x + bg_pixel_queue_next);
 	switch (bg_t) {
-		case 0: { // T0
+		case 0: {
 		case0:
-			if (cur_sprite != sprites_visible) {
-				cur_oam = &oam[active_sprite_index[cur_sprite]];
-			}
-			// decide whether we should do a sprite tile fetch here
-			int gpp = pixel_x + bg_pixel_queue_next;
-			if (cur_sprite != sprites_visible && (cur_oam->x - 8) >= gpp && (cur_oam->x - 8) < gpp+8) {
-				// sprite is due to be displayed soon, fetch its data instead of bg
-				fetch_is_sprite = 1;
-				fifo_offset = (cur_oam->x - 8) - gpp;
-//				if (fifo_offset < 0) {
-//					debug = 1;
-//					printf("%s:%d %d %d (%d) = %d -> %d\n", __FILE__, __LINE__, cur_oam->x, pixel_x, bg_pixel_queue_next, pixel_x + bg_pixel_queue_next, fifo_offset);
-//				}
+			if (fetch_is_sprite) {
+				debug_fetch((char *)"A");
 			} else {
-				fetch_is_sprite = 0;
-
-				// decide whether we need to switch to window
-				if (_io.reg[rLCDC] & LCDCF_WINON && line >= _io.reg[rWY] && (pixel_x >> 3) == (_io.reg[rWX] >> 3) - 2) {
-					window = 1;
-					bg_index_ctr = 0;
-					// TODO: we don't do perfect horizontal positioning - we'll have to
-					// refrain from pushing out the 0-7 last pixels from the bg fetches
-				}
+				debug_fetch((char *)"a");
 			}
-
-			// cycle 0: generate tile map address and prepare reading index
+			// T0: generate tile map address and prepare reading index
 			uint8_t xbase;
 			uint8_t ybase;
 			uint8_t index_ram_select_mask;
 			if (fetch_is_sprite) {
+//				printf("\nsprite fetch %d!\n", cur_sprite);
 				line_within_tile = line - cur_oam->y + 16;
 				if (cur_oam->attr & 0x40) { // Y flip
 					line_within_tile = get_sprite_height() - line_within_tile - 1;
@@ -463,6 +529,11 @@ fetch_step()
 			break;
 		}
 		case 1: {
+			if (fetch_is_sprite) {
+				debug_fetch((char *)"B");
+			} else {
+				debug_fetch((char *)"b");
+			}
 			// T1: read index, generate tile data address and prepare reading tile data #0
 			uint8_t index;
 			if (fetch_is_sprite) {
@@ -481,6 +552,11 @@ fetch_step()
 			break;
 		}
 		case 2: {
+			if (fetch_is_sprite) {
+				debug_fetch((char *)"C");
+			} else {
+				debug_fetch((char *)"c");
+			}
 			// T2: read tile data #0, prepare reading tile data #1
 			data0 = vram_get_data();
 			vram_set_address(bgptr + 1);
@@ -488,6 +564,12 @@ fetch_step()
 			break;
 		}
 		case 3: {
+			if (cancel_fetch && !fetch_is_sprite) {
+				cancel_fetch = false;
+				fetch_is_sprite = true;
+				goto case0;
+			}
+			debug_fetch((char *)"d");
 			// T3: read tile data #1, output pixels
 			// (VRAM is idle)
 			uint8_t data1 = vram_get_data();
@@ -499,12 +581,11 @@ fetch_step()
 				bool b1 = (data1 >> i2) & 1;
 				uint8_t value = b0 | (b1 << 1);
 				if (fetch_is_sprite) {
-					sprite_pixel_set(fifo_offset + i, value, cur_oam->attr & 0x10 ? source_obj1 : source_obj0, cur_oam->attr & 0x80);
+					sprite_pixel_set(i, value, cur_oam->attr & 0x10 ? source_obj1 : source_obj0, cur_oam->attr & 0x80);
 				} else {
+					bg_pixel_push(value, skip ? source_invalid : source_bg);
 					if (skip) {
 						skip--;
-					} else {
-						bg_pixel_push(value);
 					}
 				}
 			}
@@ -512,6 +593,7 @@ fetch_step()
 				cur_sprite++;
 				// VRAM is idle in T3, so if we have fetched a sprite,
 				// we can continue with T0 immediately
+				fetch_is_sprite = false;
 				goto case0;
 			} else {
 				bg_index_ctr++;

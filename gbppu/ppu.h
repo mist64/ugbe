@@ -18,6 +18,7 @@ enum {
 	source_bg,
 	source_obj0,
 	source_obj1,
+	source_invalid,
 };
 
 typedef struct {
@@ -60,14 +61,15 @@ private:
 	int bg_index_ctr; // offset of the current index within the line
 	int window;
 
-	pixel_t bg_pixel_queue[24];
-	uint8_t bg_pixel_queue_next;
+	pixel_t bg_pixel_queue[32];
+	int bg_pixel_queue_next;
 
 	bool screen_off;
 	bool vram_locked;
 	bool oamram_locked;
 
 	int pixel_x;
+	uint8_t sprite_x;
 	int line;
 
 	typedef enum {
@@ -88,7 +90,7 @@ private:
 	uint8_t data0;
 
 	bool fetch_is_sprite;
-	int fifo_offset;
+	bool cancel_fetch;
 
 #pragma pack(push, 1)
 	typedef struct {
@@ -102,6 +104,13 @@ private:
 	uint8_t active_sprite_index[10];
 	oamentry *cur_oam;
 
+	char debug_string_pixel[1024];
+	char debug_string_fetch[1024];
+	void debug_init();
+	void debug_pixel(char[]);
+	void debug_fetch(char[]);
+	void debug_flush();
+
 	void screen_reset();
 	int output_pixel(uint8_t p);
 	void new_line();
@@ -111,7 +120,7 @@ private:
 	uint8_t get_sprite_height();
 	void oam_reset();
 	void oam_step();
-	void bg_pixel_push(uint8_t value);
+	void bg_pixel_push(uint8_t value, uint8_t source);
 	pixel_t bg_pixel_get();
 	void sprite_pixel_set(int i, uint8_t value, uint8_t source, bool priority);
 	pixel_t sprite_pixel_get();
@@ -122,6 +131,8 @@ private:
 	void vblank_step();
 
 	void irq_step();
+
+	void line_reset();
 
 	void pixel_reset();
 	void pixel_step();
