@@ -90,7 +90,7 @@ private:
 	uint8_t data0;
 
 	bool fetch_is_sprite;
-	bool cancel_fetch;
+	bool next_is_sprite;
 
 #pragma pack(push, 1)
 	typedef struct {

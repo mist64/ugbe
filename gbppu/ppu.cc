@@ -427,8 +427,7 @@ pixel_step()
 		debug_pixel((char *)"s");
 		cur_oam = &((oamentry *)oamram)[active_sprite_index[cur_sprite]];
 		// we can't shift out pixels because a sprite starts at this position
-		cancel_fetch = true;
-//		printf("%s:%d\n", __FILE__, __LINE__);
+		next_is_sprite = true;
 	} else if (!window && _io.reg[rLCDC] & LCDCF_WINON && line >= _io.reg[rWY] && pixel_x == _io.reg[rWX]) {
 		debug_pixel((char *)"w");
 		// switch to window
@@ -492,48 +491,29 @@ fetch_step()
 	switch (bg_t) {
 		case 0: {
 		case0:
-			if (fetch_is_sprite) {
-				debug_fetch((char *)"A");
-			} else {
-				debug_fetch((char *)"a");
-			}
+			debug_fetch((char *)(fetch_is_sprite ? "A" : "a"));
 			// T0: generate tile map address and prepare reading index
 			uint8_t xbase;
 			uint8_t ybase;
 			uint8_t index_ram_select_mask;
-			if (fetch_is_sprite) {
-//				printf("\nsprite fetch %d!\n", cur_sprite);
-				line_within_tile = line - cur_oam->y + 16;
-				if (cur_oam->attr & 0x40) { // Y flip
-					line_within_tile = get_sprite_height() - line_within_tile - 1;
-				}
-				// when fetching a sprite, we don't use VRAM in T0, because the
-				// tile index comes from OAM, not VRAM; nevertheless, it seems we have
-				// to use up this cycle
+			if (window) {
+				xbase = bg_index_ctr;
+				ybase = line - _io.reg[rWY];
+				index_ram_select_mask = LCDCF_WIN9C00;
 			} else {
-				if (window) {
-					xbase = bg_index_ctr;
-					ybase = line - _io.reg[rWY];
-					index_ram_select_mask = LCDCF_WIN9C00;
-				} else {
-					xbase = ((_io.reg[rSCX] >> 3) + bg_index_ctr) & 31;
-					ybase = _io.reg[rSCY] + line;
-					index_ram_select_mask = LCDCF_BG9C00;
-				}
-				uint8_t ybase_hi = ybase >> 3;
-				line_within_tile = ybase & 7;
-				uint16_t charaddr = 0x1800 | (!!(_io.reg[rLCDC] & index_ram_select_mask) << 10) | (ybase_hi << 5) | xbase;
-				vram_set_address(charaddr);
+				xbase = ((_io.reg[rSCX] >> 3) + bg_index_ctr) & 31;
+				ybase = _io.reg[rSCY] + line;
+				index_ram_select_mask = LCDCF_BG9C00;
 			}
+			uint8_t ybase_hi = ybase >> 3;
+			line_within_tile = ybase & 7;
+			uint16_t charaddr = 0x1800 | (!!(_io.reg[rLCDC] & index_ram_select_mask) << 10) | (ybase_hi << 5) | xbase;
+			vram_set_address(charaddr);
 			bg_t = 1;
 			break;
 		}
 		case 1: {
-			if (fetch_is_sprite) {
-				debug_fetch((char *)"B");
-			} else {
-				debug_fetch((char *)"b");
-			}
+			debug_fetch((char *)(fetch_is_sprite ? "B" : "b"));
 			// T1: read index, generate tile data address and prepare reading tile data #0
 			uint8_t index;
 			if (fetch_is_sprite) {
@@ -552,11 +532,21 @@ fetch_step()
 			break;
 		}
 		case 2: {
-			if (fetch_is_sprite) {
-				debug_fetch((char *)"C");
-			} else {
-				debug_fetch((char *)"c");
+			if (next_is_sprite) {
+				next_is_sprite = false;
+				line_within_tile = line - cur_oam->y + 16;
+				if (cur_oam->attr & 0x40) { // Y flip
+					line_within_tile = get_sprite_height() - line_within_tile - 1;
+				}
+				if (!fetch_is_sprite) {
+					debug_fetch((char *)"x");
+					fetch_is_sprite = true;
+					bg_t = 1;
+					break;
+				}
+				fetch_is_sprite = true;
 			}
+			debug_fetch((char *)(fetch_is_sprite ? "C" : "c"));
 			// T2: read tile data #0, prepare reading tile data #1
 			data0 = vram_get_data();
 			vram_set_address(bgptr + 1);
@@ -564,12 +554,7 @@ fetch_step()
 			break;
 		}
 		case 3: {
-			if (cancel_fetch && !fetch_is_sprite) {
-				cancel_fetch = false;
-				fetch_is_sprite = true;
-				goto case0;
-			}
-			debug_fetch((char *)"d");
+			debug_fetch((char *)(fetch_is_sprite ? "D" : "d"));
 			// T3: read tile data #1, output pixels
 			// (VRAM is idle)
 			uint8_t data1 = vram_get_data();
@@ -594,13 +579,12 @@ fetch_step()
 				// VRAM is idle in T3, so if we have fetched a sprite,
 				// we can continue with T0 immediately
 				fetch_is_sprite = false;
-				goto case0;
 			} else {
 				bg_index_ctr++;
 				// VRAM is idle in T3, but background fetches have to take
 				// 4 cycles, otherwise 8 MHz pixel output cannot keep up
-				bg_t = 0;
 			}
+			bg_t = 0;
 			break;
 		}
 	}
