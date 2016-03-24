@@ -22,6 +22,7 @@ private:
 protected:
 	friend class gb;
 	ppu(memory &memory, io &io);
+    uint8_t *vram;
 
 public:
 	void step();
@@ -39,7 +40,6 @@ public:
     bool dirty;
 
 private:
-	uint8_t *vram;
 	uint8_t *oamram;
 
 	bool clock_even;

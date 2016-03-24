@@ -42,3 +42,11 @@ copy_ppu_picture(size_t &pictureSize)
 	memcpy(pictureCopy, _ppu.picture, pictureSize);
 	return pictureCopy;
 }
+
+uint8_t *gb::
+copy_tilemap(size_t &tilemapSize) {
+    tilemapSize = 8*2*(256 + 128);
+    uint8_t *pictureCopy = (uint8_t *)malloc(tilemapSize);
+    memcpy(pictureCopy, _ppu.vram, tilemapSize);
+    return pictureCopy;
+}

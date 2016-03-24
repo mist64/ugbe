@@ -11,4 +11,6 @@
 - (IBAction)spaceBarHit:(id)aSender;
 - (IBAction)arrowRightHit:(id)aSender;
 - (IBAction)toggleTurbo:(id)sender;
+
+- (IBAction)showVRAMViewer:(id)sender;
 @end

@@ -7,6 +7,11 @@
 
 #import "UGBMainWindowController.h"
 #import "UGBRomDocument.h"
+#import "UGBVRAMViewerWindowController.h"
+
+@interface UGBMainWindowController ()
+@property (nonatomic, strong) UGBVRAMViewerWindowController *vramViewerWindowController;
+@end
 
 @implementation UGBMainWindowController
 
@@ -68,5 +73,17 @@
         return displayName;
     }
 }
+
+- (IBAction)showVRAMViewer:(id)sender {
+    if (!self.vramViewerWindowController) {
+        self.vramViewerWindowController = ({
+          UGBVRAMViewerWindowController *vc = [[UGBVRAMViewerWindowController alloc] initWithWindowNibName:NSStringFromClass([UGBVRAMViewerWindowController class])];
+            [vc setDocument:self.document];
+            vc;
+        });
+    }
+    [self.vramViewerWindowController showWindow:sender];
+}
+
 
 @end

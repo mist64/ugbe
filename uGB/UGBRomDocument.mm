@@ -18,7 +18,6 @@ static CGImageRef CreateGameBoyScreenCGImageRefFromPicture(uint8_t *pictureCopy,
 @property (nonatomic, strong) NSData *romData;
 @property (nonatomic) NSTimeInterval nextFrameTime;
 @property (nonatomic) BOOL shouldEnd;
-@property (nonatomic, strong) id mostRecentCGImageRef;
 @property (nonatomic) dispatch_semaphore_t pauseSemaphore;
 @end
 
@@ -121,7 +120,72 @@ static CGImageRef CreateGameBoyScreenCGImageRefFromPicture(uint8_t *pictureCopy,
     [board writeObjects:@[image]];
 }
 
+#define TILECOUNT (256 + 128)
+#define TILEBYTESIZE (16)
+#define TILES_PER_ROW 16
+#define TILE_DIMENSION 8
+
+static uint8_t valueAtLocation(off_t location, uint8_t *tilemap) {
+    // the location is an offset in an image in which we draw 8 tiles across
+    // each tile is 8x8 bytes.
+    int rowIndex = (int)location / (TILES_PER_ROW * TILE_DIMENSION); // divide through byte width of row
+    int yPosition = rowIndex / TILE_DIMENSION;
+    int yPositionInTile = rowIndex % TILE_DIMENSION;
+    int xPosition = (int)(location % (TILES_PER_ROW * TILE_DIMENSION)) / TILE_DIMENSION;
+    int xPositionInTile = (int)location % TILE_DIMENSION;
+    
+    int tileIndex = yPosition * TILES_PER_ROW + xPosition;
+    
+    uint8_t *tilePointer = tilemap + (tileIndex * 16) + (yPositionInTile * 2);
+    uint8_t bitmask = 0x80 >> xPositionInTile;
+    uint8_t value =   ((*tilePointer & bitmask) ? 1 : 0)
+    + ((*(tilePointer+1) & bitmask) ? 2 : 0);
+    //NSLog(@"tileIndex:%x, xposition:%d, yposition:%d, positionInTile:(%d, %d) value:%d", tileIndex, xPosition, yPosition, xPositionInTile, yPositionInTile, value);
+    
+    return value;
+}
+
+static size_t _getTilemapBytesCallback(void *info, void *buffer, off_t position, size_t count) {
+
+    static const uint8_t colors[4] = { 255, 170, 85, 0 };
+
+    uint8_t *tilemap = (uint8_t *)info;
+    uint8_t *target = (uint8_t *)buffer;
+    uint8_t *targetEnd = target + count;
+    while (target < targetEnd) {
+        *(target++) = colors[valueAtLocation(position++, tilemap)];
+    }
+    return count;
+}
+
+static void _releaseInfo(void *info) {
+    free(info);
+}
+
+
+- (CGImageRef)createImageRefOfTileMap {
+    CGDataProviderDirectCallbacks callbacks;
+    callbacks.version = 0,
+    callbacks.getBytePointer = NULL;
+    callbacks.releaseBytePointer = NULL;
+    callbacks.getBytesAtPosition = _getTilemapBytesCallback;
+    callbacks.releaseInfo = _releaseInfo;
+    
+    size_t tilemapSourceByteSize;
+    uint8_t *tilemapCopy = gameboy->copy_tilemap(tilemapSourceByteSize);
+    
+    CGDataProviderRef provider = CGDataProviderCreateDirect(tilemapCopy, TILECOUNT * TILE_DIMENSION * TILE_DIMENSION, &callbacks);
+    CGColorSpaceRef grayspace = CGColorSpaceCreateDeviceGray();
+    
+    CGImageRef image = CGImageCreate(TILE_DIMENSION * TILES_PER_ROW, (TILECOUNT / TILES_PER_ROW) * TILE_DIMENSION, 8, 8, TILE_DIMENSION * TILES_PER_ROW, grayspace, kCGBitmapByteOrderDefault | kCGImageAlphaNone, provider, NULL, NO, kCGRenderingIntentDefault);
+    CFRelease(grayspace);
+    CFRelease(provider);
+    return image;
+}
+
 @end
+
+
 
 
 static size_t _getBytesCallback(void *info, void *buffer, off_t position, size_t count) {
@@ -134,10 +198,6 @@ static size_t _getBytesCallback(void *info, void *buffer, off_t position, size_t
         source++;
     }
     return count;
-}
-
-static void _releaseInfo(void *info) {
-    free(info);
 }
 
 static CGImageRef CreateGameBoyScreenCGImageRefFromPicture(uint8_t *pictureCopy, size_t pictureSize) {

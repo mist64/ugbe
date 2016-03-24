@@ -45,6 +45,7 @@ public:
     inline void clear_ppu_dirty()
     { _ppu.dirty = false; }
     uint8_t *copy_ppu_picture(size_t &size);
+    uint8_t *copy_tilemap(size_t &tilemap);
 };
 
 #endif  /* !gb_h */

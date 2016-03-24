@@ -28,5 +28,8 @@ typedef NS_OPTIONS(uint8_t, UGBKeyCode) {
 @property (nonatomic) BOOL turbo;
 @property (nonatomic) NSInteger frameCount;
 
+@property (nonatomic, strong) id mostRecentCGImageRef;
+
+- (CGImageRef)createImageRefOfTileMap;
 @end
 

@@ -22,6 +22,8 @@
 		D002FC441C952070006722DE /* gb.cc in Sources */ = {isa = PBXBuildFile; fileRef = D002FC421C952070006722DE /* gb.cc */; };
 		F22BCA9F1C8EC950008E42D0 /* UGBMainDisplayView.m in Sources */ = {isa = PBXBuildFile; fileRef = F22BCA9E1C8EC950008E42D0 /* UGBMainDisplayView.m */; };
 		F231B3BB1C8EB7F50082A3AA /* DMG_ROM.bin in Resources */ = {isa = PBXBuildFile; fileRef = F231B3BA1C8EB7F50082A3AA /* DMG_ROM.bin */; };
+		F281A1EA1CA362B70096459D /* UGBVRAMViewerWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = F281A1E81CA362B70096459D /* UGBVRAMViewerWindowController.m */; };
+		F281A1EB1CA362B70096459D /* UGBVRAMViewerWindowController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F281A1E91CA362B70096459D /* UGBVRAMViewerWindowController.xib */; };
 		F29093341C8D659C00FFF73E /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = F29093331C8D659C00FFF73E /* AppDelegate.m */; };
 		F29093371C8D659C00FFF73E /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = F29093361C8D659C00FFF73E /* main.m */; };
 		F290933A1C8D659C00FFF73E /* UGBMainDisplayViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = F29093391C8D659C00FFF73E /* UGBMainDisplayViewController.m */; };
@@ -69,6 +71,9 @@
 		F22BCA9D1C8EC950008E42D0 /* UGBMainDisplayView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UGBMainDisplayView.h; sourceTree = "<group>"; };
 		F22BCA9E1C8EC950008E42D0 /* UGBMainDisplayView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = UGBMainDisplayView.m; sourceTree = "<group>"; };
 		F231B3BA1C8EB7F50082A3AA /* DMG_ROM.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = DMG_ROM.bin; path = gbppu/DMG_ROM.bin; sourceTree = SOURCE_ROOT; };
+		F281A1E71CA362B70096459D /* UGBVRAMViewerWindowController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = UGBVRAMViewerWindowController.h; path = VRAMViewer/UGBVRAMViewerWindowController.h; sourceTree = "<group>"; };
+		F281A1E81CA362B70096459D /* UGBVRAMViewerWindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = UGBVRAMViewerWindowController.m; path = VRAMViewer/UGBVRAMViewerWindowController.m; sourceTree = "<group>"; };
+		F281A1E91CA362B70096459D /* UGBVRAMViewerWindowController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = UGBVRAMViewerWindowController.xib; path = VRAMViewer/UGBVRAMViewerWindowController.xib; sourceTree = "<group>"; };
 		F29093301C8D659C00FFF73E /* uGB.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = uGB.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F29093321C8D659C00FFF73E /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		F29093331C8D659C00FFF73E /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -167,6 +172,16 @@
 			name = Resources;
 			sourceTree = "<group>";
 		};
+		F281A1E61CA362450096459D /* VRAMViewer */ = {
+			isa = PBXGroup;
+			children = (
+				F281A1E71CA362B70096459D /* UGBVRAMViewerWindowController.h */,
+				F281A1E81CA362B70096459D /* UGBVRAMViewerWindowController.m */,
+				F281A1E91CA362B70096459D /* UGBVRAMViewerWindowController.xib */,
+			);
+			name = VRAMViewer;
+			sourceTree = "<group>";
+		};
 		F29093311C8D659C00FFF73E /* uGB */ = {
 			isa = PBXGroup;
 			children = (
@@ -178,6 +193,7 @@
 				F29093391C8D659C00FFF73E /* UGBMainDisplayViewController.m */,
 				F2EDB0F21C950B0300F92DD8 /* UGBMainWindowController.h */,
 				F2EDB0F31C950B0300F92DD8 /* UGBMainWindowController.m */,
+				F281A1E61CA362450096459D /* VRAMViewer */,
 				F290933B1C8D659C00FFF73E /* UGBRomDocument.h */,
 				F290933C1C8D659C00FFF73E /* UGBRomDocument.mm */,
 				F290933E1C8D659C00FFF73E /* Assets.xcassets */,
@@ -285,6 +301,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F281A1EB1CA362B70096459D /* UGBVRAMViewerWindowController.xib in Resources */,
 				F290933F1C8D659C00FFF73E /* Assets.xcassets in Resources */,
 				F231B3BB1C8EB7F50082A3AA /* DMG_ROM.bin in Resources */,
 				F29093421C8D659C00FFF73E /* Main.storyboard in Resources */,
@@ -328,6 +345,7 @@
 				F2EDB0FB1C957DAF00F92DD8 /* io.cc in Sources */,
 				F29093371C8D659C00FFF73E /* main.m in Sources */,
 				F29093341C8D659C00FFF73E /* AppDelegate.m in Sources */,
+				F281A1EA1CA362B70096459D /* UGBVRAMViewerWindowController.m in Sources */,
 				F2EDB0F91C957DAF00F92DD8 /* timer.cc in Sources */,
 				F2EDB0FD1C957DAF00F92DD8 /* serial.cc in Sources */,
 				F2EDB0FA1C957DAF00F92DD8 /* ppu.cc in Sources */,
