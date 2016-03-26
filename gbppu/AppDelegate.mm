@@ -216,8 +216,8 @@ static uint8_t keys;
 #else
         //	cartridge_filename = "/Users/mist/Documents/git/gb-timing/gb-scy.gb";
 //        cartridge_filename = "/Users/mist/Documents/git/gb-timing/gb-timing.gb";
-		cartridge_filename = "/Users/mist/Documents/git/gb-timing/gb-sprites.gb";
-//        cartridge_filename = "/Users/mist/tmp/gb/Tennis (W) [!].gb";
+//		cartridge_filename = "/Users/mist/Documents/git/gb-timing/gb-sprites.gb";
+        cartridge_filename = "/Users/mist/tmp/gb/Tennis (W) [!].gb";
 //        	cartridge_filename = "/Users/mist/Downloads/pocket/pocket.gb";
 
 
@@ -247,7 +247,7 @@ static uint8_t keys;
                 // wait until the next 60 hz tick
                 NSTimeInterval interval = [NSDate timeIntervalSinceReferenceDate];
                 if (interval < self.nextFrameTime) {
-                     [NSThread sleepForTimeInterval:self.nextFrameTime - interval];
+//                     [NSThread sleepForTimeInterval:self.nextFrameTime - interval];
                 } else if (interval - 20 * timePerFrame > self.nextFrameTime) {
                     self.nextFrameTime = interval;
                 }

@@ -15,6 +15,7 @@
 #include <string.h>
 
 //#define DEBUG
+#undef DEBUG
 
 #define PPU_NUM_LINES 154
 #define PPU_NUM_VISIBLE_LINES 144
@@ -60,8 +61,10 @@ void ppu::
 debug_flush()
 {
 #ifdef DEBUG
-	printf("PIX_%s\n", debug_string_pixel);
-	printf("FET_%s\n", debug_string_fetch);
+	if (*debug_string_pixel) {
+		printf("PIX_%s\n", debug_string_pixel);
+		printf("FET_%s\n", debug_string_fetch);
+	}
 #endif
 	debug_init();
 }
@@ -184,6 +187,8 @@ screen_reset()
 {
 	clock = 0;
 	line = 0;
+
+	debug_init();
 
 	line_reset();
 
@@ -368,8 +373,6 @@ pixel_reset()
 	bg_index_ctr = 0;
 	bg_t = 0;
 	window = 0;
-
-	debug_init();
 }
 
 void ppu::
@@ -377,6 +380,7 @@ line_reset()
 {
 	delay = 8;
 	skip = 8 | (_io.reg[rSCX] & 7);
+	pixel_x = 0xff;
 
 	for (int i = 0; i < 16; i++) {
 		bg_pixel_queue[i] = { 0, source_invalid };
@@ -407,10 +411,14 @@ pixel_step()
 	}
 #endif
 
+//	printf("\n%d, %d/%d\n", pixel_x, cur_sprite, sprites_visible);
+//	if (cur_sprite != sprites_visible) {
+//		printf("\n%d\n", ((oamentry *)oamram)[active_sprite_index[cur_sprite]].x);
+//	}
 //	printf("\n%d/%d, %d/%d\n", ((oamentry *)oamram)[active_sprite_index[cur_sprite]].x, pixel_x, cur_sprite, sprites_visible);
 	if (pixel_x == 160) {
 		// end this mode
-		pixel_x = 0; // so we don't hit this again in the next cycle
+		pixel_x = 0xff; // so we don't hit this again in the next cycle
 		line_reset();
 		hblank_reset();
 	} else if (cur_sprite != sprites_visible && ((oamentry *)oamram)[active_sprite_index[cur_sprite]].x == pixel_x) {
@@ -453,7 +461,7 @@ pixel_step()
 				pixel_x = 0;
 			}
 		} else {
-//			assert(palette_reg);
+			assert(palette_reg);
 			if (pixel.source == source_invalid) {
 				debug_pixel((char *)"*");
 			} else if (pixel.source == source_bg) {
@@ -531,7 +539,6 @@ fetch_step()
 		}
 		case 2: {
 			if (next_is_sprite) {
-				next_is_sprite = false;
 				line_within_tile = line - cur_oam->y + 16;
 				if (cur_oam->attr & 0x40) { // Y flip
 					line_within_tile = get_sprite_height() - line_within_tile - 1;
@@ -555,6 +562,7 @@ fetch_step()
 			debug_fetch((char *)(fetch_is_sprite ? "D" : "d"));
 			// T3: read tile data #1, output pixels
 			// (VRAM is idle)
+			next_is_sprite = false;
 			uint8_t data1 = vram_get_data();
 			bool flip = fetch_is_sprite ? !(cur_oam->attr & 0x20) : 0;
 			for (int i = 7; i >= 0; i--) {
@@ -569,7 +577,9 @@ fetch_step()
 				}
 			}
 			if (fetch_is_sprite) {
-				cur_sprite++;
+				if (cur_sprite != sprites_visible) {
+					cur_sprite++;
+				}
 				// VRAM is idle in T3, so if we have fetched a sprite,
 				// we can continue with T0 immediately
 				fetch_is_sprite = false;

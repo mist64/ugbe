@@ -22,7 +22,7 @@ gb::gb(const char *bootrom_filename, const char *cartridge_filename)
 	, _buttons(_io)
 	, _sound  (_io)
 {
-#if 1
+#if 0
 	FILE *file = fopen("/Users/mist/tmp/gb-sprites.dump", "r");
 	uint8_t *data = (uint8_t *)malloc(65536);
 	fread(data, 65536, 1, file);
@@ -36,13 +36,13 @@ gb::gb(const char *bootrom_filename, const char *cartridge_filename)
 //	_memory.write_internal(0xFF40, 0xE3);
 	for (int i = 0; i < 40; i++) {
 		uint8_t x, y;
-//		if (i == 0) {
-//			x = 1;
-//			y = 16;
-//		} else {
+		if (i == 0) {
+			x = 1;
+			y = 16;
+		} else {
 			x = 0;
 			y = 255;
-//		}
+		}
 		_memory.write_internal(0xFE00 + 4 * i, y);
 		_memory.write_internal(0xFE00 + 4 * i + 1, x);
 	}
@@ -52,7 +52,7 @@ gb::gb(const char *bootrom_filename, const char *cartridge_filename)
 int gb::
 step()
 {
-#if 1
+#if 0
 	_ppu.step();
 	return 0;
 #else
