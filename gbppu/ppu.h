@@ -61,16 +61,16 @@ private:
 	int bg_index_ctr; // offset of the current index within the line
 	int window;
 
-	pixel_t bg_pixel_queue[32];
-	int bg_pixel_queue_next;
+	pixel_t bg_pixel_queue[16];
 
 	bool screen_off;
 	bool vram_locked;
 	bool oamram_locked;
 
 	int pixel_x;
-	uint8_t sprite_x;
+	int compare_x;
 	int line;
+	uint8_t skip;
 
 	typedef enum {
 		mode_hblank = 0,

@@ -29,9 +29,23 @@ gb::gb(const char *bootrom_filename, const char *cartridge_filename)
 	fclose(file);
 
 	for (int addr = 0; addr < 65536; addr++) {
-		_memory.write_internal(addr, data[addr]);
+		if (addr != 0xFF46) {
+			_memory.write_internal(addr, data[addr]);
+		}
 	}
-	_memory.write(0xFF40, 0xE3);
+//	_memory.write_internal(0xFF40, 0xE3);
+	for (int i = 0; i < 40; i++) {
+		uint8_t x, y;
+//		if (i == 0) {
+//			x = 1;
+//			y = 16;
+//		} else {
+			x = 0;
+			y = 255;
+//		}
+		_memory.write_internal(0xFE00 + 4 * i, y);
+		_memory.write_internal(0xFE00 + 4 * i + 1, x);
+	}
 #endif
 }
 

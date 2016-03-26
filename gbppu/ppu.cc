@@ -14,8 +14,7 @@
 #include "io.h"
 #include <string.h>
 
-//#define debug_printf(...)
-#define debug_printf printf
+//#define DEBUG
 
 #define PPU_NUM_LINES 154
 #define PPU_NUM_VISIBLE_LINES 144
@@ -60,8 +59,10 @@ debug_fetch(char *s)
 void ppu::
 debug_flush()
 {
+#ifdef DEBUG
 	printf("PIX_%s\n", debug_string_pixel);
 	printf("FET_%s\n", debug_string_fetch);
+#endif
 	debug_init();
 }
 
@@ -211,24 +212,11 @@ vram_get_data()
 
 #pragma mark - Pixel Pipelines
 
-void ppu::
-bg_pixel_push(uint8_t value, uint8_t source)
-{
-	pixel_t p;
-	p.value = value;
-	p.source = source;
-
-	assert(bg_pixel_queue_next <= sizeof(bg_pixel_queue) / sizeof(*bg_pixel_queue));
-	bg_pixel_queue[bg_pixel_queue_next++] = p;
-}
-
 pixel_t ppu::
 bg_pixel_get()
 {
-	assert(bg_pixel_queue_next);
-
 	pixel_t p = bg_pixel_queue[0];
-	memmove(bg_pixel_queue, bg_pixel_queue + 1, --bg_pixel_queue_next);
+	memmove(bg_pixel_queue, bg_pixel_queue + 1, 15);
 	return p;
 }
 
@@ -343,7 +331,7 @@ oam_step()
 			oam_index = -1;
 			for (int i = 0; i < 40; i++) {
 				uint8_t spry = oam[i].y - 16;
-				if (!sprite_used[i] && oam[i].x && line >= spry && line < spry + sprite_height && oam[i].x < minx) {
+				if (!sprite_used[i] /* && oam[i].x */ && line >= spry && line < spry + sprite_height && oam[i].x < minx) {
 					minx = oam[i].x;
 					oam_index = i;
 				}
@@ -387,11 +375,11 @@ pixel_reset()
 void ppu::
 line_reset()
 {
-	pixel_x = 0;
-	sprite_x = 8;
-	bg_pixel_queue_next = 0;
-	for (int i = _io.reg[rSCX] & 7; i < 8; i++) {
-		bg_pixel_push(0, source_invalid);
+	compare_x = 0;
+	skip = 8 | (_io.reg[rSCX] & 7);
+
+	for (int i = 0; i < 16; i++) {
+		bg_pixel_queue[i] = { 0, source_invalid };
 	}
 	debug_flush();
 }
@@ -407,8 +395,8 @@ pixel_step()
 		}
 	}
 	if (sprites) {
-		printf("%03d/%03d BG  ", pixel_x, line);
-		for (int i = 0; i < bg_pixel_queue_next; i++) {
+		printf("%03d/%03d BG  ", compare_x, line);
+		for (int i = 0; i < 16; i++) {
 			printf("%c", bg_pixel_queue[i] + '0');
 		}
 		printf("\n        SPR ");
@@ -419,26 +407,27 @@ pixel_step()
 	}
 #endif
 
-	if (pixel_x >= 160) {
+//	printf("\n%d/%d, %d/%d\n", ((oamentry *)oamram)[active_sprite_index[cur_sprite]].x, compare_x, cur_sprite, sprites_visible);
+	if (pixel_x == 160) {
 		// end this mode
+		pixel_x = 0; // so we don't hit this again in the next cycle
 		line_reset();
 		hblank_reset();
-	} else if (cur_sprite != sprites_visible && ((oamentry *)oamram)[active_sprite_index[cur_sprite]].x == sprite_x) {
+	} else if (cur_sprite != sprites_visible && ((oamentry *)oamram)[active_sprite_index[cur_sprite]].x == compare_x) {
 		debug_pixel((char *)"s");
 		cur_oam = &((oamentry *)oamram)[active_sprite_index[cur_sprite]];
 		// we can't shift out pixels because a sprite starts at this position
 		next_is_sprite = true;
-	} else if (!window && _io.reg[rLCDC] & LCDCF_WINON && line >= _io.reg[rWY] && pixel_x == _io.reg[rWX]) {
+	} else if (!window && _io.reg[rLCDC] & LCDCF_WINON && line >= _io.reg[rWY] && compare_x == _io.reg[rWX]) {
 		debug_pixel((char *)"w");
 		// switch to window
 		window = 1;
 		// flush pixel buffer
 		// TODO: this clears sprites!
-		bg_pixel_queue_next = 0;
 		bg_index_ctr = 0;
-	} else if (bg_pixel_queue_next > 8) {
+	} else {
 		pixel_t pixel = bg_pixel_get();
-		uint8_t palette_reg;
+		uint8_t palette_reg = 0;
 		switch (pixel.source) {
 			case source_bg:
 				palette_reg = rBGP;
@@ -455,22 +444,31 @@ pixel_step()
 			default:
 				assert(false);
 		}
-		picture[line][pixel_x] = (_io.reg[palette_reg] >> (pixel.value << 1)) & 3;
-		if (pixel.source != source_invalid) {
-			pixel_x++;
-			sprite_x++;
-		}
-
-		if (pixel.source == source_invalid) {
-			debug_pixel((char *)"*");
+		compare_x++;
+		if (skip) {
+			debug_pixel((char *)"-");
+			if (!--skip) {
+				pixel_x = 0;
+			}
 		} else {
-			char s[2];
-			s[0] = pixel.value + '0';
-			s[1] = 0;
-			debug_pixel((char *)s);
+//			assert(palette_reg);
+			if (pixel.source == source_invalid) {
+				debug_pixel((char *)"*");
+			} else if (pixel.source == source_bg) {
+				char s[2];
+				s[0] = pixel.value + '0';
+				s[1] = 0;
+				debug_pixel((char *)s);
+			} else {
+				char s[2];
+				s[0] = pixel.value + 'A';
+				s[1] = 0;
+				debug_pixel((char *)s);
+			}
+
+			picture[line][pixel_x] = (_io.reg[palette_reg] >> (pixel.value << 1)) & 3;
+			pixel_x++;
 		}
-	} else {
-		debug_pixel((char *)".");
 	}
 }
 
@@ -480,14 +478,12 @@ void ppu::
 fetch_step()
 {
 	// the pixel transfer mode is VRAM-bound, so it runs at 1/2 speed = 2 MHz
-	if (!clock_even) {
-//		if (debug) printf("%s:%d T- %d (%d) = %d\n", __FILE__, __LINE__, pixel_x, bg_pixel_queue_next, pixel_x + bg_pixel_queue_next);
+	if (clock_even) {
 		debug_fetch((char *)"-");
 		return;
 	}
 
 	// background @ 2 MHz
-//	if (debug) printf("%s:%d T%d %d (%d) = %d\n", __FILE__, __LINE__, bg_t, pixel_x, bg_pixel_queue_next, pixel_x + bg_pixel_queue_next);
 	switch (bg_t) {
 		case 0: {
 		case0:
@@ -559,7 +555,6 @@ fetch_step()
 			// (VRAM is idle)
 			uint8_t data1 = vram_get_data();
 			bool flip = fetch_is_sprite ? !(cur_oam->attr & 0x20) : 0;
-			int skip = bg_index_ctr ? 0 : _io.reg[rSCX] & 7; // bg only
 			for (int i = 7; i >= 0; i--) {
 				int i2 = flip ? (7 - i) : i;
 				bool b0 = (data0 >> i2) & 1;
@@ -568,10 +563,7 @@ fetch_step()
 				if (fetch_is_sprite) {
 					sprite_pixel_set(i, value, cur_oam->attr & 0x10 ? source_obj1 : source_obj0, cur_oam->attr & 0x80);
 				} else {
-					bg_pixel_push(value, skip ? source_invalid : source_bg);
-					if (skip) {
-						skip--;
-					}
+					bg_pixel_queue[8 + (7 - i)] = { value, source_bg };
 				}
 			}
 			if (fetch_is_sprite) {
