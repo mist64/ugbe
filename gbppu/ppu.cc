@@ -375,7 +375,7 @@ pixel_reset()
 void ppu::
 line_reset()
 {
-	compare_x = 0;
+	delay = 8;
 	skip = 8 | (_io.reg[rSCX] & 7);
 
 	for (int i = 0; i < 16; i++) {
@@ -395,7 +395,7 @@ pixel_step()
 		}
 	}
 	if (sprites) {
-		printf("%03d/%03d BG  ", compare_x, line);
+		printf("%03d/%03d BG  ", pixel_x, line);
 		for (int i = 0; i < 16; i++) {
 			printf("%c", bg_pixel_queue[i] + '0');
 		}
@@ -407,18 +407,18 @@ pixel_step()
 	}
 #endif
 
-//	printf("\n%d/%d, %d/%d\n", ((oamentry *)oamram)[active_sprite_index[cur_sprite]].x, compare_x, cur_sprite, sprites_visible);
+//	printf("\n%d/%d, %d/%d\n", ((oamentry *)oamram)[active_sprite_index[cur_sprite]].x, pixel_x, cur_sprite, sprites_visible);
 	if (pixel_x == 160) {
 		// end this mode
 		pixel_x = 0; // so we don't hit this again in the next cycle
 		line_reset();
 		hblank_reset();
-	} else if (cur_sprite != sprites_visible && ((oamentry *)oamram)[active_sprite_index[cur_sprite]].x == compare_x) {
+	} else if (cur_sprite != sprites_visible && ((oamentry *)oamram)[active_sprite_index[cur_sprite]].x == pixel_x) {
 		debug_pixel((char *)"s");
 		cur_oam = &((oamentry *)oamram)[active_sprite_index[cur_sprite]];
 		// we can't shift out pixels because a sprite starts at this position
 		next_is_sprite = true;
-	} else if (!window && _io.reg[rLCDC] & LCDCF_WINON && line >= _io.reg[rWY] && compare_x == _io.reg[rWX]) {
+	} else if (!window && _io.reg[rLCDC] & LCDCF_WINON && line >= _io.reg[rWY] && pixel_x == _io.reg[rWX]) {
 		debug_pixel((char *)"w");
 		// switch to window
 		window = 1;
@@ -444,8 +444,10 @@ pixel_step()
 			default:
 				assert(false);
 		}
-		compare_x++;
-		if (skip) {
+		if (delay) {
+			debug_pixel((char *)".");
+			delay--;
+		} else if (skip) {
 			debug_pixel((char *)"-");
 			if (!--skip) {
 				pixel_x = 0;

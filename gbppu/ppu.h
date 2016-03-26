@@ -68,8 +68,8 @@ private:
 	bool oamram_locked;
 
 	int pixel_x;
-	int compare_x;
 	int line;
+	uint8_t delay;
 	uint8_t skip;
 
 	typedef enum {
