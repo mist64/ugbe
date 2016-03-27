@@ -217,9 +217,9 @@ static uint8_t keys;
         //	cartridge_filename = "/Users/mist/Documents/git/gb-timing/gb-scy.gb";
 //        cartridge_filename = "/Users/mist/Documents/git/gb-timing/gb-timing.gb";
 //		cartridge_filename = "/Users/mist/Documents/git/gb-timing/gb-sprites.gb";
-//		cartridge_filename = "/Users/mist/tmp/gb/Tennis (W) [!].gb";
+		cartridge_filename = "/Users/mist/tmp/gb/Tennis (W) [!].gb";
 //		cartridge_filename = "/Users/mist/tmp/gb/Super Mario Land 2 - 6 Golden Coins (UE) (V1.2) [!].gb";
-        	cartridge_filename = "/Users/mist/Downloads/pocket/pocket.gb";
+//        	cartridge_filename = "/Users/mist/Downloads/pocket/pocket.gb";
 
 
         bootrom_filename = "/Users/mist/Documents/git/gbcpu/gbppu/DMG_ROM.bin";

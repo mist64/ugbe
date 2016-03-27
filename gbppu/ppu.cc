@@ -225,20 +225,10 @@ bg_pixel_get()
 }
 
 void ppu::
-sprite_pixel_set(int i, uint8_t value, uint8_t source, bool priority)
+sprite_pixel_set(int i, pixel_t p, bool priority)
 {
-	pixel_t p;
-	p.value = value;
-	p.source = source;
-
-	// XXX
-	if (!(i >= 0 && i < sizeof(bg_pixel_queue))) {
-//		printf("%s:%d %i\n", __FILE__, __LINE__, i);
-		return;
-	}
-
-//	printf("%d ", i);
 	assert(i >= 0 && i < sizeof(bg_pixel_queue));
+
 	if (p.value && // don't draw transparent sprite pixels
 		bg_pixel_queue[i].source == source_bg && // don't draw over other sprites
 		(!priority || !bg_pixel_queue[i].value)) { // don't draw if behind bg pixels
@@ -564,14 +554,12 @@ fetch_step()
 				break;
 			}
 			uint8_t data1 = vram_get_data();
-			bool flip = fetch_is_sprite ? !(cur_oam->attr & 0x20) : 0;
 			for (int i = 7; i >= 0; i--) {
-				int i2 = flip ? (7 - i) : i;
-				bool b0 = (data0 >> i2) & 1;
-				bool b1 = (data1 >> i2) & 1;
+				bool b0 = (data0 >> i) & 1;
+				bool b1 = (data1 >> i) & 1;
 				uint8_t value = b0 | (b1 << 1);
 				if (fetch_is_sprite) {
-					sprite_pixel_set(i, value, cur_oam->attr & 0x10 ? source_obj1 : source_obj0, cur_oam->attr & 0x80);
+					sprite_pixel_set((cur_oam->attr & 0x20) ? i : 7 - i, { value, (unsigned char)(cur_oam->attr & 0x10 ? source_obj1 : source_obj0) }, cur_oam->attr & 0x80);
 				} else {
 					bg_pixel_queue[8 + (7 - i)] = { value, source_bg };
 				}

@@ -121,7 +121,8 @@ private:
 	void oam_step();
 	void bg_pixel_push(uint8_t value, uint8_t source);
 	pixel_t bg_pixel_get();
-	void sprite_pixel_set(int i, uint8_t value, uint8_t source, bool priority);
+	void sprite_pixel_set(int i, pixel_t p, bool priority);
+
 	pixel_t sprite_pixel_get();
 
 	void hblank_reset();
