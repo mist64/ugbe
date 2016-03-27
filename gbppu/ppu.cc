@@ -390,15 +390,18 @@ pixel_step()
 		bg_count = 0;
 		bg_index_ctr = 0;
 	} else if (!bg_count) {
+		// no background/window pixels in the upper half of the queue -> wait for fetch to complete
 		debug_pixel('_');
 	} else {
+		// output a pixel
 		pixel_t pixel = bg_pixel_queue[0];
 		memmove(bg_pixel_queue, bg_pixel_queue + 1, 15);
+		bg_count--;
 		uint8_t palette_reg = pixel.source == source_obj0 ? rOBP0 :
 							  pixel.source == source_obj1 ? rOBP1 :
 							  rBGP;
-		bg_count--;
 		if (skip) {
+			// the pixel is skipped because of SCX
 			debug_pixel('-');
 			--skip;
 		} else {
@@ -449,12 +452,7 @@ fetch_step()
 		case 1: {
 			debug_fetch(fetch_is_sprite ? 'B' : 'b');
 			// T1: read index, generate tile data address and prepare reading tile data #0
-			uint8_t index;
-			if (fetch_is_sprite) {
-				index = cur_oam->tile;
-			} else {
-				index = vram_get_data();
-			}
+			uint8_t index = fetch_is_sprite ? cur_oam->tile : vram_get_data();
 			if (fetch_is_sprite || (_io.reg[rLCDC] & LCDCF_BG8000)) {
 				bgptr = index * 16;
 			} else {
@@ -500,13 +498,9 @@ fetch_step()
 				if (cur_sprite != sprites_visible) {
 					cur_sprite++;
 				}
-				// VRAM is idle in T3, so if we have fetched a sprite,
-				// we can continue with T0 immediately
 				fetch_is_sprite = false;
 			} else {
 				bg_index_ctr++;
-				// VRAM is idle in T3, but background fetches have to take
-				// 4 cycles, otherwise 8 MHz pixel output cannot keep up
 			}
 			bg_t = 0;
 			break;
