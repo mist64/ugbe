@@ -209,14 +209,14 @@ screen_reset()
 void ppu::
 vram_set_address(uint16_t addr)
 {
-//	assert(vram_locked);
+	assert(vram_locked);
 	vram_address = addr;
 }
 
 uint8_t ppu::
 vram_get_data()
 {
-//	assert(vram_locked);
+	assert(vram_locked);
 	return vram[vram_address];
 }
 
@@ -290,16 +290,16 @@ oam_reset()
 void ppu::
 oam_step()
 {
-	oamentry *oam = (oamentry *)oamram;
-	int sprite_used[40];
-
 	// do all the logic in the first cycle...
 	if (!oam_mode_counter && _io.reg[rLCDC] & LCDCF_OBJON) {
+		oamentry *oam = (oamentry *)oamram;
+		bool sprite_used[40];
+
 		// find the 10 leftmost sprites
 		uint8_t sprite_height = get_sprite_height();
 
 		for (int i = 0; i < 40; i++) {
-			sprite_used[i] = 0;
+			sprite_used[i] = false;
 		}
 
 		sprites_visible = 0;
@@ -317,7 +317,7 @@ oam_step()
 			}
 			if (oam_index >= 0) {
 //				printf("%d/%d ", oam[oam_index].x, oam[oam_index].y);
-				sprite_used[oam_index] = 1;
+				sprite_used[oam_index] = true;
 				active_sprite_index[sprites_visible] = oam_index;
 				sprites_visible++;
 			}
@@ -418,6 +418,10 @@ pixel_step()
 void ppu::
 fetch_step()
 {
+	if (mode != mode_pixel) {
+		// pixel_step() has ended this mode
+		return;
+	}
 	// the pixel transfer mode is VRAM-bound, so it runs at 1/2 speed = 2 MHz
 	if (clock_even) {
 		debug_fetch('-');
@@ -428,7 +432,7 @@ fetch_step()
 	switch (bg_t) {
 		case 0: {
 		case0:
-			debug_fetch(fetch_is_sprite ? 'A' : 'a');
+			debug_fetch('a');
 			// T0: generate tile map address and prepare reading index
 			uint8_t xbase;
 			uint8_t ybase;
