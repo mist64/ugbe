@@ -424,7 +424,14 @@ pixel_step()
 		debug_pixel((char *)"s");
 		cur_oam = &((oamentry *)oamram)[active_sprite_index[cur_sprite]];
 		// we can't shift out pixels because a sprite starts at this position
-		next_is_sprite = true;
+		line_within_tile = line - cur_oam->y + 16;
+		if (cur_oam->attr & 0x40) { // Y flip
+			line_within_tile = get_sprite_height() - line_within_tile - 1;
+		}
+		if (!fetch_is_sprite) {
+			fetch_is_sprite = true;
+			bg_t = 1;
+		}
 	} else if (!window && _io.reg[rLCDC] & LCDCF_WINON && line >= _io.reg[rWY] && pixel_x == _io.reg[rWX]) {
 		debug_pixel((char *)"w");
 		// switch to window
@@ -541,19 +548,6 @@ fetch_step()
 			break;
 		}
 		case 2: {
-			if (next_is_sprite) {
-				line_within_tile = line - cur_oam->y + 16;
-				if (cur_oam->attr & 0x40) { // Y flip
-					line_within_tile = get_sprite_height() - line_within_tile - 1;
-				}
-				if (!fetch_is_sprite) {
-					debug_fetch((char *)"x");
-					fetch_is_sprite = true;
-					bg_t = 1;
-					break;
-				}
-				fetch_is_sprite = true;
-			}
 			debug_fetch((char *)(fetch_is_sprite ? "C" : "c"));
 			// T2: read tile data #0, prepare reading tile data #1
 			data0 = vram_get_data();
@@ -565,7 +559,6 @@ fetch_step()
 			debug_fetch((char *)(fetch_is_sprite ? "D" : "d"));
 			// T3: read tile data #1, output pixels
 			// (VRAM is idle)
-			next_is_sprite = false;
 			uint8_t data1 = vram_get_data();
 			bool flip = fetch_is_sprite ? !(cur_oam->attr & 0x20) : 0;
 			for (int i = 7; i >= 0; i--) {
