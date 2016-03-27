@@ -415,7 +415,7 @@ pixel_step()
 //		printf("\n%d\n", ((oamentry *)oamram)[active_sprite_index[cur_sprite]].x);
 //	}
 //	printf("\n%d/%d, %d/%d\n", ((oamentry *)oamram)[active_sprite_index[cur_sprite]].x, pixel_x, cur_sprite, sprites_visible);
-	if (pixel_x == 160) {
+	if (pixel_x == 160 + 8) {
 		// end this mode
 		pixel_x = 0xff; // so we don't hit this again in the next cycle
 		line_reset();
@@ -476,7 +476,9 @@ pixel_step()
 					debug_pixel((char *)s);
 				}
 
-				picture[line][pixel_x] = (_io.reg[palette_reg] >> (pixel.value << 1)) & 3;
+				if (pixel_x >= 8) {
+					picture[line][pixel_x - 8] = (_io.reg[palette_reg] >> (pixel.value << 1)) & 3;
+				}
 			}
 			pixel_x++;
 		}
