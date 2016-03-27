@@ -19,6 +19,7 @@ static CGImageRef CreateGameBoyScreenCGImageRefFromPicture(uint8_t *pictureCopy,
 @property (nonatomic) NSTimeInterval nextFrameTime;
 @property (nonatomic) BOOL shouldEnd;
 @property (nonatomic) dispatch_semaphore_t pauseSemaphore;
+@property (nonatomic) dispatch_queue_t simulatorQueue;
 @end
 
 @implementation UGBRomDocument
@@ -45,8 +46,9 @@ static CGImageRef CreateGameBoyScreenCGImageRefFromPicture(uint8_t *pictureCopy,
 
 - (void)startEmulation {
     _pauseSemaphore = dispatch_semaphore_create(0);
+    _simulatorQueue = dispatch_queue_create([[NSString stringWithFormat:@"dom.ugbe.%@", self.fileURL.lastPathComponent] UTF8String], DISPATCH_QUEUE_SERIAL);
     
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+    dispatch_async(_simulatorQueue, ^{
         char *bootrom_filename = (char *)[[[NSBundle mainBundle] URLForResource:@"DMG_ROM" withExtension:@"bin"] fileSystemRepresentation];
         char *rom_filename = (char *)[[self fileURL] fileSystemRepresentation];
 
