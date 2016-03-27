@@ -224,18 +224,6 @@ bg_pixel_get()
 	return p;
 }
 
-void ppu::
-sprite_pixel_set(int i, pixel_t p, bool priority)
-{
-	assert(i >= 0 && i < sizeof(bg_pixel_queue));
-
-	if (p.value && // don't draw transparent sprite pixels
-		bg_pixel_queue[i].source == source_bg && // don't draw over other sprites
-		(!priority || !bg_pixel_queue[i].value)) { // don't draw if behind bg pixels
-		bg_pixel_queue[i] = p;
-	}
-}
-
 
 #pragma mark - Mode 0: H-Blank
 
@@ -550,22 +538,23 @@ fetch_step()
 			// T3: read tile data #1, output pixels
 			// (VRAM is idle)
 			if (!fetch_is_sprite && bg_count) {
-				// repeat T3
+				// the right half of the pixel pipeline isn't ready yet, repeat T3
 				break;
 			}
 			uint8_t data1 = vram_get_data();
 			for (int i = 7; i >= 0; i--) {
-				bool b0 = (data0 >> i) & 1;
-				bool b1 = (data1 >> i) & 1;
-				uint8_t value = b0 | (b1 << 1);
+				uint8_t value = ((data0 >> i) & 1) | (((data1 >> i) & 1) << 1);
 				if (fetch_is_sprite) {
-					sprite_pixel_set((cur_oam->attr & 0x20) ? i : 7 - i, { value, (unsigned char)(cur_oam->attr & 0x10 ? source_obj1 : source_obj0) }, cur_oam->attr & 0x80);
+					uint8_t i2 = (cur_oam->attr & 0x20) ? i : 7 - i; // flip
+					if (value && // don't draw transparent sprite pixels
+						bg_pixel_queue[i2].source == source_bg && // don't draw over other sprites
+						(!(cur_oam->attr & 0x80) || !bg_pixel_queue[i2].value)) { // don't draw if behind bg pixels
+						bg_pixel_queue[i2] = { value, (unsigned char)(cur_oam->attr & 0x10 ? source_obj1 : source_obj0) };
+					}
 				} else {
 					bg_pixel_queue[8 + (7 - i)] = { value, source_bg };
+					bg_count++;
 				}
-			}
-			if (!fetch_is_sprite) {
-				bg_count += 8;
 			}
 			if (fetch_is_sprite) {
 				if (cur_sprite != sprites_visible) {
