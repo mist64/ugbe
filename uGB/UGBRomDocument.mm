@@ -45,8 +45,15 @@ static CGImageRef CreateGameBoyScreenCGImageRefFromPicture(uint8_t *pictureCopy,
 }
 
 - (void)startEmulation {
-    _pauseSemaphore = dispatch_semaphore_create(0);
-    _simulatorQueue = dispatch_queue_create([[NSString stringWithFormat:@"dom.ugbe.%@", self.fileURL.lastPathComponent] UTF8String], DISPATCH_QUEUE_SERIAL);
+    if (_pauseSemaphore) {
+        // free a waiting emulator if restarted on pause
+        dispatch_semaphore_signal(_pauseSemaphore);
+    }
+    dispatch_queue_t simulatorQueue = dispatch_queue_create([[NSString stringWithFormat:@"dom.ugbe.%@", self.fileURL.lastPathComponent] UTF8String], DISPATCH_QUEUE_SERIAL);
+    self.simulatorQueue = simulatorQueue;
+
+    dispatch_semaphore_t pauseSemaphore = dispatch_semaphore_create(0);
+    _pauseSemaphore = pauseSemaphore;
     
     dispatch_async(_simulatorQueue, ^{
         char *bootrom_filename = (char *)[[[NSBundle mainBundle] URLForResource:@"DMG_ROM" withExtension:@"bin"] fileSystemRepresentation];
@@ -60,7 +67,7 @@ static CGImageRef CreateGameBoyScreenCGImageRefFromPicture(uint8_t *pictureCopy,
         
         for (;;) {
             int ret = gameboy->step();
-            if (ret || self.shouldEnd) {
+            if (ret || simulatorQueue != self.simulatorQueue) {
                 break;
             }
             if (gameboy->is_ppu_dirty()) {
@@ -88,7 +95,7 @@ static CGImageRef CreateGameBoyScreenCGImageRefFromPicture(uint8_t *pictureCopy,
                     self.nextFrameTime = [NSDate timeIntervalSinceReferenceDate] + timePerFrame;
                 }
                 if (self.isPaused) {
-                    dispatch_semaphore_wait(_pauseSemaphore, DISPATCH_TIME_FOREVER);
+                    dispatch_semaphore_wait(pauseSemaphore, DISPATCH_TIME_FOREVER);
                     self.nextFrameTime = [NSDate timeIntervalSinceReferenceDate] + timePerFrame;
                 }
             }
@@ -112,7 +119,7 @@ static CGImageRef CreateGameBoyScreenCGImageRefFromPicture(uint8_t *pictureCopy,
 
 - (void)close {
     [super close];
-    self.shouldEnd = YES;
+    self.simulatorQueue = nil;
 }
 
 - (void)copy:(id)sender {
@@ -120,6 +127,11 @@ static CGImageRef CreateGameBoyScreenCGImageRefFromPicture(uint8_t *pictureCopy,
     [board clearContents];
     NSImage *image = [[NSImage alloc] initWithCGImage:(__bridge CGImageRef)self.mostRecentCGImageRef size:NSMakeSize(160,144)];
     [board writeObjects:@[image]];
+}
+
+- (IBAction)reset:(id)sender {
+    self.frameCount = 0;
+    [self startEmulation];
 }
 
 #define TILECOUNT (256 + 128)

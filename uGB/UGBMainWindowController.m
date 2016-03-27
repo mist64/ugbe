@@ -85,5 +85,4 @@
     [self.vramViewerWindowController showWindow:sender];
 }
 
-
 @end

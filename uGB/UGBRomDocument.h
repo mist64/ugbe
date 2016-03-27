@@ -31,5 +31,7 @@ typedef NS_OPTIONS(uint8_t, UGBKeyCode) {
 @property (nonatomic, strong) id mostRecentCGImageRef;
 
 - (CGImageRef)createImageRefOfTileMap;
+
+- (IBAction)reset:(id)sender;
 @end
 
