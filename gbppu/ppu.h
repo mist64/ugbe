@@ -70,6 +70,7 @@ private:
 	int pixel_x;
 	int line;
 	uint8_t skip;
+	uint8_t *ppicture;
 
 	typedef enum {
 		mode_hblank = 0,

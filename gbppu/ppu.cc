@@ -192,6 +192,7 @@ screen_reset()
 {
 	clock = 0;
 	line = 0;
+	ppicture = (uint8_t *)picture;
 
 	debug_init();
 
@@ -272,6 +273,7 @@ vblank_step()
 		clock = 0;
 		if (++line == PPU_NUM_LINES) {
 			line = 0;
+			ppicture = (uint8_t *)picture;
 			oam_reset();
 			dirty = true;
 		}
@@ -462,15 +464,13 @@ pixel_step()
 				}
 
 				if (pixel_x >= 8) {
-					picture[line][pixel_x - 8] = (_io.reg[palette_reg] >> (pixel.value << 1)) & 3;
+					*ppicture++ = (_io.reg[palette_reg] >> (pixel.value << 1)) & 3;
 				}
 			}
 			pixel_x++;
 		}
 	}
 }
-
-//static bool debug = 0;
 
 void ppu::
 fetch_step()
