@@ -377,13 +377,14 @@ pixel_reset()
 void ppu::
 line_reset()
 {
-	delay = 8;
 	skip = 8 | (_io.reg[rSCX] & 7);
-	pixel_x = 0xff;
+	pixel_x = -(_io.reg[rSCX] & 7);
 
 	for (int i = 0; i < 16; i++) {
 		bg_pixel_queue[i] = { 0, source_invalid };
 	}
+	bg_count = 0;
+
 	debug_flush();
 }
 
@@ -440,30 +441,28 @@ pixel_step()
 		// TODO: this clears sprites!
 		bg_index_ctr = 0;
 	} else {
-		pixel_t pixel = bg_pixel_get();
-		uint8_t palette_reg = 0;
-		switch (pixel.source) {
-			case source_bg:
-				palette_reg = rBGP;
-				break;
-			case source_obj0:
-				palette_reg = rOBP0;
-				break;
-			case source_obj1:
-				palette_reg = rOBP1;
-				break;
-			case source_invalid:
-				// blank pixel, do nothing
-				break;
-			default:
-				assert(false);
-		}
-		if (delay) {
-			debug_pixel((char *)".");
-			if (!--delay) {
-				pixel_x = -(_io.reg[rSCX] & 7);
-			}
+		if (!bg_count) {
+			debug_pixel((char *)"_");
 		} else {
+			pixel_t pixel = bg_pixel_get();
+			uint8_t palette_reg = 0;
+			switch (pixel.source) {
+				case source_bg:
+					palette_reg = rBGP;
+					break;
+				case source_obj0:
+					palette_reg = rOBP0;
+					break;
+				case source_obj1:
+					palette_reg = rOBP1;
+					break;
+				case source_invalid:
+					// blank pixel, do nothing
+					break;
+				default:
+					assert(false);
+			}
+			bg_count--;
 			if (skip) {
 				debug_pixel((char *)"-");
 				--skip;
@@ -559,6 +558,10 @@ fetch_step()
 			debug_fetch((char *)(fetch_is_sprite ? "D" : "d"));
 			// T3: read tile data #1, output pixels
 			// (VRAM is idle)
+			if (!fetch_is_sprite && bg_count) {
+				// repeat T3
+				break;
+			}
 			uint8_t data1 = vram_get_data();
 			bool flip = fetch_is_sprite ? !(cur_oam->attr & 0x20) : 0;
 			for (int i = 7; i >= 0; i--) {
@@ -571,6 +574,9 @@ fetch_step()
 				} else {
 					bg_pixel_queue[8 + (7 - i)] = { value, source_bg };
 				}
+			}
+			if (!fetch_is_sprite) {
+				bg_count += 8;
 			}
 			if (fetch_is_sprite) {
 				if (cur_sprite != sprites_visible) {

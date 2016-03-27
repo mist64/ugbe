@@ -69,7 +69,6 @@ private:
 
 	int pixel_x;
 	int line;
-	uint8_t delay;
 	uint8_t skip;
 
 	typedef enum {
@@ -90,7 +89,7 @@ private:
 	uint8_t data0;
 
 	bool fetch_is_sprite;
-	bool next_is_sprite;
+	uint8_t bg_count;
 
 #pragma pack(push, 1)
 	typedef struct {

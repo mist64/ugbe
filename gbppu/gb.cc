@@ -39,7 +39,7 @@ gb::gb(const char *bootrom_filename, const char *cartridge_filename)
 	for (int i = 0; i < 40; i++) {
 		uint8_t x, y;
 		if (i == 0) {
-			x = 1;
+			x = 7;
 			y = 16;
 		} else {
 			x = 0;
