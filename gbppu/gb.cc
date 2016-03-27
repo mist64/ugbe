@@ -12,6 +12,8 @@
 
 #include "gb.h"
 
+//#define DEBUG_PPU
+
 gb::gb(const char *bootrom_filename, const char *cartridge_filename)
 	: _ppu    (_memory, _io)
 	, _cpu    (_memory, _io)
@@ -22,7 +24,7 @@ gb::gb(const char *bootrom_filename, const char *cartridge_filename)
 	, _buttons(_io)
 	, _sound  (_io)
 {
-#if 0
+#ifdef DEBUG_PPU
 	FILE *file = fopen("/Users/mist/tmp/gb-sprites.dump", "r");
 	uint8_t *data = (uint8_t *)malloc(65536);
 	fread(data, 65536, 1, file);
@@ -52,7 +54,7 @@ gb::gb(const char *bootrom_filename, const char *cartridge_filename)
 int gb::
 step()
 {
-#if 0
+#ifdef DEBUG_PPU
 	_ppu.step();
 	return 0;
 #else

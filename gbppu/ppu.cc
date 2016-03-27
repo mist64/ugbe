@@ -14,7 +14,6 @@
 #include "io.h"
 #include <string.h>
 
-//#define DEBUG
 #undef DEBUG
 
 #define PPU_NUM_LINES 154
@@ -454,29 +453,31 @@ pixel_step()
 		}
 		if (delay) {
 			debug_pixel((char *)".");
-			delay--;
-		} else if (skip) {
-			debug_pixel((char *)"-");
-			if (!--skip) {
-				pixel_x = 0;
+			if (!--delay) {
+				pixel_x = -(_io.reg[rSCX] & 7);
 			}
 		} else {
-			assert(palette_reg);
-			if (pixel.source == source_invalid) {
-				debug_pixel((char *)"*");
-			} else if (pixel.source == source_bg) {
-				char s[2];
-				s[0] = pixel.value + '0';
-				s[1] = 0;
-				debug_pixel((char *)s);
+			if (skip) {
+				debug_pixel((char *)"-");
+				--skip;
 			} else {
-				char s[2];
-				s[0] = pixel.value + 'A';
-				s[1] = 0;
-				debug_pixel((char *)s);
-			}
+				assert(palette_reg);
+				if (pixel.source == source_invalid) {
+					debug_pixel((char *)"*");
+				} else if (pixel.source == source_bg) {
+					char s[2];
+					s[0] = pixel.value + '0';
+					s[1] = 0;
+					debug_pixel((char *)s);
+				} else {
+					char s[2];
+					s[0] = pixel.value + 'A';
+					s[1] = 0;
+					debug_pixel((char *)s);
+				}
 
-			picture[line][pixel_x] = (_io.reg[palette_reg] >> (pixel.value << 1)) & 3;
+				picture[line][pixel_x] = (_io.reg[palette_reg] >> (pixel.value << 1)) & 3;
+			}
 			pixel_x++;
 		}
 	}
