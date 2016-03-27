@@ -106,8 +106,8 @@ private:
 	char debug_string_pixel[1024];
 	char debug_string_fetch[1024];
 	void debug_init();
-	void debug_pixel(char[]);
-	void debug_fetch(char[]);
+	void debug_pixel(char);
+	void debug_fetch(char);
 	void debug_flush();
 
 	void screen_reset();

@@ -39,8 +39,11 @@ debug_init()
 }
 
 void ppu::
-debug_pixel(char *s)
+debug_pixel(char c)
 {
+	char s[2];
+	s[0] = c;
+	s[1] = 0;
 	if (strlen(debug_string_pixel) < 160) {
 		strcat(debug_string_pixel, s);
 	}
@@ -48,8 +51,11 @@ debug_pixel(char *s)
 }
 
 void ppu::
-debug_fetch(char *s)
+debug_fetch(char c)
 {
+	char s[2];
+	s[0] = c;
+	s[1] = 0;
 	if (strlen(debug_string_fetch) < 160) {
 		strcat(debug_string_fetch, s);
 	}
@@ -401,7 +407,7 @@ pixel_step()
 		line_reset();
 		hblank_reset();
 	} else if (cur_sprite != sprites_visible && ((oamentry *)oamram)[active_sprite_index[cur_sprite]].x == pixel_x) {
-		debug_pixel((char *)"s");
+		debug_pixel('s');
 		cur_oam = &((oamentry *)oamram)[active_sprite_index[cur_sprite]];
 		// we can't shift out pixels because a sprite starts at this position
 		line_within_tile = line - cur_oam->y + 16;
@@ -413,7 +419,7 @@ pixel_step()
 			bg_t = 1;
 		}
 	} else if (!window && _io.reg[rLCDC] & LCDCF_WINON && line >= _io.reg[rWY] && pixel_x + 8 == _io.reg[rWX]) {
-		debug_pixel((char *)"w");
+		debug_pixel('w');
 		// switch to window
 		window = 1;
 		// flush pixel buffer
@@ -421,7 +427,7 @@ pixel_step()
 		bg_index_ctr = 0;
 	} else {
 		if (!bg_count) {
-			debug_pixel((char *)"_");
+			debug_pixel('_');
 		} else {
 			pixel_t pixel = bg_pixel_get();
 			uint8_t palette_reg = 0;
@@ -443,22 +449,16 @@ pixel_step()
 			}
 			bg_count--;
 			if (skip) {
-				debug_pixel((char *)"-");
+				debug_pixel('-');
 				--skip;
 			} else {
 				assert(palette_reg);
 				if (pixel.source == source_invalid) {
-					debug_pixel((char *)"*");
+					debug_pixel('*');
 				} else if (pixel.source == source_bg) {
-					char s[2];
-					s[0] = pixel.value + '0';
-					s[1] = 0;
-					debug_pixel((char *)s);
+					debug_pixel(pixel.value + '0');
 				} else {
-					char s[2];
-					s[0] = pixel.value + 'A';
-					s[1] = 0;
-					debug_pixel((char *)s);
+					debug_pixel(pixel.value + 'A');
 				}
 
 				if (pixel_x >= 8) {
@@ -477,7 +477,7 @@ fetch_step()
 {
 	// the pixel transfer mode is VRAM-bound, so it runs at 1/2 speed = 2 MHz
 	if (clock_even) {
-		debug_fetch((char *)"-");
+		debug_fetch('-');
 		return;
 	}
 
@@ -485,7 +485,7 @@ fetch_step()
 	switch (bg_t) {
 		case 0: {
 		case0:
-			debug_fetch((char *)(fetch_is_sprite ? "A" : "a"));
+			debug_fetch(fetch_is_sprite ? 'A' : 'a');
 			// T0: generate tile map address and prepare reading index
 			uint8_t xbase;
 			uint8_t ybase;
@@ -507,7 +507,7 @@ fetch_step()
 			break;
 		}
 		case 1: {
-			debug_fetch((char *)(fetch_is_sprite ? "B" : "b"));
+			debug_fetch(fetch_is_sprite ? 'B' : 'b');
 			// T1: read index, generate tile data address and prepare reading tile data #0
 			uint8_t index;
 			if (fetch_is_sprite) {
@@ -526,7 +526,7 @@ fetch_step()
 			break;
 		}
 		case 2: {
-			debug_fetch((char *)(fetch_is_sprite ? "C" : "c"));
+			debug_fetch(fetch_is_sprite ? 'C' : 'c');
 			// T2: read tile data #0, prepare reading tile data #1
 			data0 = vram_get_data();
 			vram_set_address(bgptr + 1);
@@ -534,7 +534,7 @@ fetch_step()
 			break;
 		}
 		case 3: {
-			debug_fetch((char *)(fetch_is_sprite ? "D" : "d"));
+			debug_fetch(fetch_is_sprite ? 'D' : 'd');
 			// T3: read tile data #1, output pixels
 			// (VRAM is idle)
 			if (!fetch_is_sprite && bg_count) {
