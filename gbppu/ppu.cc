@@ -334,7 +334,7 @@ oam_step()
 			uint8_t minx = 0xff;
 			oam_index = -1;
 			for (int i = 0; i < 40; i++) {
-				uint8_t spry = oam[i].y - 16;
+				int spry = oam[i].y - 16;
 				if (!sprite_used[i] /* && oam[i].x */ && line >= spry && line < spry + sprite_height && oam[i].x < minx) {
 					minx = oam[i].x;
 					oam_index = i;
