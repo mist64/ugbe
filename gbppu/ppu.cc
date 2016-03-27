@@ -434,12 +434,12 @@ pixel_step()
 			fetch_is_sprite = true;
 			bg_t = 1;
 		}
-	} else if (!window && _io.reg[rLCDC] & LCDCF_WINON && line >= _io.reg[rWY] && pixel_x == _io.reg[rWX]) {
+	} else if (!window && _io.reg[rLCDC] & LCDCF_WINON && line >= _io.reg[rWY] && pixel_x + 8 == _io.reg[rWX]) {
 		debug_pixel((char *)"w");
 		// switch to window
 		window = 1;
 		// flush pixel buffer
-		// TODO: this clears sprites!
+		bg_count = 0;
 		bg_index_ctr = 0;
 	} else {
 		if (!bg_count) {
