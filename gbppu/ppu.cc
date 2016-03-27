@@ -350,7 +350,6 @@ oam_step()
 void ppu::
 pixel_reset()
 {
-//	printf("\nR");
 	mode = mode_pixel;
 	vram_locked = true;
 	oamram_locked = true;
@@ -378,31 +377,6 @@ line_reset()
 void ppu::
 pixel_step()
 {
-#if 0
-	bool sprites = false;
-	for (int i = 0; i < sizeof(sprite_pixel_queue); i++) {
-		if (sprite_pixel_queue[i] != 0xff) {
-			sprites = true;
-		}
-	}
-	if (sprites) {
-		printf("%03d/%03d BG  ", pixel_x, line);
-		for (int i = 0; i < 16; i++) {
-			printf("%c", bg_pixel_queue[i] + '0');
-		}
-		printf("\n        SPR ");
-		for (int i = 0; i < sizeof(sprite_pixel_queue); i++) {
-			printf("%c", sprite_pixel_queue[i] + '0');
-		}
-		printf("\n");
-	}
-#endif
-
-//	printf("\n%d, %d/%d\n", pixel_x, cur_sprite, sprites_visible);
-//	if (cur_sprite != sprites_visible) {
-//		printf("\n%d\n", ((oamentry *)oamram)[active_sprite_index[cur_sprite]].x);
-//	}
-//	printf("\n%d/%d, %d/%d\n", ((oamentry *)oamram)[active_sprite_index[cur_sprite]].x, pixel_x, cur_sprite, sprites_visible);
 	if (pixel_x == 160 + 8) {
 		// end this mode
 		pixel_x = 0xff; // so we don't hit this again in the next cycle
