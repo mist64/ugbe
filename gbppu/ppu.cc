@@ -61,8 +61,8 @@ debug_flush()
 {
 #ifdef DEBUG
 	if (*debug_string_pixel) {
-		printf("PIX_%s\n", debug_string_pixel);
-		printf("FET_%s\n", debug_string_fetch);
+		printf("PIX:%s\n", debug_string_pixel);
+		printf("FET:%s\n", debug_string_fetch);
 	}
 #endif
 	debug_init();
@@ -384,6 +384,7 @@ line_reset()
 		bg_pixel_queue[i] = { 0, source_invalid };
 	}
 	bg_count = 0;
+	bg_t = 0;
 
 	debug_flush();
 }

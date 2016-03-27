@@ -38,16 +38,21 @@ gb::gb(const char *bootrom_filename, const char *cartridge_filename)
 //	_memory.write_internal(0xFF40, 0xE3);
 	for (int i = 0; i < 40; i++) {
 		uint8_t x, y;
-		if (i == 0) {
-			x = 7;
-			y = 16;
-		} else {
+//		if (i == 0) {
+//			x = 7;
+//			y = 16;
+//		} else {
 			x = 0;
 			y = 255;
-		}
+//		}
 		_memory.write_internal(0xFE00 + 4 * i, y);
 		_memory.write_internal(0xFE00 + 4 * i + 1, x);
 	}
+
+	_memory.write_internal(0x9800, 'A');
+	_memory.write_internal(0x9800+32, 'B');
+	_memory.write_internal(0xFF43, 7);
+
 #endif
 }
 
