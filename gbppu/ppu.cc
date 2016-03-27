@@ -367,14 +367,13 @@ void ppu::
 pixel_step()
 {
 	if (pixel_x == 160 + 8) {
-		// end this mode
-		pixel_x = 0xff; // so we don't hit this again in the next cycle
+		// we have enough pixels for the line -> end this mode
 		line_reset();
 		hblank_reset();
 	} else if (cur_sprite != sprites_visible && ((oamentry *)oamram)[active_sprite_index[cur_sprite]].x == pixel_x) {
+		// we can't shift out pixels because a sprite starts at this position -> fetch a sprite
 		debug_pixel('s');
 		cur_oam = &((oamentry *)oamram)[active_sprite_index[cur_sprite]];
-		// we can't shift out pixels because a sprite starts at this position
 		line_within_tile = line - cur_oam->y + 16;
 		if (cur_oam->attr & 0x40) { // Y flip
 			line_within_tile = get_sprite_height() - line_within_tile - 1;
@@ -384,55 +383,32 @@ pixel_step()
 			bg_t = 1;
 		}
 	} else if (!window && _io.reg[rLCDC] & LCDCF_WINON && line >= _io.reg[rWY] && pixel_x + 8 == _io.reg[rWX]) {
+		// the window starts at this position -> clear pixel buffer, switch to window fetches
 		debug_pixel('w');
-		// switch to window
 		window = 1;
-		// flush pixel buffer
+		bg_t = 0;
 		bg_count = 0;
 		bg_index_ctr = 0;
+	} else if (!bg_count) {
+		debug_pixel('_');
 	} else {
-		if (!bg_count) {
-			debug_pixel('_');
+		pixel_t pixel = bg_pixel_queue[0];
+		memmove(bg_pixel_queue, bg_pixel_queue + 1, 15);
+		uint8_t palette_reg = pixel.source == source_obj0 ? rOBP0 :
+							  pixel.source == source_obj1 ? rOBP1 :
+							  rBGP;
+		bg_count--;
+		if (skip) {
+			debug_pixel('-');
+			--skip;
 		} else {
-			pixel_t pixel = bg_pixel_queue[0];
-			memmove(bg_pixel_queue, bg_pixel_queue + 1, 15);
-			uint8_t palette_reg = 0;
-			switch (pixel.source) {
-				case source_bg:
-					palette_reg = rBGP;
-					break;
-				case source_obj0:
-					palette_reg = rOBP0;
-					break;
-				case source_obj1:
-					palette_reg = rOBP1;
-					break;
-				case source_invalid:
-					// blank pixel, do nothing
-					break;
-				default:
-					assert(false);
-			}
-			bg_count--;
-			if (skip) {
-				debug_pixel('-');
-				--skip;
-			} else {
-				assert(palette_reg);
-				if (pixel.source == source_invalid) {
-					debug_pixel('*');
-				} else if (pixel.source == source_bg) {
-					debug_pixel(pixel.value + '0');
-				} else {
-					debug_pixel(pixel.value + 'A');
-				}
+			debug_pixel(pixel.source == source_invalid ? '*' : pixel.source == source_bg ? pixel.value + '0' : pixel.value + 'A');
 
-				if (pixel_x >= 8) {
-					*ppicture++ = (_io.reg[palette_reg] >> (pixel.value << 1)) & 3;
-				}
+			if (pixel_x >= 8) {
+				*ppicture++ = (_io.reg[palette_reg] >> (pixel.value << 1)) & 3;
 			}
-			pixel_x++;
 		}
+		pixel_x++;
 	}
 }
 
