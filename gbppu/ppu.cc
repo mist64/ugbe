@@ -221,17 +221,6 @@ vram_get_data()
 }
 
 
-#pragma mark - Pixel Pipelines
-
-pixel_t ppu::
-bg_pixel_get()
-{
-	pixel_t p = bg_pixel_queue[0];
-	memmove(bg_pixel_queue, bg_pixel_queue + 1, 15);
-	return p;
-}
-
-
 #pragma mark - Mode 0: H-Blank
 
 void ppu::
@@ -405,7 +394,8 @@ pixel_step()
 		if (!bg_count) {
 			debug_pixel('_');
 		} else {
-			pixel_t pixel = bg_pixel_get();
+			pixel_t pixel = bg_pixel_queue[0];
+			memmove(bg_pixel_queue, bg_pixel_queue + 1, 15);
 			uint8_t palette_reg = 0;
 			switch (pixel.source) {
 				case source_bg:

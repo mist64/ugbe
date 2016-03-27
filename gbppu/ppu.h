@@ -120,10 +120,6 @@ private:
 	uint8_t get_sprite_height();
 	void oam_reset();
 	void oam_step();
-	void bg_pixel_push(uint8_t value, uint8_t source);
-	pixel_t bg_pixel_get();
-
-	pixel_t sprite_pixel_get();
 
 	void hblank_reset();
 	void hblank_step();
