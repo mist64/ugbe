@@ -24,10 +24,6 @@ static CGImageRef CreateGameBoyScreenCGImageRefFromPicture(uint8_t *pictureCopy,
 
 @implementation UGBRomDocument
 
-- (void)dealloc {
-    delete gameboy;
-}
-
 - (void)makeWindowControllers {
     // Override to return the Storyboard file name of the document.
     [self addWindowController:[[NSStoryboard storyboardWithName:@"Main" bundle:nil] instantiateControllerWithIdentifier:@"Document Window Controller"]];
@@ -59,23 +55,24 @@ static CGImageRef CreateGameBoyScreenCGImageRefFromPicture(uint8_t *pictureCopy,
         char *bootrom_filename = (char *)[[[NSBundle mainBundle] URLForResource:@"DMG_ROM" withExtension:@"bin"] fileSystemRepresentation];
         char *rom_filename = (char *)[[self fileURL] fileSystemRepresentation];
 
-        gameboy = new class gb(bootrom_filename, rom_filename);
+        gb *localboy = new class gb(bootrom_filename, rom_filename);
+        gameboy = localboy;
         
         NSTimeInterval timePerFrame = 1.0 / (1024.0 * 1024.0 / 114.0 / 154.0);
         
         self.nextFrameTime = [NSDate timeIntervalSinceReferenceDate] + timePerFrame;
         
         for (;;) {
-            int ret = gameboy->step();
+            int ret = localboy->step();
             if (ret || simulatorQueue != self.simulatorQueue) {
                 break;
             }
-            if (gameboy->is_ppu_dirty()) {
-                gameboy->clear_ppu_dirty();
+            if (localboy->is_ppu_dirty()) {
+                localboy->clear_ppu_dirty();
                 self.frameCount += 1;
                 
                 size_t pictureSize;
-                uint8_t *pictureCopy = gameboy->copy_ppu_picture(pictureSize);
+                uint8_t *pictureCopy = localboy->copy_ppu_picture(pictureSize);
                 CGImageRef imageRef = CreateGameBoyScreenCGImageRefFromPicture(pictureCopy, pictureSize);
                 self.mostRecentCGImageRef = CFBridgingRelease(imageRef);
                 [CATransaction begin];
@@ -100,6 +97,7 @@ static CGImageRef CreateGameBoyScreenCGImageRefFromPicture(uint8_t *pictureCopy,
                 }
             }
         }
+        delete localboy;
     });
 }
 
