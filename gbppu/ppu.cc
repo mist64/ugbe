@@ -140,11 +140,7 @@ io_write(uint8_t a8, uint8_t d8)
 uint8_t ppu::
 vram_read(uint16_t a16)
 {
-	if (vram_locked) {
-		return 0xff;
-	} else {
-		return vram[a16];
-	}
+	return vram_locked ? 0xff : vram[a16];
 }
 
 void ppu::
@@ -158,11 +154,7 @@ vram_write(uint16_t a16, uint8_t d8)
 uint8_t ppu::
 oamram_read(uint8_t a8)
 {
-	if (oamram_locked) {
-		return 0xff;
-	} else {
-		return oamram[a8];
-	}
+	return oamram_locked ? 0xff : oamram[a8];
 }
 
 void ppu::
@@ -191,7 +183,6 @@ ppu(memory &memory, io &io)
 void ppu::
 screen_reset()
 {
-	clock = 0;
 	line = 0;
 	ppicture = (uint8_t *)picture;
 
@@ -232,21 +223,6 @@ hblank_reset()
 	oamram_locked = false;
 }
 
-void ppu::
-hblank_step()
-{
-	if (clock == PPU_CLOCKS_PER_LINE) {
-		clock = 0;
-		line_reset();
-		if (++line == PPU_NUM_VISIBLE_LINES) {
-			vblank_reset();
-		} else {
-			oam_reset();
-		}
-	}
-}
-
-
 #pragma mark - Mode 1: V-Blank
 
 void ppu::
@@ -255,18 +231,6 @@ vblank_reset()
 	mode = mode_vblank;
 	vram_locked = false;
 	oamram_locked = false;
-}
-
-void ppu::
-vblank_step()
-{
-	if (clock == PPU_CLOCKS_PER_LINE) {
-		clock = 0;
-		if (++line == PPU_NUM_LINES) {
-			screen_reset();
-			dirty = true;
-		}
-	}
 }
 
 
@@ -351,6 +315,8 @@ pixel_reset()
 void ppu::
 line_reset()
 {
+	clock = 0;
+
 	skip = 8 | (_io.reg[rSCX] & 7);
 	pixel_x = -(_io.reg[rSCX] & 7);
 
@@ -407,6 +373,7 @@ pixel_step()
 			debug_pixel(pixel.source == source_invalid ? '*' : pixel.source == source_bg ? pixel.value + '0' : pixel.value + 'A');
 
 			if (pixel_x >= 8) {
+				assert(ppicture - (uint8_t *)picture < sizeof(picture));
 				*ppicture++ = (_io.reg[palette_reg] >> (pixel.value << 1)) & 3;
 			}
 		}
@@ -543,7 +510,7 @@ irq_step()
 
 #pragma mark - Main Logic
 
-// PPU steps are executed the CPU clock rate, i.e. at ~4 MHz
+// PPU steps are executed at the CPU clock rate, i.e. at ~4 MHz
 void ppu::
 step()
 {
@@ -564,8 +531,6 @@ step()
 
 	irq_step();
 
-	clock++;
-
 	switch (mode) {
 		case mode_oam:
 			oam_step();
@@ -575,10 +540,23 @@ step()
 			fetch_step();
 			break;
 		case mode_hblank:
-			hblank_step();
-			break;
 		case mode_vblank:
-			vblank_step();
 			break;
 	}
+
+	clock++;
+
+	if (clock == PPU_CLOCKS_PER_LINE) {
+		line_reset();
+		line++;
+		if (line < PPU_NUM_VISIBLE_LINES) {
+			oam_reset();
+		} else if (line <= PPU_NUM_LINES) {
+			vblank_reset();
+		} else  {
+			screen_reset();
+			dirty = true;
+		}
+	}
+
 }
