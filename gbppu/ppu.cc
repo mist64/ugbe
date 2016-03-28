@@ -184,11 +184,10 @@ void ppu::
 screen_reset()
 {
 	line = 0;
+	clock = 0;
 	ppicture = (uint8_t *)picture;
 
 	debug_init();
-
-	line_reset();
 
 	old_mode = mode_vblank;
 
@@ -307,16 +306,6 @@ pixel_reset()
 	vram_locked = true;
 	oamram_locked = true;
 
-	bg_index_ctr = 0;
-	bg_t = 0;
-	window = 0;
-}
-
-void ppu::
-line_reset()
-{
-	clock = 0;
-
 	skip = 8 | (_io.reg[rSCX] & 7);
 	pixel_x = -(_io.reg[rSCX] & 7);
 
@@ -324,9 +313,9 @@ line_reset()
 		bg_pixel_queue[i] = { 0, source_invalid };
 	}
 	bg_count = 0;
+	bg_index_ctr = 0;
 	bg_t = 0;
-
-	debug_flush();
+	window = 0;
 }
 
 void ppu::
@@ -547,8 +536,9 @@ step()
 	clock++;
 
 	if (clock == PPU_CLOCKS_PER_LINE) {
-		line_reset();
+		clock = 0;
 		line++;
+		debug_flush();
 		if (line < PPU_NUM_VISIBLE_LINES) {
 			oam_reset();
 		} else if (line <= PPU_NUM_LINES) {
