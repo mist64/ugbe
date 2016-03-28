@@ -18,6 +18,7 @@
 
 #define PPU_NUM_LINES 154
 #define PPU_NUM_VISIBLE_LINES 144
+#define PPU_NUM_VISIBLE_PIXELS_PER_LINE 160
 #define PPU_CLOCKS_PER_LINE (114*4)
 
 #define LCDCF_ON      (1 << 7) /* LCD Control Operation */
@@ -236,6 +237,7 @@ hblank_step()
 {
 	if (clock == PPU_CLOCKS_PER_LINE) {
 		clock = 0;
+		line_reset();
 		if (++line == PPU_NUM_VISIBLE_LINES) {
 			vblank_reset();
 		} else {
@@ -261,9 +263,7 @@ vblank_step()
 	if (clock == PPU_CLOCKS_PER_LINE) {
 		clock = 0;
 		if (++line == PPU_NUM_LINES) {
-			line = 0;
-			ppicture = (uint8_t *)picture;
-			oam_reset();
+			screen_reset();
 			dirty = true;
 		}
 	}
@@ -366,9 +366,8 @@ line_reset()
 void ppu::
 pixel_step()
 {
-	if (pixel_x == 160 + 8) {
+	if (pixel_x == PPU_NUM_VISIBLE_PIXELS_PER_LINE + 8) {
 		// we have enough pixels for the line -> end this mode
-		line_reset();
 		hblank_reset();
 	} else if (cur_sprite != sprites_visible && ((oamentry *)oamram)[active_sprite_index[cur_sprite]].x == pixel_x) {
 		// we can't shift out pixels because a sprite starts at this position -> fetch a sprite
