@@ -20,6 +20,7 @@
 #define PPU_NUM_VISIBLE_LINES 144
 #define PPU_NUM_VISIBLE_PIXELS_PER_LINE 160
 #define PPU_CLOCKS_PER_LINE (114*4)
+#define PPU_CLOCKS_PER_OAM_SEARCH 80
 
 #define LCDCF_ON      (1 << 7) /* LCD Control Operation */
 #define LCDCF_WIN9C00 (1 << 6) /* Window Tile Map Display Select */
@@ -191,7 +192,7 @@ screen_reset()
 
 	old_mode = mode_vblank;
 
-	oam_reset();
+	set_mode(mode_oam);
 }
 
 
@@ -212,24 +213,14 @@ vram_get_data()
 }
 
 
-#pragma mark - Mode 0: H-Blank
+#pragma mark - Modes
 
 void ppu::
-hblank_reset()
+set_mode(ppu_mode_t m)
 {
-	mode = mode_hblank;
-	vram_locked = false;
-	oamram_locked = false;
-}
-
-#pragma mark - Mode 1: V-Blank
-
-void ppu::
-vblank_reset()
-{
-	mode = mode_vblank;
-	vram_locked = false;
-	oamram_locked = false;
+	mode = m;
+	vram_locked = mode == mode_pixel;
+	oamram_locked = mode == mode_pixel || mode_oam;
 }
 
 
@@ -242,19 +233,10 @@ get_sprite_height()
 }
 
 void ppu::
-oam_reset()
-{
-	mode = mode_oam;
-	oam_mode_counter = 0;
-	vram_locked = false;
-	oamram_locked = true;
-}
-
-void ppu::
 oam_step()
 {
 	// do all the logic in the first cycle...
-	if (!oam_mode_counter && _io.reg[rLCDC] & LCDCF_OBJON) {
+	if (!clock && _io.reg[rLCDC] & LCDCF_OBJON) {
 		oamentry *oam = (oamentry *)oamram;
 		bool sprite_used[40];
 
@@ -289,11 +271,6 @@ oam_step()
 
 		cur_sprite = 0;
 	}
-
-	// we're done after 80 cycles at ~4 MHz
-	if (++oam_mode_counter == 80) {
-		pixel_reset();
-	}
 }
 
 
@@ -302,9 +279,7 @@ oam_step()
 void ppu::
 pixel_reset()
 {
-	mode = mode_pixel;
-	vram_locked = true;
-	oamram_locked = true;
+	set_mode(mode_pixel);
 
 	skip = 8 | (_io.reg[rSCX] & 7);
 	pixel_x = -(_io.reg[rSCX] & 7);
@@ -316,6 +291,7 @@ pixel_reset()
 	bg_index_ctr = 0;
 	bg_t = 0;
 	window = 0;
+	end_pixel = false;
 }
 
 void ppu::
@@ -323,7 +299,7 @@ pixel_step()
 {
 	if (pixel_x == PPU_NUM_VISIBLE_PIXELS_PER_LINE + 8) {
 		// we have enough pixels for the line -> end this mode
-		hblank_reset();
+		end_pixel = true;
 	} else if (cur_sprite != sprites_visible && ((oamentry *)oamram)[active_sprite_index[cur_sprite]].x == pixel_x) {
 		// we can't shift out pixels because a sprite starts at this position -> fetch a sprite
 		debug_pixel('s');
@@ -373,10 +349,6 @@ pixel_step()
 void ppu::
 fetch_step()
 {
-	if (mode != mode_pixel) {
-		// pixel_step() has ended this mode
-		return;
-	}
 	// the pixel transfer mode is VRAM-bound, so it runs at 1/2 speed = 2 MHz
 	if (clock_even) {
 		debug_fetch('-');
@@ -465,6 +437,11 @@ fetch_step()
 			break;
 		}
 	}
+
+	if (end_pixel) {
+		end_pixel = false;
+		set_mode(mode_hblank);
+	}
 }
 
 
@@ -513,7 +490,7 @@ step()
 	} else {
 		if (!screen_off) {
 			screen_off = true;
-			vblank_reset();
+			set_mode(mode_vblank);
 		}
 		return;
 	}
@@ -533,16 +510,18 @@ step()
 			break;
 	}
 
+	// mode/line/screen timing
 	clock++;
-
-	if (clock == PPU_CLOCKS_PER_LINE) {
+	if (mode == mode_oam && clock == PPU_CLOCKS_PER_OAM_SEARCH) {
+		pixel_reset();
+	} else if (clock == PPU_CLOCKS_PER_LINE) {
 		clock = 0;
 		line++;
 		debug_flush();
 		if (line < PPU_NUM_VISIBLE_LINES) {
-			oam_reset();
+			set_mode(mode_oam);
 		} else if (line <= PPU_NUM_LINES) {
-			vblank_reset();
+			set_mode(mode_vblank);
 		} else  {
 			screen_reset();
 			dirty = true;
