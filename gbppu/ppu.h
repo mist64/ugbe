@@ -56,6 +56,7 @@ private:
 
 	bool clock_even;
 	int clock;
+	int oam_mode_counter;
 	int bg_t; // internal BG fetch state (0-3)
 	int bg_index_ctr; // offset of the current index within the line
 	int window;
@@ -70,7 +71,6 @@ private:
 	int line;
 	uint8_t skip;
 	uint8_t *ppicture;
-	bool end_pixel;
 
 	typedef enum {
 		mode_hblank = 0,
@@ -121,7 +121,10 @@ private:
 	void oam_reset();
 	void oam_step();
 
-	void set_mode(ppu_mode_t m);
+	void hblank_reset();
+	void hblank_step();
+	void vblank_reset();
+	void vblank_step();
 
 	void irq_step();
 
