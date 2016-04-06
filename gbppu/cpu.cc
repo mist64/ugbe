@@ -470,23 +470,23 @@ void cpu::
 daa() // DAA; 1; 4; Z - 0 C // decimal adjust a - BCD
 {
 	int carry = cf;
-
+	
 	if (!nf) {
 		if (hf || (a & 0x0f) >= 0x0a) {
-			adda8(0x06);
-			carry |= cf;
+			carry |= calc_carry(8, a, 0x06, nf);
+			a += 0x06;
 		}
 		if (carry || (a & 0xf0) >= 0xa0) {
-			adda8(0x60);
-			carry |= cf;
+			carry |= calc_carry(8, a, 0x60, nf);
+			a += 0x60;
 		}
 		
 	} else {
 		if (hf) {
-			suba8(0x06);
+			a -= 0x06;
 		}
 		if (carry) {
-			suba8(0x60);
+			a -= 0x60;
 		}
 	}
 	
