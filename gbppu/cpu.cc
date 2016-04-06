@@ -129,6 +129,7 @@ push8(uint8_t d8)
 void cpu::
 push16(uint16_t d16)
 {
+	internal_delay();
 	push8(d16 >> 8);
 	push8(d16 & 0xff);
 }
@@ -284,7 +285,6 @@ rst8(uint8_t d8)
 {
 	push16(pc);
 	pc = d8;
-	internal_delay();
 }
 
 void cpu::
@@ -303,7 +303,6 @@ callcc(int condition)
 	if (condition) {
 		push16(pc);
 		pc = a16;
-		internal_delay();
 	}
 }
 
@@ -1204,7 +1203,6 @@ step()
 			break;
 		case 0xc5: // PUSH BC; 1; 16; ----
 			push16(bc);
-			internal_delay();
 			break;
 		case 0xc6: // ADD A,d8; 2; 8; Z 0 H C
 			adda8(fetch8());
@@ -2059,7 +2057,6 @@ step()
 			break;
 		case 0xd5: // PUSH DE; 1; 16; ----
 			push16(de);
-			internal_delay();
 			break;
 		case 0xd6: // SUB d8; 2; 8; Z 1 H C
 			suba8(fetch8());
@@ -2111,7 +2108,6 @@ step()
 			return 1;
 		case 0xe5: // PUSH HL; 1; 16; ----
 			push16(hl);
-			internal_delay();
 			break;
 		case 0xe6: // AND d8; 2; 8; Z 0 1 0
 			anda(fetch8());
@@ -2161,7 +2157,6 @@ step()
 			return 1;
 		case 0xf5: // PUSH AF; 1; 16; ----
 			push16(af);
-			internal_delay();
 			break;
 		case 0xf6: // OR d8; 2; 8; Z 0 0 0
 			ora(fetch8());
