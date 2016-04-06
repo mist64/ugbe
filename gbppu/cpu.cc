@@ -69,7 +69,7 @@ calc_carry(uint8_t bit, uint16_t da, uint16_t db, uint8_t substraction)
 		result = (da & mask) < (db & mask);
 		
 	} else {
-	 result = ((da & mask) + (db & mask)) >= bb;
+		result = ((da & mask) + (db & mask)) >= bb;
 	}
 	return result;
 }
@@ -469,42 +469,26 @@ reshl(uint8_t bit)
 void cpu::
 daa() // DAA; 1; 4; Z - 0 C // decimal adjust a - BCD
 {
-	uint8_t adjust = 0x00;
-	int carry = 0;
-	
-	int result = a;
-	
+	int carry = cf;
+
 	if (!nf) {
-		if (!cf && a >= 0x9a) {
-			carry = 1;
-		} else {
-			carry = cf;
-		}
-		
 		if (hf || (a & 0x0f) >= 0x0a) {
-			adjust += 0x06;
+			adda8(0x06);
+			carry |= cf;
 		}
-		
-		if (cf || (a & 0xf0) >= 0xa0 || (a >= 0x9a && a <= 0x9f)) {
-			adjust += 0x60;
+		if (carry || (a & 0xf0) >= 0xa0) {
+			adda8(0x60);
+			carry |= cf;
 		}
-		
-		result += adjust;
-		a = result & 0xff;
 		
 	} else {
-		carry = cf;
-		
 		if (hf) {
-			adjust += 0x06;
+			suba8(0x06);
 		}
-		
-		if (cf) {
-			adjust += 0x60;
+		if (carry) {
+			suba8(0x60);
 		}
-		result -= adjust;
 	}
-	a = result & 0xff;
 	
 	cf = carry;
 	nf = nf;
