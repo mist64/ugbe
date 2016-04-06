@@ -245,53 +245,43 @@ void ppu::
 oam_reset()
 {
 	mode = mode_oam;
-	oam_mode_counter = 0;
 	vram_locked = false;
 	oamram_locked = true;
+
+	oam_counter = 0;
+	oam_out_counter = 0;
+	oam_t = 0;
+
+	for (int i = 0; i < 10; i++) {
+		active_sprite_index[i] = -1;
+	}
 }
 
 void ppu::
 oam_step()
 {
-	// do all the logic in the first cycle...
-	if (!oam_mode_counter && _io.reg[rLCDC] & LCDCF_OBJON) {
-		oamentry *oam = (oamentry *)oamram;
-		bool sprite_used[40];
+	oamentry *oam = (oamentry *)oamram;
 
-		// find the 10 leftmost sprites
-		uint8_t sprite_height = get_sprite_height();
-
-		for (int i = 0; i < 40; i++) {
-			sprite_used[i] = false;
+	switch (oam_t) {
+		case 0: {
+			int spry = oam[oam_counter].y - 16;
+			oam_candidate = oam[oam_counter].x && line >= spry;
+			oam_t = 1;
+			break;
 		}
-
-		sprites_visible = 0;
-		int oam_index;
-//		printf("collecting: ");
-		do {
-			uint8_t minx = 0xff;
-			oam_index = -1;
-			for (int i = 0; i < 40; i++) {
-				int spry = oam[i].y - 16;
-				if (!sprite_used[i] /* && oam[i].x */ && line >= spry && line < spry + sprite_height && oam[i].x < minx) {
-					minx = oam[i].x;
-					oam_index = i;
-				}
+		case 1: {
+			int spry = oam[oam_counter].y - 16;
+			oam_candidate &= line < spry + get_sprite_height();
+			if (oam_candidate && oam_out_counter < 10) {
+				active_sprite_index[oam_out_counter++] = oam_counter;
 			}
-			if (oam_index >= 0) {
-//				printf("%d/%d ", oam[oam_index].x, oam[oam_index].y);
-				sprite_used[oam_index] = true;
-				active_sprite_index[sprites_visible] = oam_index;
-				sprites_visible++;
-			}
-		} while (sprites_visible < 10 && oam_index >= 0);
-//		printf("\n");
-
-		cur_sprite = 0;
+			oam_counter++;
+			oam_t = 0;
+			break;
+		}
 	}
 
-	// we're done after 80 cycles at ~4 MHz
-	if (++oam_mode_counter == 80) {
+	if (oam_counter == 40) {
 		pixel_reset();
 	}
 }
@@ -318,16 +308,32 @@ pixel_reset()
 	window = 0;
 }
 
+int ppu::
+sprite_starts_here()
+{
+	// The real hardware uses 10 parallel comparators for this
+	if (!(_io.reg[rLCDC] & LCDCF_OBJON)) {
+		return -1;
+	}
+	for (int i = 0; i < 10; i++) {
+		int8_t index = active_sprite_index[i];
+		if (index >= 0 && ((oamentry *)oamram)[index].x == pixel_x) {
+			return i;
+		}
+	}
+	return -1;
+}
+
 void ppu::
 pixel_step()
 {
 	if (pixel_x == PPU_NUM_VISIBLE_PIXELS_PER_LINE + 8) {
 		// we have enough pixels for the line -> end this mode
 		hblank_reset();
-	} else if (cur_sprite != sprites_visible && ((oamentry *)oamram)[active_sprite_index[cur_sprite]].x == pixel_x) {
+	} else if ((sprite_index = sprite_starts_here()) >= 0) {
 		// we can't shift out pixels because a sprite starts at this position -> fetch a sprite
 		debug_pixel('s');
-		cur_oam = &((oamentry *)oamram)[active_sprite_index[cur_sprite]];
+		cur_oam = &((oamentry *)oamram)[active_sprite_index[sprite_index]];
 		line_within_tile = line - cur_oam->y + 16;
 		if (cur_oam->attr & 0x40) { // Y flip
 			line_within_tile = get_sprite_height() - line_within_tile - 1;
@@ -454,9 +460,7 @@ fetch_step()
 				}
 			}
 			if (fetch_is_sprite) {
-				if (cur_sprite != sprites_visible) {
-					cur_sprite++;
-				}
+				active_sprite_index[sprite_index] = -1;
 				fetch_is_sprite = false;
 			} else {
 				bg_index_ctr++;
