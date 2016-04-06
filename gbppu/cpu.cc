@@ -53,6 +53,11 @@
 
 #pragma mark - Helper
 
+void cpu::internal_delay()
+{
+	_io.io_step_4();
+}
+
 static uint8_t
 calc_carry(uint8_t bit, uint16_t da, uint16_t db, uint8_t substraction)
 {
@@ -112,6 +117,7 @@ ldhlsp(uint8_t d8) //  LD HL,SP+r8; 2; 12; 0 0 H C // LDHL SP,r8
 	zf = 0;
 	set_hf_nf(4, sp, d16, 0);
 	set_cf(8, sp, d16, 0);
+	internal_delay();
 }
 
 void cpu::
@@ -235,6 +241,7 @@ addhl(uint16_t d16) // ADD HL,\w\w; 1; 8; - 0 H C
 	set_hf_nf(12, hl, d16, 0);
 	set_cf(16, hl, d16, 0);
 	hl = hl + d16;
+	internal_delay();
 }
 
 void cpu::
@@ -245,6 +252,8 @@ addsp(uint8_t d8) // ADD SP,r8; 2; 16; 0 0 H C
 	set_cf(8, sp, d16, 0);
 	sp = sp + d16;
 	zf = 0;
+	internal_delay();
+	internal_delay();
 }
 
 
@@ -256,6 +265,7 @@ jrcc(int condition) // jump relative condition code
 	int8_t r8 = fetch8();
 	if (condition) {
 		pc += r8;
+		internal_delay();
 	}
 }
 
@@ -265,6 +275,7 @@ jpcc(int condition) // jump condition code
 	int16_t d16 = fetch16();
 	if (condition) {
 		pc = d16;
+		internal_delay();
 	}
 }
 
@@ -273,6 +284,7 @@ rst8(uint8_t d8)
 {
 	push16(pc);
 	pc = d8;
+	internal_delay();
 }
 
 void cpu::
@@ -280,6 +292,7 @@ retcc(int condition)
 {
 	if (condition) {
 		pc = pop16();
+		internal_delay();
 	}
 }
 
@@ -290,6 +303,7 @@ callcc(int condition)
 	if (condition) {
 		push16(pc);
 		pc = a16;
+		internal_delay();
 	}
 }
 
@@ -539,6 +553,7 @@ step()
 			break;
 		case 0x03: // INC BC; 1; 8; ----
 			bc++;
+			internal_delay();
 			break;
 		case 0x04: // INC B; 1; 4; Z 0 H -
 			inc8(&b);
@@ -567,6 +582,7 @@ step()
 			break;
 		case 0x0b: // DEC BC; 1; 8; ----
 			bc--;
+			internal_delay();
 			break;
 		case 0x0c: // INC C; 1; 4; Z 0 H -
 			inc8(&c);
@@ -593,6 +609,7 @@ step()
 			break;
 		case 0x13: // INC DE; 1; 8; ----
 			de++;
+			internal_delay();
 			break;
 		case 0x14: // INC D; 1; 4; Z 0 H -
 			inc8(&d);
@@ -623,6 +640,7 @@ step()
 			break;
 		case 0x1b: // DEC DE; 1; 8; ----
 			de--;
+			internal_delay();
 			break;
 		case 0x1c: // INC E; 1; 4; Z 0 H -
 			inc8(&e);
@@ -650,6 +668,7 @@ step()
 			break;
 		case 0x23: // INC HL; 1; 8; ----
 			hl++;
+			internal_delay();
 			break;
 		case 0x24: // INC H; 1; 4; Z 0 H -
 			inc8(&h);
@@ -674,6 +693,7 @@ step()
 			break;
 		case 0x2b: // DEC HL; 1; 8; ----
 			hl--;
+			internal_delay();
 			break;
 		case 0x2c: // INC L; 1; 4; Z 0 H -
 			inc8(&l);
@@ -700,6 +720,7 @@ step()
 			break;
 		case 0x33: // INC SP; 1; 8; ----
 			sp++;
+			internal_delay();
 			break;
 		case 0x34: { // INC (HL); 1; 12; Z 0 H -
 			uint8_t d8 = _memory.read(hl);
@@ -732,6 +753,7 @@ step()
 			break;
 		case 0x3b: // DEC SP; 1; 8; ----
 			sp--;
+			internal_delay();
 			break;
 		case 0x3c: // INC A; 1; 4; Z 0 H -
 			inc8(&a);
@@ -1133,6 +1155,7 @@ step()
 			cpa8(a);
 			break;
 		case 0xc0: // RET NZ; 1; 20/8; ----
+			internal_delay();
 			retcc(!zf);
 			break;
 		case 0xc1: // POP BC; 1; 12; ----
@@ -1150,6 +1173,7 @@ step()
 			break;
 		case 0xc5: // PUSH BC; 1; 16; ----
 			push16(bc);
+			internal_delay();
 			break;
 		case 0xc6: // ADD A,d8; 2; 8; Z 0 H C
 			adda8(fetch8());
@@ -1158,6 +1182,7 @@ step()
 			rst8(0x00);
 			break;
 		case 0xc8: // RET Z; 1; 20/8; ----
+			internal_delay();
 			retcc(zf);
 			break;
 		case 0xc9: // RET; 1; 16; ----
@@ -1986,6 +2011,7 @@ step()
 			rst8(0x08);
 			break;
 		case 0xd0: // RET NC; 1; 20/8; ----
+			internal_delay();
 			retcc(!cf);
 			break;
 		case 0xd1: // POP DE; 1; 12; ----
@@ -2002,6 +2028,7 @@ step()
 			break;
 		case 0xd5: // PUSH DE; 1; 16; ----
 			push16(de);
+			internal_delay();
 			break;
 		case 0xd6: // SUB d8; 2; 8; Z 1 H C
 			suba8(fetch8());
@@ -2010,6 +2037,7 @@ step()
 			rst8(0x10);
 			break;
 		case 0xd8: // RET C; 1; 20/8; ----
+			internal_delay();
 			retcc(cf);
 			break;
 		case 0xd9: // RETI; 1; 16; ----
@@ -2052,6 +2080,7 @@ step()
 			return 1;
 		case 0xe5: // PUSH HL; 1; 16; ----
 			push16(hl);
+			internal_delay();
 			break;
 		case 0xe6: // AND d8; 2; 8; Z 0 1 0
 			anda(fetch8());
@@ -2101,6 +2130,7 @@ step()
 			return 1;
 		case 0xf5: // PUSH AF; 1; 16; ----
 			push16(af);
+			internal_delay();
 			break;
 		case 0xf6: // OR d8; 2; 8; Z 0 0 0
 			ora(fetch8());
@@ -2113,6 +2143,7 @@ step()
 			break;
 		case 0xf9: // LD SP,HL; 1; 8; ----
 			sp = hl;
+			internal_delay();
 			break;
 		case 0xfa: // LD A,(a16); 3; 16; ----
 			a = _memory.read(fetch16());

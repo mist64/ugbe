@@ -69,6 +69,7 @@ private:
 	int halted;
 
 private:
+	void internal_delay();
 	void set_hf_nf(uint8_t bit, uint16_t da, uint16_t db, uint8_t neg);
 	void set_cf(uint8_t bit, uint16_t da, uint16_t db, uint8_t substraction);
 	uint8_t fetch8();
