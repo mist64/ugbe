@@ -44,11 +44,11 @@ private:
 	int has_rumble;
 	uint32_t romsize;
 	uint16_t extramsize;
-	int ram_enabled;
+	bool ram_enabled;
 	uint8_t rom_bank;
 	uint8_t ram_bank;
-	int banking_mode;
-	int bootrom_enabled;
+	bool banking_mode_is_ram;
+	bool bootrom_enabled;
 
 	void write_internal(uint16_t a16, uint8_t d8);
 

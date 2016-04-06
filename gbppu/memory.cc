@@ -247,7 +247,10 @@ memory::memory(ppu &ppu, io &io, const char *bootrom_filename, const char *cartr
 
     ram = (uint8_t *)calloc(0x2000, 1);
     hiram = (uint8_t *)calloc(0x7f, 1);
-    
+	ram_enabled = false;
+	banking_mode_is_ram = false;
+	ram_bank = 0;
+	rom_bank = 0;
 
 #if 0
 	file = fopen("/Users/mist/Documents/git/gbcpu/gbppu/ram.bin", "r");
@@ -277,7 +280,7 @@ read(uint16_t a16)
 			return rom[a16];
 		} else if (mbc == mbc1) {
 			uint8_t bank = rom_bank;
-			if (banking_mode) {
+			if (banking_mode_is_ram) {
 				bank &= 0x1f;
 			}
 			if ((bank & 0x1f) == 0) {
@@ -296,9 +299,9 @@ read(uint16_t a16)
 	} else if (a16 >= 0x8000 && a16 < 0xa000) {
 		return _ppu.vram_read(a16 - 0x8000);
 	} else if (a16 >= 0xa000 && a16 < 0xc000) {
-		// TODO: RAM banking
-		if (a16 - 0xa000 < extramsize) {
-			return extram[a16 - 0xa000];
+		uint32_t address = a16 - 0xa000 + ram_bank * 0x2000;
+		if (address < extramsize) {
+			return extram[address];
 		} else {
 			printf("warning: read from 0x%04x!\n", a16);
 			return 0;
@@ -333,14 +336,14 @@ write_internal(uint16_t a16, uint8_t d8)
 					rom_bank = (rom_bank & 0xe0) | (d8 & 0x1f);
 					break;
 				case 2: /* 0x4000 - 0x5FFF: RAM bank or ROM bank (hi) */
-					if (!banking_mode) {
+					if (!banking_mode_is_ram) {
 						rom_bank = (rom_bank & 0x1f) | ((d8 & 3) << 6);
 					} else {
 						ram_bank = d8 & 3;
 					}
 					break;
 				case 3: /* 0x6000 - 0x7FFF: ROM/RAM Mode Select */
-					banking_mode = d8 & 1;
+					banking_mode_is_ram = d8 & 1;
 					break;
 			}
 		} else {
@@ -349,8 +352,9 @@ write_internal(uint16_t a16, uint8_t d8)
 	} else if (a16 >= 0x8000 && a16 < 0xa000) {
 		_ppu.vram_write(a16 - 0x8000, d8);
 	} else if (a16 >= 0xa000 && a16 < 0xc000) {
-		if (a16 - 0xa000 < extramsize) {
-			extram[a16 - 0xa000] = d8;
+		uint32_t address = a16 - 0xa000 + ram_bank * 0x2000;
+		if (address < extramsize) {
+			extram[address] = d8;
 		} else {
 			printf("warning: write to 0x%04x!\n", a16);
 		}
