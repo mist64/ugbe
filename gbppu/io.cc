@@ -7,6 +7,7 @@
 //
 
 #include <stdio.h>
+#include <string.h>
 #include "memory.h"
 #include "buttons.h"
 #include "serial.h"
@@ -45,6 +46,7 @@ io::io(ppu &ppu, memory &memory, timer &timer, serial &serial, buttons &buttons,
 	, _buttons(buttons)
 	, _sound  (sound)
 {
+	memset(reg, 0, sizeof(reg));
 }
 
 uint8_t io::
