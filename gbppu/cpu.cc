@@ -470,15 +470,47 @@ reshl(uint8_t bit)
 void cpu::
 daa() // DAA; 1; 4; Z - 0 C // decimal adjust a - BCD
 {
-	printf("todo: implement daa\n");
-	uint8_t old_nf = nf;
-//	printf("todo: implement daa - a=%02x cf=%01x hf=%01x nf=%01x\n", a, cf, hf, nf);
-
-
-	nf = old_nf;
+	uint8_t adjust = 0x00;
+	int carry = 0;
+	
+	int result = a;
+	
+	if (!nf) {
+		if (!cf && a >= 0x9a) {
+			carry = 1;
+		} else {
+			carry = cf;
+		}
+		
+		if (hf || (a & 0x0f) >= 0x0a) {
+			adjust += 0x06;
+		}
+		
+		if (cf || (a & 0xf0) >= 0xa0 || (a >= 0x9a && a <= 0x9f)) {
+			adjust += 0x60;
+		}
+		
+		result += adjust;
+		a = result & 0xff;
+		
+	} else {
+		carry = cf;
+		
+		if (hf) {
+			adjust += 0x06;
+		}
+		
+		if (cf) {
+			adjust += 0x60;
+		}
+		result -= adjust;
+	}
+	a = result & 0xff;
+	
+	cf = carry;
+	nf = nf;
 	hf = 0;
 	zf = !a;
-//	printf("         result daa - a=%02x cf=%01x hf=%01x nf=%01x\n", a, cf, hf, nf);
 }
 
 #pragma mark - Init
