@@ -272,7 +272,7 @@ read(uint16_t a16)
 		} else {
 			return rom[a16];
 		}
-	} else if (a16 >= 0x4000 && a16 < 0xa000) {
+	} else if (a16 >= 0x4000 && a16 < 0x8000) {
 		if (mbc == mbc_none) {
 			return rom[a16];
 		} else if (mbc == mbc1) {
