@@ -559,9 +559,8 @@ step()
 		}
 		if (halted) {
 			pc += 2; // DMG bug: skip instruction after HALT
-		} else {
-			_io.irq_clear_pending(i);
 		}
+		_io.irq_clear_pending(i);
 		halted = 0;
 //		printf("RST 0x%02x\n", 0x40 + i * 8);
 		rst8(0x40 + i * 8);
@@ -569,9 +568,9 @@ step()
 
 	uint8_t opcode = fetch8();
 //	static long long counter;
-//			if (++counter > 1000 * 1000 * 10.5) {
+//			if (counter > 1000 * 1000 * 10.5) {
 			if (!_memory.is_bootrom_enabled()) {
-//				printf("%llu: A=%02x BC=%04x DE=%04x HL=%04x SP=%04x PC=%04x (ZF=%d,NF=%d,HF=%d,CF=%d) LY=%02x - opcode 0x%02x\n", counter, a, bc, de, hl, sp, pc-1, zf, nf, hf, cf, _memory.read(0xff44), opcode);
+//				printf("%llu: A=%02x BC=%04x DE=%04x HL=%04x SP=%04x PC=%04x (ZF=%d,NF=%d,HF=%d,CF=%d) LY=%02x - opcode 0x%02x\n", counter++, a, bc, de, hl, sp, pc-1, zf, nf, hf, cf, _memory.read(0xff44), opcode);
 			}
 
 	switch (opcode) {
