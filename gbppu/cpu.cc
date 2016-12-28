@@ -533,7 +533,9 @@ step()
 {
 	uint8_t pending_irqs = _io.irq_get_pending();
 	while ((interrupts_enabled || halted) && pending_irqs) {
+		bool interrupts_were_enabled = interrupts_enabled;
 		interrupts_enabled = 0;
+
 		int i;
 		for (i = 0; i < 8; i++) {
 			if (pending_irqs & (1 << i)) {
@@ -543,22 +545,22 @@ step()
 		if (halted) {
 			pc += 2; // DMG bug: skip instruction after HALT
 		}
-		_io.irq_clear_pending(i);
+		
+		if (interrupts_were_enabled) {
+			_io.irq_clear_pending(i);
+		}
 		halted = 0;
 //		printf("RST 0x%02x\n", 0x40 + i * 8);
 		rst8(0x40 + i * 8);
 	}
-	// issue with this is: the CPU test checks for the timer flag
-	// so the flag needs to be still set when we reach the next instruction
-	// but we clear it here -> should we?
-	
 
 	uint8_t opcode = fetch8();
-//	static long long counter;
-//			if (counter > 1000 * 1000 * 10.5) {
-			if (!_memory.is_bootrom_enabled()) {
-//				printf("%llu: A=%02x BC=%04x DE=%04x HL=%04x SP=%04x PC=%04x (ZF=%d,NF=%d,HF=%d,CF=%d) LY=%02x - opcode 0x%02x\n", counter++, a, bc, de, hl, sp, pc-1, zf, nf, hf, cf, _memory.read(0xff44), opcode);
-			}
+//	static long long counter = 1;
+//	if (counter > 0) {//1000 * 1000 * 10.5) {
+//		if (!_memory.is_bootrom_enabled()) {
+//			printf("%llu: A=%02x BC=%04x DE=%04x HL=%04x SP=%04x PC=%04x (ZF=%d,NF=%d,HF=%d,CF=%d) LY=%02x - opcode 0x%02x\n", counter++, a, bc, de, hl, sp, pc-1, zf, nf, hf, cf, _memory.read(0xff44), opcode);
+//		}
+//	}
 
 	switch (opcode) {
 		case 0x00: // NOP; 1; 4; ----
