@@ -548,6 +548,10 @@ step()
 //		printf("RST 0x%02x\n", 0x40 + i * 8);
 		rst8(0x40 + i * 8);
 	}
+	// issue with this is: the CPU test checks for the timer flag
+	// so the flag needs to be still set when we reach the next instruction
+	// but we clear it here -> should we?
+	
 
 	uint8_t opcode = fetch8();
 //	static long long counter;

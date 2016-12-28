@@ -535,22 +535,22 @@ irq_step()
 {
 	// V-Blank interrupt
 	if (line == 144 && clock == 0) {
-		_io.reg[rIF] |= 1;
+		_io.irq_set_pending(0);
 	}
 	// LY == LYC interrupt
 	if (_io.reg[rSTAT] & 0x40 && _io.reg[rLYC] == line && clock == 0) {
-		_io.reg[rIF] |= 2;
+		_io.irq_set_pending(1);
 	}
 	if (mode != old_mode) {
 		if (_io.reg[rSTAT] & 0x20 && mode == mode_oam) {
 			// Mode 2 interrupt
-			_io.reg[rIF] |= 2;
+			_io.irq_set_pending(1);
 		} else if (_io.reg[rSTAT] & 0x10 && mode == mode_vblank) {
 			// Mode 1 interrupt
-			_io.reg[rIF] |= 2;
+			_io.irq_set_pending(1);
 		} else if (_io.reg[rSTAT] & 0x08 && mode == mode_hblank) {
 			// Mode 0 interrupt
-			_io.reg[rIF] |= 2;
+			_io.irq_set_pending(1);
 		}
 	}
 	old_mode = mode;

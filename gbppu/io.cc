@@ -70,6 +70,12 @@ irq_get_pending()
 }
 
 void io::
+irq_set_pending(uint8_t irq)
+{
+	reg[rIF] |= (1 << irq);
+}
+
+void io::
 irq_clear_pending(uint8_t irq)
 {
 	reg[rIF] &= ~(1 << irq);

@@ -88,6 +88,7 @@ public:
 	void io_write(uint8_t a8, uint8_t d8);
 
 public:
+	void irq_set_pending(uint8_t irq);
 	uint8_t irq_get_pending();
 	void irq_clear_pending(uint8_t irq);
 

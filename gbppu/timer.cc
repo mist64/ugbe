@@ -52,7 +52,7 @@ step()
 		if (++_io.reg[rTIMA] == 0) {
 			_io.reg[rTIMA] = _io.reg[rTMA];
 			//			printf("TIMER FIRED %s:%d\n", __FILE__, __LINE__);
-			_io.reg[rIF] |= 4;
+			_io.irq_set_pending(2);
 		}
 	}
 }
