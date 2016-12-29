@@ -8,8 +8,11 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "gb.h"
+
+//#define DEBUG_PPU
 
 gb::gb(const char *bootrom_filename, const char *cartridge_filename)
 	: _ppu    (_memory, _io)
@@ -21,12 +24,42 @@ gb::gb(const char *bootrom_filename, const char *cartridge_filename)
 	, _buttons(_io)
 	, _sound  (_io)
 {
+#ifdef DEBUG_PPU
+	FILE *file = fopen("/Users/mist/tmp/gb-sprites.dump", "r");
+	uint8_t *data = (uint8_t *)malloc(65536);
+	fread(data, 65536, 1, file);
+	fclose(file);
+
+	for (int addr = 0; addr < 65536; addr++) {
+		if (addr != 0xFF46) {
+			_memory.write_internal(addr, data[addr]);
+		}
+	}
+//	_memory.write_internal(0xFF40, 0xE3);
+	for (int i = 0; i < 40; i++) {
+		uint8_t x, y;
+		if (i == 0) {
+			x = 7;
+			y = 16;
+		} else {
+			x = 0;
+			y = 255;
+		}
+		_memory.write_internal(0xFE00 + 4 * i, y);
+		_memory.write_internal(0xFE00 + 4 * i + 1, x);
+	}
+
+	_memory.write_internal(0x9800, 'A');
+	_memory.write_internal(0x9800+32, 'B');
+//	_memory.write_internal(0xFF43, 7);
+
+#endif
 }
 
 int gb::
 step()
 {
-#if 0
+#ifdef DEBUG_PPU
 	_ppu.step();
 	return 0;
 #else

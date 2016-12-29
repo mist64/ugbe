@@ -14,6 +14,18 @@
 class memory;
 class io;
 
+enum {
+	source_bg,
+	source_obj0,
+	source_obj1,
+	source_invalid,
+};
+
+typedef struct {
+	unsigned char value : 2;
+	unsigned char source : 2;
+} pixel_t;
+
 class ppu {
 private:
 	memory &_memory;
@@ -44,14 +56,15 @@ private:
 
 	bool clock_even;
 	int clock;
-	int oam_mode_counter;
+	int oam_counter;
+	int oam_out_counter;
+	int oam_t;
+	bool oam_candidate;
 	int bg_t; // internal BG fetch state (0-3)
 	int bg_index_ctr; // offset of the current index within the line
 	int window;
 
-	uint8_t bg_pixel_queue[16];
-	uint8_t bg_pixel_queue_next;
-	uint8_t sprite_pixel_queue[24];
+	pixel_t bg_pixel_queue[16];
 
 	bool screen_off;
 	bool vram_locked;
@@ -59,6 +72,8 @@ private:
 
 	int pixel_x;
 	int line;
+	uint8_t skip;
+	uint8_t *ppicture;
 
 	typedef enum {
 		mode_hblank = 0,
@@ -71,13 +86,14 @@ private:
 
 	uint16_t vram_address;
 	uint8_t sprites_visible;
-	uint8_t cur_sprite;
 
 	uint8_t line_within_tile;
 	uint16_t bgptr;
 	uint8_t data0;
 
 	bool fetch_is_sprite;
+	uint8_t bg_count;
+	int sprite_index;
 
 #pragma pack(push, 1)
 	typedef struct {
@@ -88,8 +104,15 @@ private:
 	} oamentry;
 #pragma pack(pop)
 
-	uint8_t active_sprite_index[10];
+	int8_t active_sprite_index[10];
 	oamentry *cur_oam;
+
+	char debug_string_pixel[1024];
+	char debug_string_fetch[1024];
+	void debug_init();
+	void debug_pixel(char);
+	void debug_fetch(char);
+	void debug_flush();
 
 	void screen_reset();
 	int output_pixel(uint8_t p);
@@ -100,10 +123,6 @@ private:
 	uint8_t get_sprite_height();
 	void oam_reset();
 	void oam_step();
-	void bg_pixel_push(uint8_t p);
-	uint8_t bg_pixel_get();
-	void sprite_pixel_set(int i, uint8_t p);
-	uint8_t sprite_pixel_get();
 
 	void hblank_reset();
 	void hblank_step();
@@ -112,9 +131,12 @@ private:
 
 	void irq_step();
 
+	void line_reset();
+
+	int sprite_starts_here();
 	void pixel_reset();
 	void pixel_step();
-	void mixer_step();
+	void fetch_step();
 };
 
 #endif /* ppu_h */

@@ -293,7 +293,7 @@ read(uint16_t a16)
 				return rom[address];
 			}
 		} else {
-			printf("warning: unsupported MBC read!\n");
+//			printf("warning: unsupported MBC read!\n");
 			return rom[a16];
 		}
 	} else if (a16 >= 0x8000 && a16 < 0xa000) {
@@ -303,7 +303,7 @@ read(uint16_t a16)
 		if (address < extramsize) {
 			return extram[address];
 		} else {
-			printf("warning: read from 0x%04x!\n", a16);
+//			printf("warning: read from 0x%04x!\n", a16);
 			return 0;
 		}
 	} else if (a16 >= 0xc000 && a16 < 0xe000) {
@@ -318,7 +318,7 @@ read(uint16_t a16)
 	} else if (a16 >= 0xff80) {
 		return hiram[a16 - 0xff80];
 	} else {
-		printf("warning: read from 0x%04x!\n", a16);
+//		printf("warning: read from 0x%04x!\n", a16);
 		return 0xff;
 	}
 }
@@ -347,7 +347,7 @@ write_internal(uint16_t a16, uint8_t d8)
 					break;
 			}
 		} else {
-			printf("warning: unsupported MBC write!\n");
+//			printf("warning: unsupported MBC write!\n");
 		}
 	} else if (a16 >= 0x8000 && a16 < 0xa000) {
 		_ppu.vram_write(a16 - 0x8000, d8);
@@ -356,7 +356,7 @@ write_internal(uint16_t a16, uint8_t d8)
 		if (address < extramsize) {
 			extram[address] = d8;
 		} else {
-			printf("warning: write to 0x%04x!\n", a16);
+//			printf("warning: write to 0x%04x!\n", a16);
 		}
 	} else if (a16 >= 0xc000 && a16 < 0xe000) {
 		ram[a16 - 0xc000] = d8;
@@ -369,7 +369,7 @@ write_internal(uint16_t a16, uint8_t d8)
 	} else if (a16 >= 0xff80) {
 		hiram[a16 - 0xff80] = d8;
 	} else {
-		printf("warning: write to 0x%04x!\n", a16);
+//		printf("warning: write to 0x%04x!\n", a16);
 	}
 }
 
