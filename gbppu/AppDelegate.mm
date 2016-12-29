@@ -252,8 +252,8 @@ static uint8_t keys;
 			if (gb->is_ppu_dirty()) {
 				gb->clear_ppu_dirty();
                 [view updateLayerContents];
-#if ! BUILD_USER_Lisa
-                // wait until the next 60 hz tick
+
+				// wait until the next 60 hz tick
                 NSTimeInterval interval = [NSDate timeIntervalSinceReferenceDate];
                 if (interval < self.nextFrameTime) {
 //                     [NSThread sleepForTimeInterval:self.nextFrameTime - interval];
@@ -261,7 +261,6 @@ static uint8_t keys;
                     self.nextFrameTime = interval;
                 }
                 self.nextFrameTime += timePerFrame;
-#endif
 			}
 		}
 	});
