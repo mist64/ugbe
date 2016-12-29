@@ -192,29 +192,37 @@ static uint8_t keys;
         // CPU Tests
 		cartridge_filename = "/Users/lisa/Projects/game_boy/roms/cpu_test/cpu_instrs.gb";
         
-        //	cartridge_filename = "/Users/lisa/Projects/game_boy/roms/cpu_test/individual/01-special.gb";
-        //	cartridge_filename = "/Users/lisa/Projects/game_boy/roms/cpu_test/individual/02-interrupts.gb";
-        //	cartridge_filename = "/Users/lisa/Projects/game_boy/roms/cpu_test/individual/03-op sp,hl.gb";
-        //	cartridge_filename = "/Users/lisa/Projects/game_boy/roms/cpu_test/individual/04-op r,imm.gb";
-        //	cartridge_filename = "/Users/lisa/Projects/game_boy/roms/cpu_test/individual/05-op rp.gb";
-        //	cartridge_filename = "/Users/lisa/Projects/game_boy/roms/cpu_test/individual/06-ld r,r.gb";
-        //	cartridge_filename = "/Users/lisa/Projects/game_boy/roms/cpu_test/individual/07-jr,jp,call,ret,rst.gb";
-        //	cartridge_filename = "/Users/lisa/Projects/game_boy/roms/cpu_test/individual/08-misc instrs.gb";
-        //	cartridge_filename = "/Users/lisa/Projects/game_boy/roms/cpu_test/individual/09-op r,r.gb";
-        //	cartridge_filename = "/Users/lisa/Projects/game_boy/roms/cpu_test/individual/10-bit ops.gb";
-        //	cartridge_filename = "/Users/lisa/Projects/game_boy/roms/cpu_test/individual/11-op a,(hl).gb";
-        
-        // demos
-        //	cartridge_filename = "/Users/lisa/Projects/game_boy/roms/demos/3dclown/CLOWN1.GB";
-        //	cartridge_filename = "/Users/lisa/Projects/game_boy/roms/demos/pocket/pocket.gb";
-        
-        // games
-        //	cartridge_filename = "/Users/lisa/Projects/game_boy/roms/games/Tennis (W) [!].gb";
-        //	cartridge_filename = "/Users/lisa/Projects/game_boy/gbcpu/gbppu/tetris.gb";
-        //	cartridge_filename = "/Users/lisa/Projects/game_boy/roms/games/Pokemon - Blaue Edition (G) [S][!].gb";
-        
-#else
-        //	cartridge_filename = "/Users/mist/Documents/git/gbcpu/gbppu/tetris.gb";
+//		cartridge_filename = "/Users/lisa/Projects/game_boy/roms/cpu_test/individual/01-special.gb";
+//		cartridge_filename = "/Users/lisa/Projects/game_boy/roms/cpu_test/individual/02-interrupts.gb";
+//		cartridge_filename = "/Users/lisa/Projects/game_boy/roms/cpu_test/individual/03-op sp,hl.gb";
+//		cartridge_filename = "/Users/lisa/Projects/game_boy/roms/cpu_test/individual/04-op r,imm.gb";
+//		cartridge_filename = "/Users/lisa/Projects/game_boy/roms/cpu_test/individual/05-op rp.gb";
+//		cartridge_filename = "/Users/lisa/Projects/game_boy/roms/cpu_test/individual/06-ld r,r.gb";
+//		cartridge_filename = "/Users/lisa/Projects/game_boy/roms/cpu_test/individual/07-jr,jp,call,ret,rst.gb";
+//		cartridge_filename = "/Users/lisa/Projects/game_boy/roms/cpu_test/individual/08-misc instrs.gb";
+//		cartridge_filename = "/Users/lisa/Projects/game_boy/roms/cpu_test/individual/09-op r,r.gb";
+//		cartridge_filename = "/Users/lisa/Projects/game_boy/roms/cpu_test/individual/10-bit ops.gb";
+//		cartridge_filename = "/Users/lisa/Projects/game_boy/roms/cpu_test/individual/11-op a,(hl).gb";
+//		
+		// demos
+//		cartridge_filename = "/Users/lisa/Projects/game_boy/roms/demos/3dclown/CLOWN1.GB";
+//		cartridge_filename = "/Users/lisa/Projects/game_boy/roms/demos/pocket/pocket.gb";
+//		
+		// games
+//		cartridge_filename = "/Users/lisa/Projects/game_boy/roms/games/Tennis (W) [!].gb";
+//		cartridge_filename = "/Users/lisa/Projects/game_boy/gbcpu/gbppu/tetris.gb";
+//		cartridge_filename = "/Users/lisa/Projects/game_boy/roms/games/Pokemon - Blaue Edition (G) [S][!].gb";
+//		
+		// tests
+//		cartridge_filename = "/Users/lisa/Projects/game_boy/roms/tests/instr_timing/instr_timing.gb"; // failed 02
+//		cartridge_filename = "/Users/lisa/Projects/game_boy/roms/tests/interrupt_time/interrupt_time.gb";
+//		cartridge_filename = "/Users/lisa/Projects/game_boy/roms/tests/mem_timing/mem_timing.gb"; // 01
+//		cartridge_filename = "/Users/lisa/Projects/game_boy/roms/tests/mem_timing-2/mem_timing.gb"; // 01
+//		cartridge_filename = "/Users/lisa/Projects/game_boy/roms/tests/oam_bug/oam_bug.gb"; // 03, 06 ok
+//		cartridge_filename = "/Users/lisa/Projects/game_boy/roms/tests/halt_bug.gb"; // möp
+
+#else    
+		//	cartridge_filename = "/Users/mist/Documents/git/gbcpu/gbppu/tetris.gb";
         //	cartridge_filename = "/Users/mist/Documents/git/gb-timing/gb-scy.gb";
         cartridge_filename = "/Users/mist/Documents/git/gb-timing/gb-timing.gb";
         //	cartridge_filename = "/Users/mist/Documents/git/gb-platformer/gb-platformer.gb";
