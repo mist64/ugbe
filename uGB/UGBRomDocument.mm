@@ -21,6 +21,7 @@ static CGImageRef CreateGameBoyScreenCGImageRefFromPicture(uint8_t *pictureCopy,
 @property (nonatomic) BOOL shouldEnd;
 @property (nonatomic) dispatch_semaphore_t pauseSemaphore;
 @property (nonatomic) dispatch_queue_t simulatorQueue;
+@property (nonatomic) dispatch_queue_t enqueueSoundsQueue;
 @property (nonatomic, strong) UGBAudioOutput *audioOutput;
 @end
 
@@ -114,7 +115,36 @@ static CGImageRef CreateGameBoyScreenCGImageRefFromPicture(uint8_t *pictureCopy,
     }
 }
 
+// temporary test method to test infrastructure
+- (void)enqueueDemoSound {
+    if (!_enqueueSoundsQueue) {
+        _enqueueSoundsQueue = dispatch_queue_create([[NSString stringWithFormat:@"dom.ugbe.%@.soundEnqueueing", self.fileURL.lastPathComponent] UTF8String], DISPATCH_QUEUE_SERIAL);
+    }
+    dispatch_async(_enqueueSoundsQueue, ^{
+        NSData *data = [NSData dataWithContentsOfURL:[[NSBundle mainBundle] URLForResource:@"TestAudio" withExtension:@"wav"]];
+        TPCircularBuffer *buffer = [self.audioOutput inputBuffer];
+        char *bytes = (char *)data.bytes;
+        char *bytesEnd = bytes + data.length;
+        bytes += 44; // skip wav header
+        while (bytes < bytesEnd) {
+            int32_t availableSpace;
+            TPCircularBufferHead(buffer, &availableSpace);
+            int32_t bytesToCopy = (int32_t)MIN(availableSpace, bytesEnd - bytes);
+            TPCircularBufferProduceBytes(buffer, bytes, bytesToCopy);
+            bytes += bytesToCopy;
+            if (bytes < bytesEnd) {
+                [NSThread sleepForTimeInterval:0.04];
+            }
+        }
+    });
+}
+
 - (void)setKeys:(uint8_t)keys {
+    if ((keys & UGBKeyCodeStart) &&
+        !(_keys & UGBKeyCodeStart)) {
+        // enqueue a sound
+        [self enqueueDemoSound];
+    }
     _keys = keys;
     gameboy->set_buttons(keys);
 }

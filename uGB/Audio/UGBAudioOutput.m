@@ -12,51 +12,26 @@
 #import "UGBAudioOutput.h"
 
 
-static OSStatus RenderCallback(void                       *in,
+static OSStatus RenderCallback(void                       *circularBuffer,
                                AudioUnitRenderActionFlags *ioActionFlags,
                                const AudioTimeStamp       *inTimeStamp,
                                UInt32                      inBusNumber,
                                UInt32                      inNumberFrames,
                                AudioBufferList            *ioData)
 {
-    static NSData *testData = nil;
-    NSInteger startOffset = 44;
-    static NSInteger dataOffset;
-    if (!testData) {
-        testData = [NSData dataWithContentsOfURL:[[NSBundle mainBundle] URLForResource:@"TestAudio" withExtension:@"wav"]];
-        dataOffset = startOffset;
-    }
-    
-    NSLog(@"Render callback: frames requested: %d", inNumberFrames);
-    NSInteger bytesRequested = inNumberFrames * 2 * 2;
+//    NSLog(@"Render callback: frames requested: %d", inNumberFrames);
+    int32_t bytesRequested = inNumberFrames * 2 * 2;
     char *outBuffer = ioData->mBuffers[0].mData;
-    
-    NSInteger bytesRemaining = testData.length - (dataOffset + bytesRequested);
-    if (bytesRemaining < 0) {
-        memcpy(outBuffer, (char *)testData.bytes + dataOffset, bytesRequested + bytesRemaining);
-        dataOffset = startOffset;
-        bytesRequested = -1 * bytesRemaining;
-        memcpy(outBuffer, (char *)testData.bytes + dataOffset, bytesRequested);
+    int availableBytes;
+    void *head = TPCircularBufferTail(circularBuffer, &availableBytes);
+    int32_t byteCountToWriteOut = MIN(availableBytes, bytesRequested);
+    if (byteCountToWriteOut > 0) {
+        memcpy(outBuffer, head, byteCountToWriteOut);
+        TPCircularBufferConsume(circularBuffer, byteCountToWriteOut);
     } else {
-        memcpy(outBuffer, (char *)testData.bytes + dataOffset, bytesRequested);
+        memset(outBuffer, 0, bytesRequested);
     }
-    dataOffset += bytesRequested;
     
-    //
-    //    if(leftover > 0 && context->bytesPerSample == 2)
-    //    {
-    //        // time stretch
-    //        // FIXME this works a lot better with a larger buffer
-    //        int framesRequested = inNumberFrames;
-    //        int framesAvailable = availableBytes / (context->bytesPerSample * context->channelCount);
-    //        StretchSamples((int16_t *)outBuffer, head, framesRequested, framesAvailable, context->channelCount);
-    //    }
-    //    else if(availableBytes)
-    //        memcpy(outBuffer, head, availableBytes);
-    //    else
-    //        memset(outBuffer, 0, bytesRequested);
-    //
-    //    TPCircularBufferConsume(context->buffer, availableBytes);
     return noErr;
 }
 
@@ -65,6 +40,7 @@ static OSStatus RenderCallback(void                       *in,
     AUGraph   _graph;
     AUNode    _converterNode, _mixerNode, _outputNode;
     AudioUnit _converterUnit, _mixerUnit, _outputUnit;
+    TPCircularBuffer circularBuffer;
 }
 
 - (void)cleanupGraphIfNeeded {
@@ -79,8 +55,13 @@ static OSStatus RenderCallback(void                       *in,
     self = [super init];
     if (self) {
         _volume = 1.0;
+        TPCircularBufferInit(&circularBuffer, 2 * 2 * 4096);
     }
     return self;
+}
+
+- (TPCircularBuffer *)inputBuffer {
+    return &circularBuffer;
 }
 
 - (void)dealloc {
@@ -170,7 +151,7 @@ static OSStatus RenderCallback(void                       *in,
     
     AURenderCallbackStruct renderStruct;
     renderStruct.inputProc = RenderCallback;
-    renderStruct.inputProcRefCon = (void *)nil; // TODO: give context for the render callback
+    renderStruct.inputProcRefCon = (void *)&circularBuffer; // TODO: give context for the render callback
     
     err = AudioUnitSetProperty(_converterUnit, kAudioUnitProperty_SetRenderCallback,
                                kAudioUnitScope_Input, 0, &renderStruct, sizeof(AURenderCallbackStruct));

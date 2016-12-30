@@ -7,11 +7,13 @@
 //
 
 #import <Foundation/Foundation.h>
+#import "TPCircularBuffer.h"
 
-@interface UGBAudioOutput : NSObject
+@interface UGBAudioOutput : NSObject 
 @property(nonatomic) CGFloat volume;
 - (void)startAudio;
 - (void)stopAudio;
 - (void)pauseAudio;
 - (void)resumeAudio;
+- (TPCircularBuffer *)inputBuffer;
 @end

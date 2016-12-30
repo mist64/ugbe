@@ -27,6 +27,7 @@
 		F23F0C441E15EF6000F0BD25 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F23F0C431E15EF6000F0BD25 /* CoreAudio.framework */; };
 		F23F0C461E15F04300F0BD25 /* AudioUnit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F23F0C451E15F04300F0BD25 /* AudioUnit.framework */; };
 		F23F0C481E15FF2200F0BD25 /* TestAudio.wav in Resources */ = {isa = PBXBuildFile; fileRef = F23F0C471E15FF2200F0BD25 /* TestAudio.wav */; };
+		F23F0C4B1E16063A00F0BD25 /* TPCircularBuffer.c in Sources */ = {isa = PBXBuildFile; fileRef = F23F0C491E16063A00F0BD25 /* TPCircularBuffer.c */; };
 		F281A1EA1CA362B70096459D /* UGBVRAMViewerWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = F281A1E81CA362B70096459D /* UGBVRAMViewerWindowController.m */; };
 		F281A1EB1CA362B70096459D /* UGBVRAMViewerWindowController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F281A1E91CA362B70096459D /* UGBVRAMViewerWindowController.xib */; };
 		F29093341C8D659C00FFF73E /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = F29093331C8D659C00FFF73E /* AppDelegate.m */; };
@@ -76,12 +77,14 @@
 		F22BCA9D1C8EC950008E42D0 /* UGBMainDisplayView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UGBMainDisplayView.h; sourceTree = "<group>"; };
 		F22BCA9E1C8EC950008E42D0 /* UGBMainDisplayView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = UGBMainDisplayView.m; sourceTree = "<group>"; };
 		F231B3BA1C8EB7F50082A3AA /* DMG_ROM.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; name = DMG_ROM.bin; path = gbppu/DMG_ROM.bin; sourceTree = SOURCE_ROOT; };
-		F23F0C3C1E15EED100F0BD25 /* UGBAudioOutput.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = UGBAudioOutput.h; path = Audio/UGBAudioOutput.h; sourceTree = "<group>"; };
-		F23F0C3D1E15EED100F0BD25 /* UGBAudioOutput.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = UGBAudioOutput.m; path = Audio/UGBAudioOutput.m; sourceTree = "<group>"; };
+		F23F0C3C1E15EED100F0BD25 /* UGBAudioOutput.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UGBAudioOutput.h; sourceTree = "<group>"; };
+		F23F0C3D1E15EED100F0BD25 /* UGBAudioOutput.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = UGBAudioOutput.m; sourceTree = "<group>"; };
 		F23F0C411E15EF5800F0BD25 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
 		F23F0C431E15EF6000F0BD25 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
 		F23F0C451E15F04300F0BD25 /* AudioUnit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioUnit.framework; path = System/Library/Frameworks/AudioUnit.framework; sourceTree = SDKROOT; };
-		F23F0C471E15FF2200F0BD25 /* TestAudio.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; name = TestAudio.wav; path = Audio/TestAudio.wav; sourceTree = "<group>"; };
+		F23F0C471E15FF2200F0BD25 /* TestAudio.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = TestAudio.wav; sourceTree = "<group>"; };
+		F23F0C491E16063A00F0BD25 /* TPCircularBuffer.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = TPCircularBuffer.c; sourceTree = "<group>"; };
+		F23F0C4A1E16063A00F0BD25 /* TPCircularBuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TPCircularBuffer.h; sourceTree = "<group>"; };
 		F281A1E71CA362B70096459D /* UGBVRAMViewerWindowController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = UGBVRAMViewerWindowController.h; path = VRAMViewer/UGBVRAMViewerWindowController.h; sourceTree = "<group>"; };
 		F281A1E81CA362B70096459D /* UGBVRAMViewerWindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = UGBVRAMViewerWindowController.m; path = VRAMViewer/UGBVRAMViewerWindowController.m; sourceTree = "<group>"; };
 		F281A1E91CA362B70096459D /* UGBVRAMViewerWindowController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = UGBVRAMViewerWindowController.xib; path = VRAMViewer/UGBVRAMViewerWindowController.xib; sourceTree = "<group>"; };
@@ -191,10 +194,12 @@
 			isa = PBXGroup;
 			children = (
 				F23F0C471E15FF2200F0BD25 /* TestAudio.wav */,
+				F23F0C4A1E16063A00F0BD25 /* TPCircularBuffer.h */,
+				F23F0C491E16063A00F0BD25 /* TPCircularBuffer.c */,
 				F23F0C3C1E15EED100F0BD25 /* UGBAudioOutput.h */,
 				F23F0C3D1E15EED100F0BD25 /* UGBAudioOutput.m */,
 			);
-			name = Audio;
+			path = Audio;
 			sourceTree = "<group>";
 		};
 		F23F0C401E15EF5800F0BD25 /* Frameworks */ = {
@@ -376,6 +381,7 @@
 				F23F0C3E1E15EED100F0BD25 /* UGBAudioOutput.m in Sources */,
 				F2EDB0F61C957DAF00F92DD8 /* cpu.cc in Sources */,
 				F290933D1C8D659C00FFF73E /* UGBRomDocument.mm in Sources */,
+				F23F0C4B1E16063A00F0BD25 /* TPCircularBuffer.c in Sources */,
 				F2EDB0F81C957DAF00F92DD8 /* sound.cc in Sources */,
 				F290933A1C8D659C00FFF73E /* UGBMainDisplayViewController.m in Sources */,
 				F2EDB0FC1C957DAF00F92DD8 /* buttons.cc in Sources */,
