@@ -8,6 +8,7 @@
 #import "UGBRomDocument.h"
 #import "gb.h"
 #import <QuartzCore/QuartzCore.h>
+#import "UGBAudioOutput.h"
 
 // consumes pictureCopy
 static CGImageRef CreateGameBoyScreenCGImageRefFromPicture(uint8_t *pictureCopy, size_t pictureSize);
@@ -20,6 +21,7 @@ static CGImageRef CreateGameBoyScreenCGImageRefFromPicture(uint8_t *pictureCopy,
 @property (nonatomic) BOOL shouldEnd;
 @property (nonatomic) dispatch_semaphore_t pauseSemaphore;
 @property (nonatomic) dispatch_queue_t simulatorQueue;
+@property (nonatomic, strong) UGBAudioOutput *audioOutput;
 @end
 
 @implementation UGBRomDocument
@@ -29,6 +31,8 @@ static CGImageRef CreateGameBoyScreenCGImageRefFromPicture(uint8_t *pictureCopy,
     [self addWindowController:[[NSStoryboard storyboardWithName:@"Main" bundle:nil] instantiateControllerWithIdentifier:@"Document Window Controller"]];
     self.mainDisplayViewController = (UGBMainDisplayViewController *)self.windowControllers.firstObject.window.contentViewController;
     [self.windowControllers.firstObject.window setInitialFirstResponder:self.mainDisplayViewController.view];
+    self.audioOutput = [UGBAudioOutput new];
+    [self.audioOutput startAudio];
     [self startEmulation];
 }
 
