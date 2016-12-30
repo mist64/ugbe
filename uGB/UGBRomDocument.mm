@@ -140,11 +140,14 @@ static CGImageRef CreateGameBoyScreenCGImageRefFromPicture(uint8_t *pictureCopy,
 }
 
 - (void)setKeys:(uint8_t)keys {
+#if 0
+// enable to play sound on start for testing purposes only (doesn't mix, does just fill ringbuffer)
     if ((keys & UGBKeyCodeStart) &&
         !(_keys & UGBKeyCodeStart)) {
         // enqueue a sound
         [self enqueueDemoSound];
     }
+#endif
     _keys = keys;
     gameboy->set_buttons(keys);
 }
