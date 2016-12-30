@@ -19,13 +19,29 @@ static OSStatus RenderCallback(void                       *in,
                                UInt32                      inNumberFrames,
                                AudioBufferList            *ioData)
 {
-    //    OEGameAudioContext *context = (OEGameAudioContext *)in;
-    //    int availableBytes = 0;
-    //    void *head = TPCircularBufferTail(context->buffer, &availableBytes);
-    //    int bytesRequested = inNumberFrames * context->bytesPerSample * context->channelCount;
-    //    availableBytes = MIN(availableBytes, bytesRequested);
-    //    int leftover = bytesRequested - availableBytes;
-    //    char *outBuffer = ioData->mBuffers[0].mData;
+    static NSData *testData = nil;
+    NSInteger startOffset = 44;
+    static NSInteger dataOffset;
+    if (!testData) {
+        testData = [NSData dataWithContentsOfURL:[[NSBundle mainBundle] URLForResource:@"TestAudio" withExtension:@"wav"]];
+        dataOffset = startOffset;
+    }
+    
+    NSLog(@"Render callback: frames requested: %d", inNumberFrames);
+    NSInteger bytesRequested = inNumberFrames * 2 * 2;
+    char *outBuffer = ioData->mBuffers[0].mData;
+    
+    NSInteger bytesRemaining = testData.length - (dataOffset + bytesRequested);
+    if (bytesRemaining < 0) {
+        memcpy(outBuffer, (char *)testData.bytes + dataOffset, bytesRequested + bytesRemaining);
+        dataOffset = startOffset;
+        bytesRequested = -1 * bytesRemaining;
+        memcpy(outBuffer, (char *)testData.bytes + dataOffset, bytesRequested);
+    } else {
+        memcpy(outBuffer, (char *)testData.bytes + dataOffset, bytesRequested);
+    }
+    dataOffset += bytesRequested;
+    
     //
     //    if(leftover > 0 && context->bytesPerSample == 2)
     //    {
@@ -57,6 +73,14 @@ static OSStatus RenderCallback(void                       *in,
         AUGraphClose(_graph);
         AUGraphUninitialize(_graph);
     }
+}
+
+- (instancetype)init {
+    self = [super init];
+    if (self) {
+        _volume = 1.0;
+    }
+    return self;
 }
 
 - (void)dealloc {
@@ -155,9 +179,9 @@ static OSStatus RenderCallback(void                       *in,
     }
     
     AudioStreamBasicDescription mDataFormat;
-    UInt32 channelCount = 4;
+    UInt32 channelCount = 2;
     UInt32 bytesPerSample = 2;
-    Float64 sampleRate = 44000;
+    Float64 sampleRate = 44100;
     int formatFlag = (bytesPerSample == 4) ? kLinearPCMFormatFlagIsFloat : kLinearPCMFormatFlagIsSignedInteger;
     mDataFormat.mSampleRate       = sampleRate;
     mDataFormat.mFormatID         = kAudioFormatLinearPCM;

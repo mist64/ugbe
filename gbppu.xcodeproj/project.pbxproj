@@ -26,6 +26,7 @@
 		F23F0C421E15EF5800F0BD25 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F23F0C411E15EF5800F0BD25 /* AudioToolbox.framework */; };
 		F23F0C441E15EF6000F0BD25 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F23F0C431E15EF6000F0BD25 /* CoreAudio.framework */; };
 		F23F0C461E15F04300F0BD25 /* AudioUnit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F23F0C451E15F04300F0BD25 /* AudioUnit.framework */; };
+		F23F0C481E15FF2200F0BD25 /* TestAudio.wav in Resources */ = {isa = PBXBuildFile; fileRef = F23F0C471E15FF2200F0BD25 /* TestAudio.wav */; };
 		F281A1EA1CA362B70096459D /* UGBVRAMViewerWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = F281A1E81CA362B70096459D /* UGBVRAMViewerWindowController.m */; };
 		F281A1EB1CA362B70096459D /* UGBVRAMViewerWindowController.xib in Resources */ = {isa = PBXBuildFile; fileRef = F281A1E91CA362B70096459D /* UGBVRAMViewerWindowController.xib */; };
 		F29093341C8D659C00FFF73E /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = F29093331C8D659C00FFF73E /* AppDelegate.m */; };
@@ -80,6 +81,7 @@
 		F23F0C411E15EF5800F0BD25 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
 		F23F0C431E15EF6000F0BD25 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
 		F23F0C451E15F04300F0BD25 /* AudioUnit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioUnit.framework; path = System/Library/Frameworks/AudioUnit.framework; sourceTree = SDKROOT; };
+		F23F0C471E15FF2200F0BD25 /* TestAudio.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; name = TestAudio.wav; path = Audio/TestAudio.wav; sourceTree = "<group>"; };
 		F281A1E71CA362B70096459D /* UGBVRAMViewerWindowController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = UGBVRAMViewerWindowController.h; path = VRAMViewer/UGBVRAMViewerWindowController.h; sourceTree = "<group>"; };
 		F281A1E81CA362B70096459D /* UGBVRAMViewerWindowController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = UGBVRAMViewerWindowController.m; path = VRAMViewer/UGBVRAMViewerWindowController.m; sourceTree = "<group>"; };
 		F281A1E91CA362B70096459D /* UGBVRAMViewerWindowController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = UGBVRAMViewerWindowController.xib; path = VRAMViewer/UGBVRAMViewerWindowController.xib; sourceTree = "<group>"; };
@@ -188,6 +190,7 @@
 		F23F0C3F1E15EEDA00F0BD25 /* Audio */ = {
 			isa = PBXGroup;
 			children = (
+				F23F0C471E15FF2200F0BD25 /* TestAudio.wav */,
 				F23F0C3C1E15EED100F0BD25 /* UGBAudioOutput.h */,
 				F23F0C3D1E15EED100F0BD25 /* UGBAudioOutput.m */,
 			);
@@ -334,6 +337,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F23F0C481E15FF2200F0BD25 /* TestAudio.wav in Resources */,
 				F281A1EB1CA362B70096459D /* UGBVRAMViewerWindowController.xib in Resources */,
 				F290933F1C8D659C00FFF73E /* Assets.xcassets in Resources */,
 				F231B3BB1C8EB7F50082A3AA /* DMG_ROM.bin in Resources */,
