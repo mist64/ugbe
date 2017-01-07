@@ -17,6 +17,15 @@ class io;
 class sound {
 private:
 	io &_io;
+	int clock_divider;
+	bool c1_on;
+	int c1_freq;
+	int c1_trigger;
+	bool c1_invert;
+	int c1_freq_counter;
+	bool c1_value;
+
+	void c1_restart();
 
 protected:
 	friend class gb;
@@ -25,6 +34,7 @@ protected:
 public:
 	uint8_t read(uint8_t a8);
 	void write(uint8_t a8, uint8_t d8);
+	void step();
 };
 
 #endif /* sound_h */

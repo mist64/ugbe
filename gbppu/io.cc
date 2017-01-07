@@ -129,6 +129,7 @@ void io::
 io_step()
 {
 	_timer.step();
+	_sound.step();
 	_ppu.step();
 }
 
