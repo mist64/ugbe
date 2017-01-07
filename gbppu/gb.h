@@ -25,11 +25,11 @@ private:
 	memory  _memory;
 	io      _io;
 	timer   _timer;
-	sound   _sound;
 	buttons _buttons;
 	serial  _serial;
 
 public:
+    sound   _sound;
 	gb(const char *bootrom_filename, const char *cartridge_filename);
 
 public:

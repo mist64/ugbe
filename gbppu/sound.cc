@@ -14,6 +14,7 @@ sound::sound(io &io)
 {
 	c1_freq = 0;
 	c1_freq_counter = 0;
+    consumeSoundInteger = NULL;
 }
 
 void sound::
@@ -79,6 +80,12 @@ step()
 		} else if (c1_freq_counter == 0) {
 			c1_restart();
 		}
-		printf("%d", c1_value ? 1 : 0);
+		//printf("%d", c1_value ? 1 : 0);
+        
+        if (this->consumeSoundInteger) {
+            // stereo sample
+            (*this->consumeSoundInteger)(c1_value ? INT16_MAX : INT16_MIN);
+//            (*this->consumeSoundInteger)(c1_value ? INT16_MAX : INT16_MIN);
+        }
 	}
 }

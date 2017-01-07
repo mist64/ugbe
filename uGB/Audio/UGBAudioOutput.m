@@ -19,16 +19,17 @@ static OSStatus RenderCallback(void                       *circularBuffer,
                                UInt32                      inNumberFrames,
                                AudioBufferList            *ioData)
 {
-//    NSLog(@"Render callback: frames requested: %d", inNumberFrames);
     int32_t bytesRequested = inNumberFrames * 2 * 2;
     char *outBuffer = ioData->mBuffers[0].mData;
     int availableBytes;
     void *head = TPCircularBufferTail(circularBuffer, &availableBytes);
     int32_t byteCountToWriteOut = MIN(availableBytes, bytesRequested);
     if (byteCountToWriteOut > 0) {
+        NSLog(@"Render callback: frames requested: %d - bytes to write out: %d", inNumberFrames, byteCountToWriteOut);
         memcpy(outBuffer, head, byteCountToWriteOut);
         TPCircularBufferConsume(circularBuffer, byteCountToWriteOut);
     } else {
+        NSLog(@"Render callback: frames requested: %d - no data available, sending zeros", inNumberFrames);
         memset(outBuffer, 0, bytesRequested);
     }
     
@@ -162,7 +163,7 @@ static OSStatus RenderCallback(void                       *circularBuffer,
     AudioStreamBasicDescription mDataFormat;
     UInt32 channelCount = 2;
     UInt32 bytesPerSample = 2;
-    Float64 sampleRate = 44100;
+    Float64 sampleRate = 131072; //44100;
     int formatFlag = (bytesPerSample == 4) ? kLinearPCMFormatFlagIsFloat : kLinearPCMFormatFlagIsSignedInteger;
     mDataFormat.mSampleRate       = sampleRate;
     mDataFormat.mFormatID         = kAudioFormatLinearPCM;

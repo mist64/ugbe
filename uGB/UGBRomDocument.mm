@@ -7,6 +7,7 @@
 
 #import "UGBRomDocument.h"
 #import "gb.h"
+#import "sound.h"
 #import <QuartzCore/QuartzCore.h>
 #import "UGBAudioOutput.h"
 
@@ -45,6 +46,14 @@ static CGImageRef CreateGameBoyScreenCGImageRefFromPicture(uint8_t *pictureCopy,
     return YES;
 }
 
+static TPCircularBuffer *s_circularBuffer;
+static void consumeSoundInteger(int16_t value) {
+    if (s_circularBuffer) {
+        TPCircularBufferProduceBytes(s_circularBuffer, &value, 2);
+    }
+}
+
+
 - (void)startEmulation {
     if (_pauseSemaphore) {
         // free a waiting emulator if restarted on pause
@@ -62,7 +71,13 @@ static CGImageRef CreateGameBoyScreenCGImageRefFromPicture(uint8_t *pictureCopy,
 
         gb *localboy = new class gb(bootrom_filename, rom_filename);
         gameboy = localboy;
+
+        if (self.audioOutput) {
+            s_circularBuffer = self.audioOutput.inputBuffer;
+            localboy->_sound.consumeSoundInteger = consumeSoundInteger;
+        }
         
+
         NSTimeInterval timePerFrame = 1.0 / (1024.0 * 1024.0 / 114.0 / 154.0);
         
         self.nextFrameTime = [NSDate timeIntervalSinceReferenceDate] + timePerFrame;

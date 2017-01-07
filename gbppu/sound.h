@@ -35,6 +35,7 @@ public:
 	uint8_t read(uint8_t a8);
 	void write(uint8_t a8, uint8_t d8);
 	void step();
+    void (* consumeSoundInteger)(int16_t);
 };
 
 #endif /* sound_h */
