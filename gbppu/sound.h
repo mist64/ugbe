@@ -18,14 +18,14 @@ class sound {
 private:
 	io &_io;
 	int clock_divider;
-	bool c1_on;
-	int c1_freq;
-	int c1_trigger;
-	bool c1_invert;
-	int c1_freq_counter;
-	bool c1_value;
+	bool pulse_on[2];
+	int pulse_freq[2];
+	int pulse_trigger[2];
+	bool pulse_invert[2];
+	int pulse_freq_counter[2];
+	bool pulse_value[2];
 
-	void c1_restart();
+	void pulse_restart(int c);
 
 protected:
 	friend class gb;
