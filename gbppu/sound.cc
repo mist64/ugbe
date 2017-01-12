@@ -9,8 +9,6 @@
 #include "sound.h"
 #include "io.h"
 
-FILE *f;
-
 sound::sound(io &io)
 	: _io(io)
 {
@@ -21,8 +19,6 @@ sound::sound(io &io)
 	pulse_value[0] = false;
 	pulse_value[1] = false;
 	consumeSoundInteger = NULL;
-
-//	f = fopen("/tmp/del.pcm", "w");
 }
 
 void sound::
@@ -50,6 +46,12 @@ pulse_restart(int c)
 	pulse_value[c] = pulse_invert[c];
 }
 
+void sound::
+wave_restart()
+{
+	wave_freq_counter = wave_freq;
+}
+
 uint8_t sound::
 read(uint8_t a8)
 {
@@ -70,6 +72,13 @@ write(uint8_t a8, uint8_t d8)
 			pulse_freq[c] = ((((c ? _io.reg[rNR24] : _io.reg[rNR14]) & 7) << 8) | (c ? _io.reg[rNR23] : _io.reg[rNR13])) ^ 2047;
 			pulse_restart(c);
 		}
+	} else if (a8 == rNR34) {
+		if (d8 & 0x80) {
+			wave_freq = (((_io.reg[rNR34] & 7) << 8) | _io.reg[rNR33]) ^ 2047;
+			wave_ptr = 0;
+			wave_value = 0;
+			wave_restart();
+		}
 	}
 }
 
@@ -77,12 +86,12 @@ write(uint8_t a8, uint8_t d8)
 void sound::
 step()
 {
-//	clock_divider = (clock_divider + 1) & 7;
 	clock_divider = (clock_divider + 1) & 15;
 	if (clock_divider) {
 		return;
 	}
 
+	// Pulse
 	for (int c = 0; c <= 1; c++) {
 		if (pulse_on[c]) {
 			pulse_freq_counter[c]--;
@@ -94,12 +103,24 @@ step()
 		}
 	}
 
-	uint16_t mixed_value = (pulse_value[0] ? 8192 : 0) + (pulse_value[1] ? 8192 : 0);
-//	fwrite(&mixed_value, 2, 1, f);
+	// Wave
+	wave_freq_counter--;
+	if (wave_freq_counter == 0) {
+		wave_ptr = (wave_ptr + 1) & 31;
+		wave_value = _io.reg[0x30 + wave_ptr / 2];
+		if (wave_ptr & 2) {
+			wave_value &= 15;
+		} else {
+			wave_value >>= 4;
+		}
+		wave_restart();
+	}
+
+	uint16_t mixed_value = (pulse_value[0] ? 8192 : 0) + (pulse_value[1] ? 8192 : 0) + (wave_value * 512);
+//	uint16_t mixed_value = (wave_value * 512);
 
 	if (this->consumeSoundInteger) {
 		// stereo sample
 		(*this->consumeSoundInteger)(mixed_value);
-		//            (*this->consumeSoundInteger)(pulse_value ? INT16_MAX : INT16_MIN);
 	}
 }

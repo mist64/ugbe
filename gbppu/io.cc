@@ -18,12 +18,18 @@
 #include "io.h"
 
 static const char *reg_name[] = {
+	// $FF00
 	"P1", "SB", "SC", 0, "DIV", "TIMA", "TMA", "TAC", 0, 0, 0, 0, 0, 0, 0, "IF",
- "NR10", "NR11", "NR12", "NR13", "NR14", 0, "NR21", "NR22", "NR23", "NR24",
-	"NR30", "NR31", "NR32", "NR33", "NR34", 0, "NR41", "NR42", "NR42_2", "NR43",
- "NR50", "NR51", "NR52", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, "LCDC", "STAT", "SCY", "SCX", "LY", "LYC", "DMA",
-	"BGP", "OBP0", "OBP1", "WY", "WX"
+	// $FF10
+	"NR10", "NR11", "NR12", "NR13", "NR14", 0, "NR21", "NR22", "NR23", "NR24", "NR30", "NR31", "NR32", "NR33", "NR34", 0,
+	// $FF20
+	"NR41", "NR42", "NR42_2", "NR43", "NR50", "NR51", "NR52", 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	// $FF30
+	"W0", "W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9", "W10", "W11", "W12", "W13", "W14", "W15",
+	// $FF40
+	"LCDC", "STAT", "SCY", "SCX", "LY", "LYC", "DMA", "BGP", "OBP0", "OBP1", "WY", "WX",
+	// $FF50
+	"BOOT"
 };
 
 const char *
@@ -93,7 +99,7 @@ io_read(uint8_t a8)
 		return _timer.read(a8);
 	} else if (a8 == 0x0F || a8 == 0xFF) {
 		return irq_read(a8);
-	} else if (a8 >= 0x10 && a8 <= 0x26) {
+	} else if (a8 >= 0x10 && a8 <= 0x3f) {
 		return _sound.read(a8);
 	} else if (a8 >= 0x40 && a8 <= 0x4b) {
 		return _ppu.io_read(a8);
@@ -114,7 +120,7 @@ io_write(uint8_t a8, uint8_t d8)
 		_timer.write(a8, d8);
 	} else if (a8 == 0x0F || a8 == 0xFF) {
 		irq_write(a8, d8);
-	} else if (a8 >= 0x10 && a8 <= 0x26) {
+	} else if (a8 >= 0x10 && a8 <= 0x3f) {
 		_sound.write(a8, d8);
 	} else if (a8 >= 0x40 && a8 <= 0x4b) {
 		_ppu.io_write(a8, d8);

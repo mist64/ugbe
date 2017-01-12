@@ -25,7 +25,14 @@ private:
 	int pulse_freq_counter[2];
 	bool pulse_value[2];
 
+	bool wave_on;
+	int wave_freq;
+	int wave_freq_counter;
+	int wave_ptr;
+	uint8_t wave_value;
+
 	void pulse_restart(int c);
+	void wave_restart();
 
 protected:
 	friend class gb;
