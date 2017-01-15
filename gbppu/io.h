@@ -32,9 +32,6 @@
 #define rIE 0xFF
 #define rWY 0x4A
 #define rWX 0x4B
-#define rNR50 0x24
-#define rNR51 0x25
-#define rNR52 0x26
 #define rNR10 0x10
 #define rNR11 0x11
 #define rNR12 0x12
@@ -51,8 +48,11 @@
 #define rNR34 0x1E
 #define rNR41 0x20
 #define rNR42 0x21
-#define rNR42_2 0x22
-#define rNR43 0x23
+#define rNR43 0x22
+#define rNR44 0x23
+#define rNR50 0x24
+#define rNR51 0x25
+#define rNR52 0x26
 
 const char *name_for_io_reg(uint8_t a8);
 

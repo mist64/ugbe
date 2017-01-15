@@ -19,6 +19,8 @@ sound::sound(io &io)
 	pulse_value[0] = false;
 	pulse_value[1] = false;
 	consumeSoundInteger = NULL;
+
+	noise_random = 0xEA31;
 }
 
 void sound::
@@ -52,6 +54,12 @@ wave_restart()
 	wave_freq_counter = wave_freq;
 }
 
+void sound::
+noise_restart()
+{
+	noise_freq_counter = noise_freq;
+}
+
 uint8_t sound::
 read(uint8_t a8)
 {
@@ -79,6 +87,20 @@ write(uint8_t a8, uint8_t d8)
 			wave_value = 0;
 			wave_restart();
 		}
+	} else if (a8 == rNR44) {
+		if (d8 & 0x80) {
+//			f = 524288 / r / 2^(s+1)
+//			.
+
+			noise_freq = ((_io.reg[rNR43] & 7) + 1) * (1 << ((_io.reg[rNR43] >> 4) + 1));
+//			printf("%s:%d %x -> %d\n", __FILE__, __LINE__, _io.reg[rNR43], noise_freq);
+			noise_value = 0;
+			length[3] = (d8 & 0x40) ? ((_io.reg[rNR42] & 63) ^ 63) << 10 : 0;
+			printf("%s:%d %d\n", __FILE__, __LINE__, length[3]);
+			noise_restart();
+		} else {
+			noise_on = false;
+		}
 	}
 }
 
@@ -104,20 +126,41 @@ step()
 	}
 
 	// Wave
-	wave_freq_counter--;
-	if (wave_freq_counter == 0) {
-		wave_ptr = (wave_ptr + 1) & 31;
-		wave_value = _io.reg[0x30 + wave_ptr / 2];
-		if (wave_ptr & 2) {
-			wave_value &= 15;
-		} else {
-			wave_value >>= 4;
+	if (wave_on) {
+		wave_freq_counter--;
+		if (wave_freq_counter == 0) {
+			wave_ptr = (wave_ptr + 1) & 31;
+			wave_value = _io.reg[0x30 + wave_ptr / 2];
+			if (wave_ptr & 2) {
+				wave_value &= 15;
+			} else {
+				wave_value >>= 4;
+			}
+			wave_restart();
 		}
-		wave_restart();
 	}
 
-	uint16_t mixed_value = (pulse_value[0] ? 8192 : 0) + (pulse_value[1] ? 8192 : 0) + (wave_value * 512);
+	// Noise
+	if (noise_on) {
+		noise_freq_counter--;
+		if (noise_freq_counter == 0) {
+			noise_value = noise_random >> 15;
+			noise_random <<= 1;
+			noise_random |= ((noise_random >> 3) & 1) ^ ((noise_random >> 7) & 1) ^ ((noise_random >> 11) & 1) ^ ((noise_random >> 13) & 1);
+			noise_restart();
+		}
+		if (length[3]) {
+			length[3]--;
+			if (!length[3]) {
+				noise_on = false;
+				noise_value = 0;
+			}
+		}
+	}
+
+//	uint16_t mixed_value = (pulse_value[0] ? 8192 : 0) + (pulse_value[1] ? 8192 : 0) + (wave_value * 512);
 //	uint16_t mixed_value = (wave_value * 512);
+	uint16_t mixed_value = noise_value ? 8192 : 0;
 
 	if (this->consumeSoundInteger) {
 		// stereo sample

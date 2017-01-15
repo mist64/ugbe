@@ -18,6 +18,9 @@ class sound {
 private:
 	io &_io;
 	int clock_divider;
+
+	uint16_t length[4];
+
 	bool pulse_on[2];
 	int pulse_freq[2];
 	int pulse_trigger[2];
@@ -31,8 +34,15 @@ private:
 	int wave_ptr;
 	uint8_t wave_value;
 
+	bool noise_on;
+	int noise_freq;
+	int noise_freq_counter;
+	uint16_t noise_random;
+	uint8_t noise_value;
+
 	void pulse_restart(int c);
 	void wave_restart();
+	void noise_restart();
 
 protected:
 	friend class gb;
